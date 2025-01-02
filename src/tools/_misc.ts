@@ -1,0 +1,220 @@
+import * as path from 'path';
+const { exec } = require('child_process');
+
+import packageJSON from '../../package.json';
+import { pathExists, pathExistsSync, readFileSync } from 'fs-extra';
+import { ChildProcessWithoutNullStreams, spawn, SpawnOptionsWithoutStdio } from 'child_process';
+
+export namespace _misc{
+
+/**打印 */
+export function log_1(...args){
+    args.unshift("[plugin]")
+    console.log.apply(console, args)
+}
+
+/**获取当前插件的绝对路径 */
+export function getCurPluginPath(){
+    return path.join(Editor.Project.path,"extensions",packageJSON.name);
+}
+
+export async function waitForSeconds(seconds:number){
+    return new Promise((resolve)=>{
+        setTimeout(()=>{
+            resolve(null)
+        },seconds*1000)
+    })
+}
+
+/**根据文件的路径，获取其中的所有子路径
+ * 
+ * 'db://assets/xxx/yyy/zzz.png' => ['db://assets', 'db://assets/xxx', 'db://assets/xxx/yyy', 'db://assets/xxx/yyy/zzz.png']
+ */
+export function getAllSubpathsFromUrl(resUrl:string) {
+    // 移除协议部分，只保留路径部分
+    const pathWithoutProtocol = resUrl.replace(/^[^:]+:\/\//, '');
+
+    // 分割路径为数组
+    const pathParts = pathWithoutProtocol.split('/');
+
+    // 初始化结果数组
+    const subpaths:Array<string> = [];
+
+    // 遍历路径部分，构建所有可能的子路径
+    let currentPath = '';
+    for (let i = 0; i < pathParts.length; i++) {
+        currentPath = (currentPath ? currentPath + '/' : '') + pathParts[i];
+        subpaths.push(currentPath);
+    }
+
+    return subpaths;
+}
+
+/**根据资源类型获取对应的图标
+ * 
+ * @param {string} type 资源类型
+ * @returns {string} 图标名称 会应用到 ui-icon组件 中的 value 属性
+ * */
+export function getIconOfResType(type:string){
+    if(type==="cc.SpriteFrame"||type==="cc.Texture2D"||type==="cc.ImageAsset"){
+        return "image"
+    }else if(type==="cc.Prefab"){
+        return "prefab"
+    }else if(type==="cc.SceneAsset"){
+        return "scene"
+    }else if(type==="cc.Material"){
+        return "material"
+    }else if(type==="cc.EffectAsset"){
+        return "effect"
+    }else if(type==="cc.AudioClip"){
+        return "audio-clip"
+    }else if(type==="cc.AnimationClip"){
+        return "animation-clip"
+    }else if(type==="cc.JsonAsset"){
+        return "json"
+    }else if(type==="cc.TextAsset"){
+        return "text"
+    }else if(type==="cc.BitmapFont"){
+        return "bitmap-font"
+    }else if(type==="cc.TTFFont"){
+        return "ttf-font"
+    }else if(type==="cc.ParticleAsset"){
+        return "particle"
+    }else if(type==="cc.SpriteAtlas"){
+        return "sprite-atlas"
+    }else if(type==="cc.VideoClip"){
+        return "video"
+    }else if(type==="cc.Mesh"){
+        return "mesh"
+    }else if(type==="cc.Skeleton"){
+        return "spine-data"
+    }else if(type==="cc.AnimationClip"){
+        return "animation-clip"
+    }else{
+        return "unknown"
+    }
+}
+
+/**
+ * 获取运行时的预览地址
+ */
+export function getRuntimePreviewUrl(){
+    let port = 7456
+    let previewUrl = `http://localhost:${port}/`
+    let launchJsonPath = path.join(Editor.Project.path, '.vscode/launch.json')
+    if (pathExistsSync(launchJsonPath)) {
+        try{
+            let launchJson = JSON.parse(readFileSync(launchJsonPath, 'utf-8'))
+            if (launchJson.configurations && launchJson.configurations[0] && launchJson.configurations[0].url) {
+                previewUrl = launchJson.configurations[0].url
+            }
+        }catch(e){
+
+        }
+    }
+    return previewUrl
+}
+
+/**使用浏览器打开网页 */
+export function openWebSiteUrl(url:string){
+    const command = `start "" "${url}"`;
+    // 执行命令
+    exec(command, (error, stdout, stderr) => {
+        if (error) {
+            console.error(`执行命令时出错: ${error}`);
+            return;
+        }
+        if (stderr) {
+            console.error(`标准错误输出: ${stderr}`);
+        }
+    });
+}
+
+/**
+ * 等待一个元素真正被挂载
+ * @param ref 
+ * @param callback 
+ * @param interval 
+ * @param maxRetries 
+ */
+export async function waitForElementMounted(ref, interval = 100, maxRetries = 50) {
+    if(ref.value){
+        return ref.value
+    }
+    return new Promise(function (resolve,reject) {
+        let retryCount = 0;
+        const _id = setInterval(() => {
+            if (ref.value) {
+                resolve(ref.value);
+                clearInterval(_id);
+            } else if (retryCount >= maxRetries) {
+                console.error("超时未找到目标元素");
+                clearInterval(_id);
+            } else {
+                retryCount++;
+            }
+        }, interval);
+    })
+}
+
+/**
+ * 将值限制在指定的最小值和最大值之间。
+ * 如果值超出指定区间，则返回相应边界，否则返回该值。
+ * @param min - 最小值
+ * @param max - 最大值
+ * @param val - 要限制的值
+ * @returns 限制后的值
+ */
+export function clamp(min: number, max: number, val: number): number {
+    // 可选：添加对min和max的验证
+    if (min > max) {
+        throw new Error("min should be less than or equal to max");
+    }
+    return Math.min(Math.max(val, min), max);
+}
+
+
+const _childProcess:Array<ChildProcessWithoutNullStreams> = []
+/**
+ * 运行批处理命令，并返回一个 Promise，等待其执行完毕
+ */
+export function runCmdSpawn(cmd: string, args?: readonly string[], options?: SpawnOptionsWithoutStdio): Promise<void> {
+    return new Promise((resolve, reject) => {
+        // 使用 spawn 启动子进程
+        const _process = spawn(cmd, args, {shell: true,...options});
+        _childProcess.push(_process)
+
+        // 捕获子进程输出
+        _process.stdout.on('data', (data: Buffer) => {
+            console.log(`[runCmdSpawn]: ${data.toString().trim()}`);
+        });
+
+        _process.stderr.on('data', (data: Buffer) => {
+            console.error(`[runCmdSpawn Error]: ${data.toString().trim()}`);
+        });
+
+        _process.on('error', (error: Error) => {
+            console.error('[runCmdSpawn Error]', error);
+            resolve();
+        });
+
+        _process.on('exit', (code: number) => {
+            _childProcess.splice(_childProcess.indexOf(_process),1)
+            console.log(`[runCmdSpawn] Process exited with code ${code}`);
+            if (code === 0) {
+                resolve(); // 如果进程正常退出，解析 Promise
+            } else {
+                resolve();
+            }
+        });
+    });
+}
+
+export function stopSpawnProcess(){
+    for(let process of _childProcess){
+        process.kill()
+    }
+    _childProcess.length = 0
+}
+
+}
