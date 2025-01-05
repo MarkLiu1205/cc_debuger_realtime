@@ -1,4 +1,4 @@
-import path from "path";
+const path = require("path");
 import { _funcs } from "./_funcs";
 
 interface TreeItemInfo{

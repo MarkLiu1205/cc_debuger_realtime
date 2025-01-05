@@ -1,9 +1,8 @@
-import * as path from 'path';
-const { exec } = require('child_process');
+const path =  require('path');
+const { exec,spawn } = require('child_process');
+const { pathExists, pathExistsSync, readFileSync } = require('fs-extra');
 
 import packageJSON from '../../package.json';
-import { pathExists, pathExistsSync, readFileSync } from 'fs-extra';
-import { ChildProcessWithoutNullStreams, spawn, SpawnOptionsWithoutStdio } from 'child_process';
 
 export namespace _funcs{
 
@@ -12,6 +11,10 @@ export interface AssetInfo {
     type:string,
     uuid:string,
     path:string,
+}
+
+export function getPluginName(){
+    return packageJSON.name
 }
 
 /**
@@ -208,11 +211,11 @@ export function clamp(min: number, max: number, val: number): number {
 }
 
 
-const _childProcess:Array<ChildProcessWithoutNullStreams> = []
+const _childProcess:Array<any> = []
 /**
  * 运行批处理命令，并返回一个 Promise，等待其执行完毕
  */
-export function runCmdSpawn(cmd: string, args?: readonly string[], options?: SpawnOptionsWithoutStdio): Promise<void> {
+export function runCmdSpawn(cmd: string, args?: readonly string[], options?: any): Promise<void> {
     return new Promise((resolve, reject) => {
         // 使用 spawn 启动子进程
         const _process = spawn(cmd, args, {shell: true,...options});

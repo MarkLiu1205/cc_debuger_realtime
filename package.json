@@ -1,57 +1,45 @@
 {
-    "package_version": 2,
-    "version": "1.0.0",
     "name": "cc_debuger_realtime",
-    "description": "i18n:cc_debuger_realtime.description",
-    "main": "./dist/main.js",
+    "version": "0.0.0",
+    "package_version": 2,
+    "type": "module",
+    "main": "./dist/browser.cjs",
+    "scripts": {
+        "dev": "npm run build -- --mode development",
+        "build": "vite build"
+    },
     "dependencies": {
-        "@vue-flow/core": "^1.41.6",
-        "@ysx-libs/vue-virtual-tree": "^0.0.13",
-        "fs-extra": "^10.0.0",
-        "vue": "^3.5.13",
-        "vue3-virtual-list": "^1.0.2",
+        "@dagrejs/dagre": "^1.1.4",
+        "@vue-flow/core": "^1.41.7",
+        "element-plus": "^2.8.6",
+        "fs-extra": "^11.2.0",
+        "vue": "^3.4.37",
         "ws": "^8.18.0"
     },
     "devDependencies": {
-        "@types/fs-extra": "^9.0.5",
-        "@types/node": "^16.0.1",
-        "typescript": "^4.3.4"
-    },
-    "panels": {
-        "default": {
-            "title": "cc_debuger_realtime Default Panel",
-            "type": "dockable",
-            "main": "dist/panels/default",
-            "size": {
-                "min-width": 400,
-                "min-height": 300,
-                "width": 1024,
-                "height": 600
-            }
-        }
+        "@cocos-fe/vite-plugin-cocos-panel": "^0.0.1-beta.5",
+        "@cocos/creator-types": "^3.8.4",
+        "@types/node": "^22.10.5",
+        "@vitejs/plugin-vue": "^5.2.1",
+        "rollup-plugin-node-externals": "^7.1.3",
+        "typescript": "^5.5.3",
+        "unplugin-auto-import": "^0.18.6",
+        "unplugin-vue-components": "^0.27.5",
+        "vite": "^5.4.1",
+        "vue-tsc": "^2.1.10"
     },
     "contributions": {
         "menu": [
             {
-                "path": "i18n:menu.extension/cc_debuger_realtime",
-                "label": "i18n:cc_debuger_realtime.open_panel",
-                "message": "open-panel"
-            },
-            {
-                "path": "i18n:menu.extension/cc_debuger_realtime",
-                "label": "i18n:cc_debuger_realtime.send_to_panel",
-                "message": "send-to-panel"
+                "path": "i18n:menu.extension",
+                "label": "i18n:cc_debuger_realtime.title",
+                "message": "open"
             }
         ],
         "messages": {
-            "open-panel": {
+            "open": {
                 "methods": [
-                    "openPanel"
-                ]
-            },
-            "send-to-panel": {
-                "methods": [
-                    "default.hello"
+                    "open"
                 ]
             },
             "restart-self": {
@@ -61,10 +49,15 @@
             }
         }
     },
-    "author": "Cocos Creator",
-    "editor": ">=3.7.4",
-    "scripts": {
-        "build": "tsc -b",
-        "watch": "tsc -w"
+    "panels": {
+        "default": {
+            "main": "./dist/panel.cjs",
+            "size": {
+                "min-width": 400,
+                "min-height": 300,
+                "width": 800,
+                "height": 700
+            }
+        }
     }
 }

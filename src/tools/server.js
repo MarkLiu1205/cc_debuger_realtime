@@ -1,6 +1,6 @@
-const WebSocket = require('ws');
+import { WebSocketServer } from 'ws';
 
-class WebSocketServer {
+class WebSocketServerWrapper {
     constructor(port) {
         this.m_port = port;
         this.m_ws_plugin = null;
@@ -9,7 +9,7 @@ class WebSocketServer {
     }
 
     start() {
-        this.wss = new WebSocket.Server({ port: this.m_port });
+        this.wss = new WebSocketServer({ port: this.m_port });
         console.log(`WebSocket server running on ws://localhost:${this.m_port}`);
 
         this.wss.on('connection', (ws) => {
@@ -192,7 +192,5 @@ if(port==null||isNaN(port)){
     port = 8085
 }
 
-if (require.main === module) {
-    const server = new WebSocketServer(port);
-    server.start();
-}
+const server = new WebSocketServerWrapper(port);
+server.start();

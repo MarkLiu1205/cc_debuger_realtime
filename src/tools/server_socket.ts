@@ -1,8 +1,6 @@
-import { spawn } from 'child_process';
-import * as path from 'path';
+const { exec, spawn } = require('child_process');
+const path = require("path")
 
-// @ts-ignore
-import packageJSON from '../../package.json';
 import { _funcs } from './_funcs';
 
 // WebSocket Server class

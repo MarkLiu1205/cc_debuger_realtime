@@ -1,47 +1,35 @@
-# Project Title
+# Vue 3 + Vite
 
-An extension that shows how to open and communicate with the panel through messages and menus.
-The panel is based on Vue3.x.
+This template should help get you started developing with Vue 3 in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
 
-## Development Environment
+Learn more about IDE Support for Vue in the [Vue Docs Scaling up Guide](https://vuejs.org/guide/scaling-up/tooling.html#ide-support).
 
-Node.js
-
-## Install
+## setup
 
 ```bash
-# Install dependent modules
 npm install
-# build
+
+npm run dev
+
 npm run build
 ```
 
-## Usage
-
-After enabling the extension, click `Panel -> cc_debuger_realtime -> Default Panel` in the main menu bar to open the default panel of the extension.
-
-To send a message to the default panel, click `Developer -> cc_debuger_realtime -> Send Message to Panel` at the top of the menu. If the default panel exists, the `hello` method of the panel will be called.
-
-After clicking `Send Message to Panel`, a message `send-to-panel` will be sent to the extension as defined by `contributions.menu` in `package.json`. When the extension receives the `send-to-panel` message, it will cause the `default` panel to call the `hello` method as defined by `contributions.messages` in `package.json`.
-
-
-
 TODO
 
-èµ„æºå ç”¨ç›¸å…³
-1.æŒ‰ç…§bundleç­›é€‰ã€æ˜¯å¦æ­£åœ¨è¢«ä½¿ç”¨ç­›é€‰ã€è¾“å…¥æ¡†ç­›é€‰
-2.ç»Ÿè®¡å½“å‰èµ„æºæ‰€å ç”¨å†…å­˜
-3.ç»Ÿè®¡æ¯ä¸ªèµ„æºçš„å¼•ç”¨è®¡æ•°
-4.æ˜¾ç¤ºèµ„æºçš„ä¾èµ–å…³ç³»
-5.åˆ†ææœ‰å¯èƒ½æ²¡æœ‰é‡Šæ”¾çš„èµ„æºï¼ˆå¦‚å½“å‰åœºæ™¯æ²¡æœ‰ä½¿ç”¨åˆ°çš„èµ„æºï¼Œä¹Ÿä¸è¢«å¤„åœ¨ç¼“å­˜ä¸­çš„prefabå¼•ç”¨ï¼‰
-6.åˆ†æå¯èƒ½å­˜åœ¨çš„éœ€è¦æ‰‹åŠ¨é‡Šæ”¾çš„èµ„æºï¼ˆå¦‚æ£€æµ‹åˆ°åŠ¨æ€å¼•ç”¨åˆ°çš„èµ„æºï¼Œä½†æ˜¯å…¶å¼•ç”¨è®¡æ•°æ²¡æœ‰å¢åŠ ï¼‰
+×ÊÔ´Õ¼ÓÃÏà¹Ø
+1.°´ÕÕbundleÉ¸Ñ¡¡¢ÊÇ·ñÕıÔÚ±»Ê¹ÓÃÉ¸Ñ¡¡¢ÊäÈë¿òÉ¸Ñ¡
+2.Í³¼Æµ±Ç°×ÊÔ´ËùÕ¼ÓÃÄÚ´æ
+3.Í³¼ÆÃ¿¸ö×ÊÔ´µÄÒıÓÃ¼ÆÊı
+4.ÏÔÊ¾×ÊÔ´µÄÒÀÀµ¹ØÏµ
+5.·ÖÎöÓĞ¿ÉÄÜÃ»ÓĞÊÍ·ÅµÄ×ÊÔ´£¨Èçµ±Ç°³¡¾°Ã»ÓĞÊ¹ÓÃµ½µÄ×ÊÔ´£¬Ò²²»±»´¦ÔÚ»º´æÖĞµÄprefabÒıÓÃ£©
+6.·ÖÎö¿ÉÄÜ´æÔÚµÄĞèÒªÊÖ¶¯ÊÍ·ÅµÄ×ÊÔ´£¨Èç¼ì²âµ½¶¯Ì¬ÒıÓÃµ½µÄ×ÊÔ´£¬µ«ÊÇÆäÒıÓÃ¼ÆÊıÃ»ÓĞÔö¼Ó£©
 
-èŠ‚ç‚¹æ•°ç›¸å…³
-1.æ”¯æŒèŠ‚ç‚¹æ ‘inspactor
-2.æ”¯æŒæ˜¾ç¤ºæŒ‡å®šèŠ‚ç‚¹æ‰€å ç”¨èµ„æº
-3.æ”¯æŒå®æ—¶åœ¨è¿è¡Œæ—¶é¢„è§ˆèµ„æºï¼ˆå¸¸ä½èŠ‚ç‚¹ï¼‰
+½ÚµãÊıÏà¹Ø
+1.Ö§³Ö½ÚµãÊ÷inspactor
+2.Ö§³ÖÏÔÊ¾Ö¸¶¨½ÚµãËùÕ¼ÓÃ×ÊÔ´
+3.Ö§³ÖÊµÊ±ÔÚÔËĞĞÊ±Ô¤ÀÀ×ÊÔ´£¨³£×¡½Úµã£©
 
 
-å…¶ä»–
-1.æ”¯æŒè‡ªåŠ¨åˆ·æ–°
-2.æ”¯æŒåœ¨å¤šä¸ªåœ¨çº¿çš„runtimeä¸­è¿›è¡Œåˆ‡æ¢
+ÆäËû
+1.Ö§³Ö×Ô¶¯Ë¢ĞÂ
+2.Ö§³ÖÔÚ¶à¸öÔÚÏßµÄruntimeÖĞ½øĞĞÇĞ»»

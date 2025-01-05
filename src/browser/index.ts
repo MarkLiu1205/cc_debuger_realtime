@@ -1,32 +1,25 @@
-// @ts-ignore
-import packageJSON from '../package.json';
-import { _funcs } from './tools/_funcs';
-import { load_ts_to_runtime, unload_ts_from_runtime } from './tools/runtime_socket_helper';
-/**
- * @en 
- * @zh 为扩展的主进程的注册方法
- */
-export const methods: { [key: string]: (...any: any) => any } = {
-    openPanel() {
+import packageJSON from '../../package.json'
+import { _funcs } from '../tools/_funcs';
+import { load_ts_to_runtime, unload_ts_from_runtime } from '../tools/runtime_socket_helper';
+
+console.log("packageJSON",packageJSON)
+
+export const methods = {
+    async open() {
         console.log("点击打开主面板")
         Editor.Panel.open(packageJSON.name);
     },
     async restart_self_ui(){
-        if(1){
-            const buildCmd = _funcs.getCurPluginPath()+"/"+"build_tsc.bat"
-            await _funcs.runCmdSpawn(buildCmd,[_funcs.getCurPluginPath()])
-        }
+        
 
         console.log("收到消息restart_self_ui")
         Editor.Panel.close(packageJSON.name);
-
-        
 
         setTimeout(()=>{
             console.log("时间到重启")
             Editor.Panel.open(packageJSON.name);
 
-        },1000)
+        },100)
     }
 };
 

@@ -1,8 +1,7 @@
-import * as fs from 'fs';
-import * as path from 'path';
+const fs = require('fs-extra');
+const path = require("path")
 
-// @ts-ignore
-import packageJSON from '../../package.json';
+
 import { _funcs } from './_funcs';
 
 const runtimeScriptName = 'runtime_socket.ts';
@@ -11,7 +10,7 @@ const runtimeMetaPath = runtimeScriptPath + '.meta';
 
 export const load_ts_to_runtime = async () => {
     try {
-        console.log(`[${packageJSON.name}] Injecting runtime script...`);
+        console.log(`[${_funcs.getPluginName()}] Injecting runtime script...`);
 
         const sourceScriptPath = path.join(_funcs.getCurPluginPath(), "src/tools/", runtimeScriptName);
         const sourceScriptContent = fs.readFileSync(sourceScriptPath, 'utf-8');
@@ -21,7 +20,7 @@ export const load_ts_to_runtime = async () => {
         // 检查文件是否存在
         if (fs.existsSync(runtimeScriptPath)) {
             shouldWriteFile = false
-            console.log(`[${packageJSON.name}] Runtime script already exists and is up-to-date. Skipping injection.`);
+            console.log(`[${_funcs.getPluginName()}] Runtime script already exists and is up-to-date. Skipping injection.`);
         }
 
         if (shouldWriteFile) {
@@ -35,7 +34,7 @@ export const load_ts_to_runtime = async () => {
             });
 
             // 刷新资源
-            console.log(`[${packageJSON.name}] Runtime script written to ${runtimeScriptPath}`);
+            console.log(`[${_funcs.getPluginName()}] Runtime script written to ${runtimeScriptPath}`);
             const refreshResult = await Editor.Message.request(
                 "asset-db",
                 "refresh-asset",
@@ -43,23 +42,23 @@ export const load_ts_to_runtime = async () => {
             );
         }
     } catch (error) {
-        console.error(`[${packageJSON.name}] Error injecting runtime script:`, error);
+        console.error(`[${_funcs.getPluginName()}] Error injecting runtime script:`, error);
     }
 };
 
 /** 移除运行时代码 */
 export const unload_ts_from_runtime = async () => {
     try {
-        console.log(`[${packageJSON.name}] Removing runtime script...`);
+        console.log(`[${_funcs.getPluginName()}] Removing runtime script...`);
 
         // 删除文件
         if (fs.existsSync(runtimeScriptPath)) {
             fs.unlinkSync(runtimeScriptPath);
-            console.log(`[${packageJSON.name}] Runtime script removed: ${runtimeScriptPath}`);
+            console.log(`[${_funcs.getPluginName()}] Runtime script removed: ${runtimeScriptPath}`);
         }
         if (fs.existsSync(runtimeMetaPath)) {
             fs.unlinkSync(runtimeMetaPath);
-            console.log(`[${packageJSON.name}] Meta file removed: ${runtimeMetaPath}`);
+            console.log(`[${_funcs.getPluginName()}] Meta file removed: ${runtimeMetaPath}`);
         }
 
         await new Promise(function (resolve) {
@@ -75,6 +74,6 @@ export const unload_ts_from_runtime = async () => {
             `db://assets/${runtimeScriptName}`
         );
     } catch (error) {
-        console.error(`[${packageJSON.name}] Error removing runtime script:`, error);
+        console.error(`[${_funcs.getPluginName()}] Error removing runtime script:`, error);
     }
 };
