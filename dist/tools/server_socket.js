@@ -26,14 +26,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports._serverSocket = void 0;
 const child_process_1 = require("child_process");
 const path = __importStar(require("path"));
-const _misc_1 = require("./_misc");
+const _funcs_1 = require("./_funcs");
 // WebSocket Server class
 class ServerSocket {
     constructor() {
         this.process = null;
     }
     start(port) {
-        const serverScript = path.join(_misc_1._misc.getCurPluginPath(), 'src/tools/server.js');
+        const serverScript = path.join(_funcs_1._funcs.getCurPluginPath(), 'src/tools/server.js');
         console.log('serverScript', serverScript);
         // 使用 spawn 启动子进程
         this.process = (0, child_process_1.spawn)('node', [serverScript, port]);

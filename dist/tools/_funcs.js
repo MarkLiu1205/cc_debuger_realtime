@@ -26,25 +26,52 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports._misc = void 0;
+exports._funcs = void 0;
 const path = __importStar(require("path"));
 const { exec } = require('child_process');
 const package_json_1 = __importDefault(require("../../package.json"));
 const fs_extra_1 = require("fs-extra");
 const child_process_1 = require("child_process");
-var _misc;
-(function (_misc) {
+var _funcs;
+(function (_funcs) {
+    /**
+     * 获取资源信息
+     * @param {string} uuid
+     * @returns {Promise<any>}
+     */
+    async function getAssetInfoByUuid(uuid) {
+        return Editor.Message.request('asset-db', 'query-asset-info', uuid);
+    }
+    _funcs.getAssetInfoByUuid = getAssetInfoByUuid;
+    /**
+     * 获取资源 META
+     * @param {string} uuidOrurl
+     * @returns {Promise<any>}
+     */
+    async function getAssetMetaByUuid(uuidOrurl) {
+        return Editor.Message.request('asset-db', 'query-asset-meta', uuidOrurl);
+    }
+    _funcs.getAssetMetaByUuid = getAssetMetaByUuid;
+    /**
+     * 获取资源 uuid
+     * @param {string} url
+     * @returns {Promise<string>}
+     */
+    async function getUuidByUrl(url) {
+        return Editor.Message.request('asset-db', 'query-uuid', url);
+    }
+    _funcs.getUuidByUrl = getUuidByUrl;
     /**打印 */
     function log_1(...args) {
         args.unshift("[plugin]");
         console.log.apply(console, args);
     }
-    _misc.log_1 = log_1;
+    _funcs.log_1 = log_1;
     /**获取当前插件的绝对路径 */
     function getCurPluginPath() {
         return path.join(Editor.Project.path, "extensions", package_json_1.default.name);
     }
-    _misc.getCurPluginPath = getCurPluginPath;
+    _funcs.getCurPluginPath = getCurPluginPath;
     async function waitForSeconds(seconds) {
         return new Promise((resolve) => {
             setTimeout(() => {
@@ -52,7 +79,7 @@ var _misc;
             }, seconds * 1000);
         });
     }
-    _misc.waitForSeconds = waitForSeconds;
+    _funcs.waitForSeconds = waitForSeconds;
     /**根据文件的路径，获取其中的所有子路径
      *
      * 'db://assets/xxx/yyy/zzz.png' => ['db://assets', 'db://assets/xxx', 'db://assets/xxx/yyy', 'db://assets/xxx/yyy/zzz.png']
@@ -72,7 +99,7 @@ var _misc;
         }
         return subpaths;
     }
-    _misc.getAllSubpathsFromUrl = getAllSubpathsFromUrl;
+    _funcs.getAllSubpathsFromUrl = getAllSubpathsFromUrl;
     /**根据资源类型获取对应的图标
      *
      * @param {string} type 资源类型
@@ -134,7 +161,7 @@ var _misc;
             return "unknown";
         }
     }
-    _misc.getIconOfResType = getIconOfResType;
+    _funcs.getIconOfResType = getIconOfResType;
     /**
      * 获取运行时的预览地址
      */
@@ -154,7 +181,7 @@ var _misc;
         }
         return previewUrl;
     }
-    _misc.getRuntimePreviewUrl = getRuntimePreviewUrl;
+    _funcs.getRuntimePreviewUrl = getRuntimePreviewUrl;
     /**使用浏览器打开网页 */
     function openWebSiteUrl(url) {
         const command = `start "" "${url}"`;
@@ -169,7 +196,7 @@ var _misc;
             }
         });
     }
-    _misc.openWebSiteUrl = openWebSiteUrl;
+    _funcs.openWebSiteUrl = openWebSiteUrl;
     /**
      * 等待一个元素真正被挂载
      * @param ref
@@ -198,7 +225,7 @@ var _misc;
             }, interval);
         });
     }
-    _misc.waitForElementMounted = waitForElementMounted;
+    _funcs.waitForElementMounted = waitForElementMounted;
     /**
      * 将值限制在指定的最小值和最大值之间。
      * 如果值超出指定区间，则返回相应边界，否则返回该值。
@@ -214,7 +241,7 @@ var _misc;
         }
         return Math.min(Math.max(val, min), max);
     }
-    _misc.clamp = clamp;
+    _funcs.clamp = clamp;
     const _childProcess = [];
     /**
      * 运行批处理命令，并返回一个 Promise，等待其执行完毕
@@ -247,12 +274,12 @@ var _misc;
             });
         });
     }
-    _misc.runCmdSpawn = runCmdSpawn;
+    _funcs.runCmdSpawn = runCmdSpawn;
     function stopSpawnProcess() {
         for (let process of _childProcess) {
             process.kill();
         }
         _childProcess.length = 0;
     }
-    _misc.stopSpawnProcess = stopSpawnProcess;
-})(_misc = exports._misc || (exports._misc = {}));
+    _funcs.stopSpawnProcess = stopSpawnProcess;
+})(_funcs = exports._funcs || (exports._funcs = {}));

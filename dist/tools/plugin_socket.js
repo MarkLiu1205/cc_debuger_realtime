@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports._pluginSocket = void 0;
-const _misc_1 = require("./_misc");
+const _funcs_1 = require("./_funcs");
 let _accId = 0;
 function _getAccId() {
     return ++_accId;
@@ -34,7 +34,7 @@ class PluginSocket {
         await new Promise((resolve, reject) => {
             this.m_socket = new WebSocket(url);
             this.m_socket.onopen = () => {
-                _misc_1._misc.log_1(' Connected to server');
+                _funcs_1._funcs.log_1(' Connected to server');
                 this._send({ type: 'identify', role: 'plugin' });
                 resolve(null);
             };
@@ -43,7 +43,7 @@ class PluginSocket {
                 this._onMessage(msg);
             };
             this.m_socket.onclose = () => {
-                _misc_1._misc.log_1(' Disconnected from server');
+                _funcs_1._funcs.log_1(' Disconnected from server');
             };
             this.m_socket.onerror = (error) => {
                 console.error('[Plugin] WebSocket error:', error);
@@ -65,7 +65,7 @@ class PluginSocket {
         });
     }
     _onMessage(msg) {
-        // _misc.log_1("onMesage",JSON.stringify(msg))
+        // _funcs.log_1("onMesage",JSON.stringify(msg))
         if (msg["isSplit"]) {
             const obj = msg;
             this._spiltMsg[obj.uniqueId] = this._spiltMsg[obj.uniqueId] || [];
@@ -190,7 +190,7 @@ class PluginSocket {
         }
         const requestId = _getAccId();
         const payload = { type: type, action, data, requestId };
-        // _misc.log_1(" send",JSON.stringify(payload))
+        // _funcs.log_1(" send",JSON.stringify(payload))
         return new Promise((resolve, reject) => {
             this.m_pendingRequests.set(requestId, { resolve, reject });
             this._send(payload);

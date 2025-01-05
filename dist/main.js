@@ -6,7 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.unload = exports.load = exports.methods = void 0;
 // @ts-ignore
 const package_json_1 = __importDefault(require("../package.json"));
-const _misc_1 = require("./tools/_misc");
+const _funcs_1 = require("./tools/_funcs");
 const runtime_socket_helper_1 = require("./tools/runtime_socket_helper");
 /**
  * @en
@@ -19,8 +19,8 @@ exports.methods = {
     },
     async restart_self_ui() {
         if (1) {
-            const buildCmd = _misc_1._misc.getCurPluginPath() + "/" + "build_tsc.bat";
-            await _misc_1._misc.runCmdSpawn(buildCmd, [_misc_1._misc.getCurPluginPath()]);
+            const buildCmd = _funcs_1._funcs.getCurPluginPath() + "/" + "build_tsc.bat";
+            await _funcs_1._funcs.runCmdSpawn(buildCmd, [_funcs_1._funcs.getCurPluginPath()]);
         }
         console.log("收到消息restart_self_ui");
         Editor.Panel.close(package_json_1.default.name);

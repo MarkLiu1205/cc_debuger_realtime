@@ -12,7 +12,7 @@ const _dataCtx_1 = require("../../tools/_dataCtx");
 const plugin_socket_1 = require("../../tools/plugin_socket");
 // @ts-ignore
 const package_json_1 = __importDefault(require("../../../package.json"));
-const _misc_1 = require("../../tools/_misc");
+const _funcs_1 = require("../../tools/_funcs");
 const panelDataMap = new WeakMap();
 const main_app_comp = (0, vue_1.defineComponent)({
     name: 'MainApp',
@@ -25,7 +25,7 @@ const main_app_comp = (0, vue_1.defineComponent)({
             treeData_assets: null,
             treeData_internal: null,
             isRuntimeOffline: true,
-            runtimePreviewUrl: _misc_1._misc.getRuntimePreviewUrl(),
+            runtimePreviewUrl: _funcs_1._funcs.getRuntimePreviewUrl(),
             bundleNames: _dataCtx_1._dataCtx.m_bundleNames,
         });
         plugin_socket_1._pluginSocket.getNewAddedAssets().then((uuidMap) => {
@@ -37,17 +37,17 @@ const main_app_comp = (0, vue_1.defineComponent)({
             });
         });
         plugin_socket_1._pluginSocket.listenRuntimeOnlineInfo((bIsOnline) => {
-            _misc_1._misc.log_1("runtime在线吗?", bIsOnline);
+            _funcs_1._funcs.log_1("runtime在线吗?", bIsOnline);
             treeData.isRuntimeOffline = !bIsOnline;
         });
         plugin_socket_1._pluginSocket.listenRuntimeList((nameArr) => {
-            _misc_1._misc.log_1("runtime 列表：", JSON.stringify(nameArr));
+            _funcs_1._funcs.log_1("runtime 列表：", JSON.stringify(nameArr));
         });
         plugin_socket_1._pluginSocket.listenSceneNodeTree((data) => {
-            _misc_1._misc.log_1("节点树变化：");
+            _funcs_1._funcs.log_1("节点树变化：");
         });
-        const width_asset_list = (0, vue_1.ref)(_misc_1._misc.clamp(200, 500, window.innerWidth * 0.3)); // 默认左面板宽度占窗口宽度的30%
-        const width_node_tree = (0, vue_1.ref)(_misc_1._misc.clamp(200, 500, window.innerWidth * 0.3)); // 默认左面板宽度占窗口宽度的30%
+        const width_asset_list = (0, vue_1.ref)(_funcs_1._funcs.clamp(200, 500, window.innerWidth * 0.3)); // 默认左面板宽度占窗口宽度的30%
+        const width_node_tree = (0, vue_1.ref)(_funcs_1._funcs.clamp(200, 500, window.innerWidth * 0.3)); // 默认左面板宽度占窗口宽度的30%
         const resizer_ele_1 = (0, vue_1.ref)(null); //拉伸左右边界的线
         const resizer_ele_2 = (0, vue_1.ref)(null); //拉伸左右边界的线
         const onMouseDown = (e) => {
@@ -57,7 +57,7 @@ const main_app_comp = (0, vue_1.defineComponent)({
             const onMouseMove = (moveEvent) => {
                 const newWidth = startWidth + (moveEvent.clientX - startX);
                 // 限制最小和最大宽度
-                width_ref.value = _misc_1._misc.clamp(200, 500, newWidth);
+                width_ref.value = _funcs_1._funcs.clamp(200, 500, newWidth);
             };
             const onMouseUp = () => {
                 document.removeEventListener('mousemove', onMouseMove);
@@ -68,10 +68,10 @@ const main_app_comp = (0, vue_1.defineComponent)({
         };
         (0, vue_1.onMounted)(() => {
             plugin_socket_1._pluginSocket.waitForRuntimeIsInline().then(() => {
-                _misc_1._misc.waitForElementMounted(resizer_ele_1).then(() => {
+                _funcs_1._funcs.waitForElementMounted(resizer_ele_1).then(() => {
                     resizer_ele_1.value.addEventListener('mousedown', onMouseDown);
                 });
-                _misc_1._misc.waitForElementMounted(resizer_ele_2).then(() => {
+                _funcs_1._funcs.waitForElementMounted(resizer_ele_2).then(() => {
                     resizer_ele_2.value.addEventListener('mousedown', onMouseDown);
                 });
             });
@@ -102,7 +102,7 @@ const main_app_comp = (0, vue_1.defineComponent)({
             console.log('选中:', item);
         },
         doOpenRuntimePreview() {
-            _misc_1._misc.openWebSiteUrl(this.treeData.runtimePreviewUrl);
+            _funcs_1._funcs.openWebSiteUrl(this.treeData.runtimePreviewUrl);
         },
         doReOpenSelfPopup() {
             Editor.Message.send(package_json_1.default.name, "restart-self");
@@ -178,8 +178,8 @@ module.exports = Editor.Panel.define({
             console.log('hide');
         },
     },
-    template: (0, fs_extra_1.readFileSync)((0, path_1.join)(_misc_1._misc.getCurPluginPath(), 'static/template/default/index.html'), 'utf-8'),
-    style: (0, fs_extra_1.readFileSync)((0, path_1.join)(_misc_1._misc.getCurPluginPath(), 'static/style/default/index.css'), 'utf-8'),
+    template: (0, fs_extra_1.readFileSync)((0, path_1.join)(_funcs_1._funcs.getCurPluginPath(), 'static/template/default/index.html'), 'utf-8'),
+    style: (0, fs_extra_1.readFileSync)((0, path_1.join)(_funcs_1._funcs.getCurPluginPath(), 'static/style/default/index.css'), 'utf-8'),
     $: {
         app: '#app',
     },
@@ -213,6 +213,6 @@ module.exports = Editor.Panel.define({
             app.unmount();
         }
         server_socket_1._serverSocket.stop();
-        _misc_1._misc.stopSpawnProcess();
+        _funcs_1._funcs.stopSpawnProcess();
     },
 });

@@ -3,7 +3,7 @@ import * as path from 'path';
 
 // @ts-ignore
 import packageJSON from '../../package.json';
-import { _misc } from './_misc';
+import { _funcs } from './_funcs';
 
 const runtimeScriptName = 'runtime_socket.ts';
 const runtimeScriptPath = path.join(Editor.Project.path, 'assets', runtimeScriptName);
@@ -13,7 +13,7 @@ export const load_ts_to_runtime = async () => {
     try {
         console.log(`[${packageJSON.name}] Injecting runtime script...`);
 
-        const sourceScriptPath = path.join(_misc.getCurPluginPath(), "src/tools/", runtimeScriptName);
+        const sourceScriptPath = path.join(_funcs.getCurPluginPath(), "src/tools/", runtimeScriptName);
         const sourceScriptContent = fs.readFileSync(sourceScriptPath, 'utf-8');
 
         let shouldWriteFile = true;

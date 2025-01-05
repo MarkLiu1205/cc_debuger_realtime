@@ -31,14 +31,14 @@ const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
 // @ts-ignore
 const package_json_1 = __importDefault(require("../../package.json"));
-const _misc_1 = require("./_misc");
+const _funcs_1 = require("./_funcs");
 const runtimeScriptName = 'runtime_socket.ts';
 const runtimeScriptPath = path.join(Editor.Project.path, 'assets', runtimeScriptName);
 const runtimeMetaPath = runtimeScriptPath + '.meta';
 const load_ts_to_runtime = async () => {
     try {
         console.log(`[${package_json_1.default.name}] Injecting runtime script...`);
-        const sourceScriptPath = path.join(_misc_1._misc.getCurPluginPath(), "src/tools/", runtimeScriptName);
+        const sourceScriptPath = path.join(_funcs_1._funcs.getCurPluginPath(), "src/tools/", runtimeScriptName);
         const sourceScriptContent = fs.readFileSync(sourceScriptPath, 'utf-8');
         let shouldWriteFile = true;
         // 检查文件是否存在

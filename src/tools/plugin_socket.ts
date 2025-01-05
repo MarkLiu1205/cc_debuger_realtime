@@ -1,4 +1,4 @@
-import { _misc } from "./_misc";
+import { _funcs } from "./_funcs";
 
 let _accId = 0;
 function _getAccId(){
@@ -49,7 +49,7 @@ class PluginSocket {
             this.m_socket = new WebSocket(url);
 
             this.m_socket.onopen = () => {
-                _misc.log_1(' Connected to server');
+                _funcs.log_1(' Connected to server');
                 this._send({ type: 'identify', role: 'plugin' })
                 resolve(null);
             };
@@ -60,7 +60,7 @@ class PluginSocket {
             };
 
             this.m_socket.onclose = () => {
-                _misc.log_1(' Disconnected from server');
+                _funcs.log_1(' Disconnected from server');
             };
 
             this.m_socket.onerror = (error) => {
@@ -87,7 +87,7 @@ class PluginSocket {
     
     private _spiltMsg:Record<number,Array<SplitMsg>> = {}
     private _onMessage(msg: OneMsg) {
-        // _misc.log_1("onMesage",JSON.stringify(msg))
+        // _funcs.log_1("onMesage",JSON.stringify(msg))
         if(msg["isSplit"]){
             const obj = msg as any as SplitMsg
             this._spiltMsg[obj.uniqueId] = this._spiltMsg[obj.uniqueId] || []
@@ -221,7 +221,7 @@ class PluginSocket {
 
         const requestId = _getAccId()
         const payload:OneMsg = { type: type, action, data, requestId };
-        // _misc.log_1(" send",JSON.stringify(payload))
+        // _funcs.log_1(" send",JSON.stringify(payload))
 
         return new Promise<T>((resolve, reject) => {
             this.m_pendingRequests.set(requestId, { resolve, reject });

@@ -5,7 +5,41 @@ import packageJSON from '../../package.json';
 import { pathExists, pathExistsSync, readFileSync } from 'fs-extra';
 import { ChildProcessWithoutNullStreams, spawn, SpawnOptionsWithoutStdio } from 'child_process';
 
-export namespace _misc{
+export namespace _funcs{
+
+export interface AssetInfo {
+    url:string,
+    type:string,
+    uuid:string,
+    path:string,
+}
+
+/**
+ * 获取资源信息
+ * @param {string} uuid 
+ * @returns {Promise<any>} 
+ */
+export async function getAssetInfoByUuid(uuid):Promise<AssetInfo> {
+    return Editor.Message.request('asset-db', 'query-asset-info', uuid);
+}
+
+/**
+ * 获取资源 META
+ * @param {string} uuidOrurl 
+ * @returns {Promise<any>} 
+ */
+export async function getAssetMetaByUuid(uuidOrurl) {
+    return Editor.Message.request('asset-db', 'query-asset-meta', uuidOrurl);
+}
+
+/**
+ * 获取资源 uuid
+ * @param {string} url 
+ * @returns {Promise<string>} 
+ */
+export async function getUuidByUrl(url) {
+    return Editor.Message.request('asset-db', 'query-uuid', url);
+}
 
 /**打印 */
 export function log_1(...args){

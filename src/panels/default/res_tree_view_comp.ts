@@ -1,6 +1,6 @@
 import { ref, computed, defineComponent, h,onMounted,onUnmounted } from 'vue';
 import { _pluginSocket } from '../../tools/plugin_socket';
-import { _misc } from '../../tools/_misc';
+import { _funcs } from '../../tools/_funcs';
 import { context_select_menu_comp, createContextMenu } from './context_select_menu_comp';
 
 

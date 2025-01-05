@@ -1,6 +1,5 @@
 import path from "path";
-import { _editor } from "./_editor";
-import { _misc } from "./_misc";
+import { _funcs } from "./_funcs";
 
 interface TreeItemInfo{
     /**名字 */
@@ -63,15 +62,15 @@ class _DataContext{
         for(let i=0;i<arr.length;i++){
             let uuid = arr[i]
             if(i%1000=== 0){
-                await _misc.waitForSeconds(0.01)
-                _misc.log_1("正在加载资源",i,arr.length,Date.now()/1000)
+                await _funcs.waitForSeconds(0.01)
+                _funcs.log_1("正在加载资源",i,arr.length,Date.now()/1000)
             }
-            let info = await _editor.getAssetInfoByUuid(uuid)
+            let info = await _funcs.getAssetInfoByUuid(uuid)
             if(info==null){//比如网络图片等，下个版本再处理
                 console.error("uuid找不到资源",uuid)
                 continue
             }
-            let _resPaths = _misc.getAllSubpathsFromUrl(info.url);//根据资源的url解析出来的各级路径
+            let _resPaths = _funcs.getAllSubpathsFromUrl(info.url);//根据资源的url解析出来的各级路径
             let _parentInfo:TreeItemInfo = null
             let bundleName:string = null
             // console.log("打印路径",info.url)
@@ -106,7 +105,7 @@ class _DataContext{
         // console.log("打印树结构",JSON.stringify(this.m_treeDatas,null,4))
     }
 
-    private async _createNewItemToTreeDataFromPath(_path:string,isAsset:boolean,isDatabase:boolean,info: _editor.AssetInfo){
+    private async _createNewItemToTreeDataFromPath(_path:string,isAsset:boolean,isDatabase:boolean,info: _funcs.AssetInfo){
         let name = path.basename(_path);
         let obj:TreeItemInfo = {
             name: name,
@@ -119,7 +118,7 @@ class _DataContext{
         }else if(isAsset){
             obj.assetType = info.type;
             obj.uuid = info.uuid;
-            obj.icon = _misc.getIconOfResType(info.type);
+            obj.icon = _funcs.getIconOfResType(info.type);
             if(obj.assetType === "cc.ImageAsset"){
                 obj.children = [];
             }
@@ -127,14 +126,14 @@ class _DataContext{
             obj.icon = "directory";
             obj.children = [];
             let url = "db://"+_path
-            let floderInfo = await _editor.getAssetMetaByUuid(url)
+            let floderInfo = await _funcs.getAssetMetaByUuid(url)
             
             const userData: {isBundle?: boolean,bundleName?: string } = floderInfo?.userData;
             if(userData?.isBundle){
                 obj.isBundleFloder = true
                 obj.bundleName = userData?.bundleName ?? obj.name
             }
-            obj.uuid = await _editor.getUuidByUrl(url)
+            obj.uuid = await _funcs.getUuidByUrl(url)
 
             // if(_path.indexOf("assets")>=0){
             //     console.log("是bundle?",userData.isBundle,obj.uuid)

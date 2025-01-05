@@ -3,12 +3,11 @@ import { join } from 'path';
 import { createApp, App, ref, computed, defineComponent, h,reactive, nextTick, onMounted, onUnmounted } from 'vue';
 import { _serverSocket } from '../../tools/server_socket';
 import { res_tree_view_comp } from './res_tree_view_comp';
-import { _editor } from '../../tools/_editor';
 import { _dataCtx } from '../../tools/_dataCtx';
 import { _pluginSocket } from '../../tools/plugin_socket';
 // @ts-ignore
 import packageJSON from '../../../package.json';
-import { _misc } from '../../tools/_misc';
+import { _funcs } from '../../tools/_funcs';
 
 const panelDataMap = new WeakMap<any, App>();
 
@@ -24,7 +23,7 @@ const main_app_comp = defineComponent({
             treeData_assets: null,
             treeData_internal: null,
             isRuntimeOffline: true,
-            runtimePreviewUrl: _misc.getRuntimePreviewUrl(),
+            runtimePreviewUrl: _funcs.getRuntimePreviewUrl(),
             bundleNames:_dataCtx.m_bundleNames,
         });
     
@@ -38,20 +37,20 @@ const main_app_comp = defineComponent({
         })
         
         _pluginSocket.listenRuntimeOnlineInfo((bIsOnline)=>{
-            _misc.log_1("runtime在线吗?",bIsOnline)
+            _funcs.log_1("runtime在线吗?",bIsOnline)
             treeData.isRuntimeOffline = !bIsOnline
         })
 
         _pluginSocket.listenRuntimeList((nameArr)=>{
-            _misc.log_1("runtime 列表：",JSON.stringify(nameArr))
+            _funcs.log_1("runtime 列表：",JSON.stringify(nameArr))
         })
 
         _pluginSocket.listenSceneNodeTree((data)=>{
-            _misc.log_1("节点树变化：")
+            _funcs.log_1("节点树变化：")
         })
         
-        const width_asset_list = ref(_misc.clamp(200,500,window.innerWidth * 0.3)); // 默认左面板宽度占窗口宽度的30%
-        const width_node_tree = ref(_misc.clamp(200,500,window.innerWidth * 0.3)); // 默认左面板宽度占窗口宽度的30%
+        const width_asset_list = ref(_funcs.clamp(200,500,window.innerWidth * 0.3)); // 默认左面板宽度占窗口宽度的30%
+        const width_node_tree = ref(_funcs.clamp(200,500,window.innerWidth * 0.3)); // 默认左面板宽度占窗口宽度的30%
         const resizer_ele_1 = ref(null); //拉伸左右边界的线
         const resizer_ele_2 = ref(null); //拉伸左右边界的线
 
@@ -64,7 +63,7 @@ const main_app_comp = defineComponent({
             const onMouseMove = (moveEvent) => {
                 const newWidth = startWidth + (moveEvent.clientX - startX)
                 // 限制最小和最大宽度
-                width_ref.value = _misc.clamp(200,500,newWidth)
+                width_ref.value = _funcs.clamp(200,500,newWidth)
             }
     
             const onMouseUp = () => {
@@ -78,10 +77,10 @@ const main_app_comp = defineComponent({
 
         onMounted(() => {
             _pluginSocket.waitForRuntimeIsInline().then(()=>{
-                _misc.waitForElementMounted(resizer_ele_1).then(()=>{
+                _funcs.waitForElementMounted(resizer_ele_1).then(()=>{
                     resizer_ele_1.value.addEventListener('mousedown', onMouseDown);
                 })
-                _misc.waitForElementMounted(resizer_ele_2).then(()=>{
+                _funcs.waitForElementMounted(resizer_ele_2).then(()=>{
                     resizer_ele_2.value.addEventListener('mousedown', onMouseDown);
                 })
             })
@@ -115,7 +114,7 @@ const main_app_comp = defineComponent({
             console.log('选中:', item);
         },
         doOpenRuntimePreview() {
-            _misc.openWebSiteUrl(this.treeData.runtimePreviewUrl)
+            _funcs.openWebSiteUrl(this.treeData.runtimePreviewUrl)
         },
         doReOpenSelfPopup(){
             Editor.Message.send(packageJSON.name,"restart-self")
@@ -194,8 +193,8 @@ module.exports = Editor.Panel.define({
             console.log('hide');
         },
     },
-    template: readFileSync(join(_misc.getCurPluginPath(), 'static/template/default/index.html'), 'utf-8'),
-    style: readFileSync(join(_misc.getCurPluginPath(), 'static/style/default/index.css'), 'utf-8'),
+    template: readFileSync(join(_funcs.getCurPluginPath(), 'static/template/default/index.html'), 'utf-8'),
+    style: readFileSync(join(_funcs.getCurPluginPath(), 'static/style/default/index.css'), 'utf-8'),
     $: {
         app: '#app',
     },
@@ -236,6 +235,6 @@ module.exports = Editor.Panel.define({
         }
         _serverSocket.stop()
 
-        _misc.stopSpawnProcess()
+        _funcs.stopSpawnProcess()
     },
 });

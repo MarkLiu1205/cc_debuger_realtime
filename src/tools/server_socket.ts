@@ -3,14 +3,14 @@ import * as path from 'path';
 
 // @ts-ignore
 import packageJSON from '../../package.json';
-import { _misc } from './_misc';
+import { _funcs } from './_funcs';
 
 // WebSocket Server class
 class ServerSocket {
     private process: any = null;
 
     start(port:string) {
-        const serverScript = path.join(_misc.getCurPluginPath(), 'src/tools/server.js');
+        const serverScript = path.join(_funcs.getCurPluginPath(), 'src/tools/server.js');
         console.log('serverScript', serverScript);
 
         // 使用 spawn 启动子进程

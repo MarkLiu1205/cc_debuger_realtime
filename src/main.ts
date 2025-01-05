@@ -1,6 +1,6 @@
 // @ts-ignore
 import packageJSON from '../package.json';
-import { _misc } from './tools/_misc';
+import { _funcs } from './tools/_funcs';
 import { load_ts_to_runtime, unload_ts_from_runtime } from './tools/runtime_socket_helper';
 /**
  * @en 
@@ -13,8 +13,8 @@ export const methods: { [key: string]: (...any: any) => any } = {
     },
     async restart_self_ui(){
         if(1){
-            const buildCmd = _misc.getCurPluginPath()+"/"+"build_tsc.bat"
-            await _misc.runCmdSpawn(buildCmd,[_misc.getCurPluginPath()])
+            const buildCmd = _funcs.getCurPluginPath()+"/"+"build_tsc.bat"
+            await _funcs.runCmdSpawn(buildCmd,[_funcs.getCurPluginPath()])
         }
 
         console.log("收到消息restart_self_ui")
