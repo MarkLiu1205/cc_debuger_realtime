@@ -95,9 +95,7 @@ function onSel(item) {
 function doOpenRuntimePreview() {
     _funcs.openWebSiteUrl(treeData.runtimePreviewUrl)
 }
-function doReOpenSelfPopup(){
-    Editor.Message.send(_funcs.getPluginName(),"restart-self")
-}
+
 function onChange2ListView(){
     console.log("切换list 1")
 
@@ -135,11 +133,6 @@ function onChange2TreeView(){
                     :bundleNames="treeData.bundleNames"
                     @update:selectedItem="onSel($event)"
                 ></ResListView>
-                <div style="height:50px">
-                    <ui-button type="icon" style="flex-shrink: 0; " @click="doReOpenSelfPopup">
-                        <ui-icon value="refresh" style="font-size: 16px;" />
-                    </ui-button>
-                </div>
             </div>
             <div class="resizer-line-1" ref="resizer_ele_1"></div>
             <div id="eid_view_node_tree" class="cls_view_node_tree" :style="{ width: width_node_tree + 'px' }">

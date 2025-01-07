@@ -21,7 +21,7 @@ export default Editor.Panel.define({
         console.log("ssssssssaa",_funcs.getCurPluginPath())
         if (!this.$.root) return;
 
-        const app = createApp(App);
+        const app = createApp(MainApp);
         app.provide('appRoot', this.$.root);
         app.provide('message', (options) => {
             if (typeof options === 'string') {

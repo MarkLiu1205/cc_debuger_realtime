@@ -65,10 +65,19 @@ function onNodeClick (data: TreeNodeData, node: TreeNode, e: MouseEvent){
     emit('update:selectedItem', data);
 }
 
+function doReOpenSelfPopup(){
+    Editor.Message.send(_funcs.getPluginName(),"restart-self")
+}
+
 </script>
 
 <template>
-    <div  ref="treeContainer">
+    <div class="res-info">
+        <ui-button type="icon" style="flex-shrink: 0; " @click="doReOpenSelfPopup">
+            <ui-icon value="refresh" style="font-size: 16px;" />
+        </ui-button>
+    </div>
+    <div  ref="treeContainer" class="tree-view-container">
         <el-tree-v2
             style="max-width: 600px;"
             :data="treeDatas"
@@ -85,8 +94,16 @@ function onNodeClick (data: TreeNodeData, node: TreeNode, e: MouseEvent){
 </template>
 
 <style scoped>
+.res-info {
+    height: 20%;
+    border: 1px solid #ccc;
+    padding-right: 10px;
+    display: flex;
+    flex-direction: column;
+}
+
 .tree-view-container { 
-    height: 100%;
+    height: 80%;
     display: flex;
     flex-direction: column;
     /* overflow-y: auto;  */
