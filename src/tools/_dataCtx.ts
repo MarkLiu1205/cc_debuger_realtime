@@ -1,7 +1,7 @@
 const path = require("path");
 import { _funcs } from "./_funcs";
 
-interface TreeItemInfo{
+interface ResTreeItem{
     /**名字 */
     name:string;
     /**路径 */
@@ -18,7 +18,18 @@ interface TreeItemInfo{
     icon?:string;
     uuid?:string;
     /**除了文件夹以外，ImageAsset也有SpriteFrame作为子节点 */
-    children?:Array<TreeItemInfo>;
+    children?:Array<ResTreeItem>;
+}
+
+interface NodeTreeItem{
+    name:string
+    uuid:string
+    children:NodeTreeItem[]
+    active:boolean
+    activeInHierarchy:boolean
+    parentUuid:string,
+    path:string,
+    isSceneNode?:boolean,
 }
 
 class _DataContext{
@@ -28,23 +39,23 @@ class _DataContext{
     private m_unusing_uuids:Array<string> = [];
 
     /**资源列表数据，主要分为assets和internal */
-    private m_treeDatas:Array<TreeItemInfo> = [];
+    private _allAssetArr:Array<ResTreeItem> = [];
 
-    public get treeData_assets(){
-        for(let treeData of this.m_treeDatas){
-            if(treeData.name === "assets"){
-                return treeData;
+    public getResTree_datas(){
+        this._allAssetArr.sort(function(a,b) {
+            if(a.name=="assets"){
+                return -1
+            }else if(b.name=="assets"){
+                return 1
+            }else{
+                return this._allAssetArr.indexOf(a)-this._allAssetArr.indexOf(b)
             }
-        }
+        })
+        return this._allAssetArr
     }
 
-    public get treeData_internal(){
-        for(let treeData of this.m_treeDatas){
-            if(treeData.name === "internal"){
-                return treeData;
-            }
-        }
-    }
+    /**节点树 */
+    public curNodeTreeInfo:ResTreeItem = null
 
     /**bundle列表 */
     public m_bundleNames:Array<string> = []
@@ -71,7 +82,7 @@ class _DataContext{
                 continue
             }
             let _resPaths = _funcs.getAllSubpathsFromUrl(info.url);//根据资源的url解析出来的各级路径
-            let _parentInfo:TreeItemInfo = null
+            let _parentInfo:ResTreeItem = null
             let bundleName:string = null
             // console.log("打印路径",info.url)
             for(let i=0;i<_resPaths.length;i++){
@@ -82,7 +93,7 @@ class _DataContext{
                 if(!obj){
                     obj = await this._createNewItemToTreeDataFromPath(_path,isAsset,isDatabase,info);
                     if(isDatabase){
-                        this.m_treeDatas.push(obj);
+                        this._allAssetArr.push(obj);
                     }else{
                         _parentInfo.children.push(obj);
                         if(obj.isBundleFloder){
@@ -102,12 +113,21 @@ class _DataContext{
                 }
             }
         }
-        // console.log("打印树结构",JSON.stringify(this.m_treeDatas,null,4))
+        this._allAssetArr.sort(function(a,b) {
+            if(a.name=="assets"){
+                return -1
+            }else if(b.name=="assets"){
+                return 1
+            }else{
+                return this._allAssetArr.indexOf(a)-this._allAssetArr.indexOf(b)
+            }
+        })
+        // console.log("打印树结构",JSON.stringify(this._allAssetArr,null,4))
     }
 
     private async _createNewItemToTreeDataFromPath(_path:string,isAsset:boolean,isDatabase:boolean,info: _funcs.AssetInfo){
         let name = path.basename(_path);
-        let obj:TreeItemInfo = {
+        let obj:ResTreeItem = {
             name: name,
             path: _path,
             isAsset: isAsset,
@@ -149,8 +169,8 @@ class _DataContext{
      * @param path 
      * @returns 
      */
-    private _getTreeItemInfoFromPath(path:string,start:TreeItemInfo=null):TreeItemInfo{
-        function searchInTreeItemInfo(treeItemInfo:TreeItemInfo):TreeItemInfo{
+    private _getTreeItemInfoFromPath(path:string,start:ResTreeItem=null):ResTreeItem{
+        function searchInTreeItemInfo(treeItemInfo:ResTreeItem):ResTreeItem{
             if(treeItemInfo.path === path){
                 return treeItemInfo;
             }else if(treeItemInfo.children){
@@ -166,7 +186,7 @@ class _DataContext{
         if(start){
             return searchInTreeItemInfo(start);
         }
-        for(let treeData of this.m_treeDatas){
+        for(let treeData of this._allAssetArr){
             let result = searchInTreeItemInfo(treeData);
             if(result){
                 return result;

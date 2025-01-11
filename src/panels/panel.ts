@@ -34,10 +34,9 @@ export default Editor.Panel.define({
 
         weakMap.set(this, app);
 
-        let debugPort = 8085
-        _serverSocket.start(`${debugPort}`)
+        startServer()
 
-        _pluginSocket.connectToServer(`ws://localhost:${debugPort}`)
+        registerF5()
     },
     close() {
         const app = weakMap.get(this);
@@ -47,3 +46,22 @@ export default Editor.Panel.define({
         _funcs.stopSpawnProcess()
     },
 });
+
+
+function startServer() {
+    let debugPort = 8085
+    _serverSocket.start(`${debugPort}`)
+
+    _pluginSocket.connectToServer(`ws://localhost:${debugPort}`)
+}
+
+function registerF5(){
+    window.addEventListener('keyup', (event) => {
+        console.log('Global keydown event:', event.key);
+        
+        if(event.key=="F5"){
+            console.log("按了F5")
+            Editor.Message.send(_funcs.getPluginName(),"restart-self")
+        }
+      });
+}
