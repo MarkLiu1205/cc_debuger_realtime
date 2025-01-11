@@ -7,7 +7,11 @@ import { ElMessage } from 'element-plus';
 import { _funcs } from '../tools/_funcs';
 import { _dataCtx } from '../tools/_dataCtx';
 import { _pluginSocket } from '../tools/plugin_socket';
-import view_node from './inspector/view_node.vue'
+import view_Node from './inspector/view_Node_.vue'
+import view_Sprite from './inspector/view_Sprite.vue'
+import view_Label from './inspector/view_Label.vue'
+import view_UITransform from './inspector/view_UITransform.vue'
+import view_Button from './inspector/view_Button.vue'
 
 /**客户端是否在线 */
 const isRuntimeOffline = ref(true)
@@ -47,7 +51,7 @@ _pluginSocket.listenSceneNodeTree((data)=>{
 })
 
 const width_asset_list = ref(_funcs.clamp(200,500,window.innerWidth * 0.3)); // 默认左面板宽度占窗口宽度的30%
-const width_node_tree = ref(_funcs.clamp(300,500,window.innerWidth * 0.3)); // 默认左面板宽度占窗口宽度的30%
+const width_node_tree = ref(_funcs.clamp(310,500,window.innerWidth * 0.3)); // 默认左面板宽度占窗口宽度的30%
 const resizer_ele_1 = ref(null); //拉伸左右边界的线
 const resizer_ele_2 = ref(null); //拉伸左右边界的线
 const isLoading_res = computed(()=>{
@@ -60,7 +64,7 @@ const isLoading_nodeTree = computed(()=>{
 
 const onMouseDown = (e:MouseEvent) => {
     const width_ref = e.target==resizer_ele_1.value?width_asset_list:width_node_tree
-    const minWidth = e.target==resizer_ele_1.value?200:300
+    const minWidth = e.target==resizer_ele_1.value?200:310
     
     const startX = e.clientX
     const startWidth = width_ref.value
@@ -164,7 +168,12 @@ function onSel_node(item){
                     </div>
                     <div class="tree-view-container">
                         <span>灌灌灌灌灌</span>
-                        <view_node></view_node>
+                        <view_Node></view_Node>
+                        <view_UITransform></view_UITransform>
+                        <view_Sprite></view_Sprite>
+                        <view_Label></view_Label>
+                        <view_Button></view_Button>
+                        
                     </div>
                     
                 

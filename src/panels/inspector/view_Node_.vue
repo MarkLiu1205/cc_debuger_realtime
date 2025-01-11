@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { reactive, ref } from 'vue';
+import { nextTick, reactive, ref } from 'vue';
 
 const node = reactive({
     name: "bg",
@@ -12,8 +12,15 @@ const node = reactive({
 const layers = ref(["UI_2D", "UI_3D", "World", "Background"]);
 const editingName = ref(false);
 
+const nameInputRef = ref<HTMLInputElement | null>(null);
+
 const toggleEditingName = () => {
-    editingName.value = !editingName.value;
+  editingName.value = !editingName.value;
+  if (editingName.value) {
+    nextTick(() => {
+      nameInputRef.value?.focus();
+    });
+  }
 };
 
 const handleNameBlur = () => {
@@ -25,8 +32,11 @@ const handleNameBlur = () => {
     <div class="node-properties">
         <div class="property">
             <input type="checkbox" v-model="node.active" />
-                <div v-if="!editingName" @click="toggleEditingName">Node: <span>{{ node.name }}</span></div>
-            <input 
+            <span style="padding-right: 10px;">Node: </span>
+            <div v-if="!editingName" @click="toggleEditingName" style="min-width: 60px;">
+                <span >{{ node.name }}</span>
+            </div>
+            <input ref="nameInputRef"
                 v-else 
                 v-model="node.name" 
                 type="text" 
@@ -72,28 +82,7 @@ const handleNameBlur = () => {
 </template>
 
 <style scoped>
-.node-properties {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    font-family: Arial, sans-serif;
-    font-size: 14px;
-    padding-left: 5px;
-    padding-top: 5px;
-    padding-bottom: 5px;
-    border: 1px outset #fff8f8;
-}
-
-.property {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-}
-
-.vector-input {
-    display: flex;
-    gap: 15px;
-}
+@import "./inspector.css";
 
 label {
     display: flex;
@@ -101,9 +90,7 @@ label {
     width: 60px;
 }
 
-input {
-    width: 50px;
-}
+
 
 select {
     padding: 2px;
