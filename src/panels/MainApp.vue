@@ -7,6 +7,7 @@ import { ElMessage } from 'element-plus';
 import { _funcs } from '../tools/_funcs';
 import { _dataCtx } from '../tools/_dataCtx';
 import { _pluginSocket } from '../tools/plugin_socket';
+import view_node from './inspector/view_node.vue'
 
 /**客户端是否在线 */
 const isRuntimeOffline = ref(true)
@@ -46,7 +47,7 @@ _pluginSocket.listenSceneNodeTree((data)=>{
 })
 
 const width_asset_list = ref(_funcs.clamp(200,500,window.innerWidth * 0.3)); // 默认左面板宽度占窗口宽度的30%
-const width_node_tree = ref(_funcs.clamp(200,500,window.innerWidth * 0.3)); // 默认左面板宽度占窗口宽度的30%
+const width_node_tree = ref(_funcs.clamp(300,500,window.innerWidth * 0.3)); // 默认左面板宽度占窗口宽度的30%
 const resizer_ele_1 = ref(null); //拉伸左右边界的线
 const resizer_ele_2 = ref(null); //拉伸左右边界的线
 const isLoading_res = computed(()=>{
@@ -59,6 +60,7 @@ const isLoading_nodeTree = computed(()=>{
 
 const onMouseDown = (e:MouseEvent) => {
     const width_ref = e.target==resizer_ele_1.value?width_asset_list:width_node_tree
+    const minWidth = e.target==resizer_ele_1.value?200:300
     
     const startX = e.clientX
     const startWidth = width_ref.value
@@ -66,7 +68,7 @@ const onMouseDown = (e:MouseEvent) => {
     const onMouseMove = (moveEvent) => {
         const newWidth = startWidth + (moveEvent.clientX - startX)
         // 限制最小和最大宽度
-        width_ref.value = _funcs.clamp(200,500,newWidth)
+        width_ref.value = _funcs.clamp(minWidth,500,newWidth)
     }
 
     const onMouseUp = () => {
@@ -162,7 +164,9 @@ function onSel_node(item){
                     </div>
                     <div class="tree-view-container">
                         <span>灌灌灌灌灌</span>
+                        <view_node></view_node>
                     </div>
+                    
                 
                 </div>
                 <div class="resizer-line-1" ref="resizer_ele_2"></div>
