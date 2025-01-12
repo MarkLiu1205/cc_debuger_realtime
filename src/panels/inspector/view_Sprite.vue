@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, reactive, ref } from 'vue';
+import { _funcs } from '../../tools/_funcs';
 
 enum _SizeMode {
     CUSTOM = 0,
@@ -31,7 +32,6 @@ const _compData = reactive({
     color: "#ffffff",
     customMaterial: "d3c7820c-2a98-4429-8bc7-b8453bc9ac41",
     grayscale: false,
-    sharedMaterials: ["d3c7820c-2a98-4429-8bc7-b8453bc9ac41"],
     sizeMode: _SizeMode.TRIMMED,
     spriteAtlas: null,
     spriteFrame: "adc844c5-3225-4d5c-88d5-caae62248f8b@f9941",
@@ -59,7 +59,9 @@ function onAssetConfirm(event:CustomEvent ){
 
 function onConfirmColor(arr){
     const [r,g,b,a] = arr
-    console.log("r,g,b,a",r,g,b,a)
+    
+    _compData.color = _funcs.rgbaToHex(r,g,b,a)
+    console.log("r,g,b,a",r,g,b,a,_compData.color)
 }
 
 onMounted(()=>{
@@ -119,7 +121,7 @@ function onToggle(event){
         </div>
         <div class="property">
             <label>Color:</label>
-            <ui-color @confirm="onConfirmColor($event.target.value)"></ui-color>
+            <ui-color @confirm="onConfirmColor($event.target.value)" :value="_compData.color"></ui-color>
         </div>
         <div class="property">
             <label>SpriteAtlas:</label>

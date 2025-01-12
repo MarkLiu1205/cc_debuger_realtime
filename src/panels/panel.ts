@@ -57,7 +57,7 @@ function startServer() {
 
 function registerF5(){
     window.addEventListener('keyup', (event) => {
-        console.log('Global keydown event:', event.key);
+        // console.log('Global keydown event:', event.key);
         
         if(event.key=="F5"){
             console.log("按了F5")

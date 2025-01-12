@@ -260,4 +260,13 @@ export function stopSpawnProcess(){
     _childProcess.length = 0
 }
 
+export function rgbaToHex(r, g, b, a) {
+    const toHex = (n) => {
+        const hex = n.toString(16);
+        return hex.length === 1 ? '0' + hex : hex;
+    };
+
+    return `#${toHex(r)}${toHex(g)}${toHex(b)}${toHex(a)}`;
+}
+
 }

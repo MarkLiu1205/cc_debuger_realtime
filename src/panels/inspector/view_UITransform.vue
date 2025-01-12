@@ -56,7 +56,7 @@ function onToggle(event){
 @import "./inspector.css";
 
 label {
-    width: 90px;
+    width: 95px;
     /* display: inline-block; */
 }
 
