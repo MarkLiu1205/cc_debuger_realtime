@@ -27,7 +27,7 @@ const enumDesc_SpriteType = [
     "FILLED",
 ]
 
-const sprite = reactive({
+const _compData = reactive({
     color: "#ffffff",
     customMaterial: "d3c7820c-2a98-4429-8bc7-b8453bc9ac41",
     grayscale: false,
@@ -74,12 +74,35 @@ onUnmounted(()=>{
     ref_spriteFrame.value?.removeEventListener('confirm', onAssetConfirm);
 })
 
-function onSelect_SizeMode(event){
-    console.log("sizeMode changed to:", event.target.value,sprite.sizeMode)
+function onSelect(event){
+    const eleId = event.target.id
+    const sel = event.target.value
+    if(eleId=="id_sizeMode"){
+        _compData.sizeMode = sel
+        console.log("sizeMode changed to:", event.target.value,_compData.sizeMode)
+    }else if(eleId=="id_type"){
+        _compData.type = sel
+        console.log("Sprite type changed to:", event.target.value,_compData.type)
+    }
+    
 }
 
 function onSelect_SpriteType(event){
-    console.log("Sprite type changed to:", event.target.value,sprite.type)
+    console.log("Sprite type changed to:", event.target.value,_compData.type)
+}
+
+function onToggle(event){
+    const eleId = event.target.id 
+    const bool = event.target.value
+    if(eleId=="id_enable"){
+        _compData.enabled = bool
+    }else if(eleId=="id_grayscale"){
+        _compData.grayscale = bool
+    }else if(eleId=="id_trim"){
+        _compData.trim = bool
+    }
+    
+    console.log("event.target.value",event.target.value,"id",event.target.id)
 }
 
 </script>
@@ -87,12 +110,12 @@ function onSelect_SpriteType(event){
 <template>
     <div class="component-properties">
         <div class="title">
-            <input type="checkbox" v-model="sprite.enabled" />
+            <ui-checkbox id="id_enable" @change="onToggle" :value="_compData.enabled"></ui-checkbox>
             <h3>cc.Sprite</h3>
         </div>
         <div class="property">
             <label>CustomMaterial:</label>
-            <ui-asset droppable="cc.Material" ref="ref_customMaterial" :value="sprite.customMaterial"></ui-asset>
+            <ui-asset droppable="cc.Material" ref="ref_customMaterial" :value="_compData.customMaterial"></ui-asset>
         </div>
         <div class="property">
             <label>Color:</label>
@@ -100,32 +123,38 @@ function onSelect_SpriteType(event){
         </div>
         <div class="property">
             <label>SpriteAtlas:</label>
-            <ui-asset droppable="cc.SpriteAtlas" ref="ref_spriteAtlas" :value="sprite.spriteAtlas"></ui-asset>
+            <ui-asset droppable="cc.SpriteAtlas" ref="ref_spriteAtlas" :value="_compData.spriteAtlas"></ui-asset>
         </div>
         <div class="property">
             <label>SpriteFrame:</label>
-            <ui-asset droppable="cc.SpriteFrame" ref="ref_spriteFrame" :value="sprite.spriteFrame"></ui-asset>
+            <ui-asset droppable="cc.SpriteFrame" ref="ref_spriteFrame" :value="_compData.spriteFrame"></ui-asset>
         </div>
         <div class="property">
             <label>Grayscale:</label>
-            <input v-model="sprite.grayscale" type="checkbox" />
+            <ui-checkbox id="id_grayscale" @change="onToggle" :value="_compData.grayscale"></ui-checkbox>
         </div>
         <div class="property">
             <label>SizeMode:</label>
-            <select v-model="sprite.sizeMode" @change="onSelect_SizeMode">
+            <!-- <select v-model="_compData.sizeMode" @change="onSelect_SizeMode">
                 <option v-for="(mode, index) in enumDesc_SizeMode" :key="index" :value="index">{{ mode }}</option>
-            </select>
+            </select> -->
+            <ui-select id="id_sizeMode" v-model="_compData.sizeMode" @change="onSelect">
+                <option v-for="(mode, index) in enumDesc_SizeMode" :key="index" :value="index">{{ mode }}</option>
+            </ui-select>
         </div>
         
         <div class="property">
             <label>Type:</label>
-            <select v-model="sprite.type" @change="onSelect_SpriteType">
+            <!-- <select v-model="_compData.type" @change="onSelect_SpriteType">
                 <option v-for="(mode, index) in enumDesc_SpriteType" :key="index" :value="index">{{ mode }}</option>
-            </select>
+            </select> -->
+            <ui-select id="id_type" v-model="_compData.type" @change="onSelect">
+                <option v-for="(mode, index) in enumDesc_SpriteType" :key="index" :value="index">{{ mode }}</option>
+            </ui-select>
         </div>
         <div class="property">
             <label>Trim:</label>
-            <input v-model="sprite.trim" type="checkbox" />
+            <ui-checkbox id="id_trim" @change="onToggle" :value="_compData.trim"></ui-checkbox>
         </div>
     </div>
 </template>
@@ -135,5 +164,9 @@ function onSelect_SpriteType(event){
 label {
     width: 105px;
     display: inline-block;
+}
+
+ui-select {
+    width: 190px;
 }
 </style>
