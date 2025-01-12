@@ -6,6 +6,11 @@ const uiTransform = reactive({
     contentSize:{width:100,height:100},
     enabled:true,
 });
+
+function onNumChange(event){
+    console.log("event.target.value",event.target.value,"id",event.target.id)
+}
+
 </script>
 
 <template>
@@ -17,15 +22,15 @@ const uiTransform = reactive({
         <div class="property">
             <label>anchorPoint:</label>
             <div class="vector-input">
-                <input v-model.number="uiTransform.anchorPoint.x" type="number" step="0.01"/>
-                <input v-model.number="uiTransform.anchorPoint.y" type="number" step="0.01"/>
+                <ui-num-input id="anchor.x" @change="onNumChange" :value="uiTransform.anchorPoint.x"  step="0.01" unit="x"></ui-num-input>
+                <ui-num-input id="anchor.y" @change="onNumChange":value="uiTransform.anchorPoint.y"  step="0.01" unit="y"></ui-num-input>
             </div>
         </div>
         <div class="property">
             <label>contentSize:</label>
             <div class="vector-input">
-                <input v-model.number="uiTransform.contentSize.width" type="number" />
-                <input v-model.number="uiTransform.contentSize.height" type="number" />
+                <ui-num-input id="size.width" @change="onNumChange" :value="uiTransform.contentSize.width" placeholder="width"></ui-num-input>
+                <ui-num-input id="size.height" @change="onNumChange":value="uiTransform.contentSize.height" placeholder="height"></ui-num-input>
             </div>
         </div>
     </div>
@@ -40,6 +45,10 @@ label {
 }
 
 input[type="number"] {
-  width: 80px;
+    width: 80px;
+}
+
+ui-num-input {
+    width: 90px;
 }
 </style>

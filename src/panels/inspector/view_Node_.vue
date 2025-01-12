@@ -26,6 +26,10 @@ const toggleEditingName = () => {
 const handleNameBlur = () => {
     editingName.value = false;
 };
+
+function onNumChange(event){
+    console.log("event.target.value",event.target.value,"id",event.target.id)
+}
 </script>
 
 <template>
@@ -48,27 +52,32 @@ const handleNameBlur = () => {
         <div class="property">
             <label>Position:</label>
             <div class="vector-input">
-                <label>X: <input v-model.number="node.position.x" type="number" /></label>
-                <label>Y: <input v-model.number="node.position.y" type="number" /></label>
-                <label>Z: <input v-model.number="node.position.z" type="number" /></label>
+                <ui-num-input id="position.x" @change="onNumChange" :value="node.position.x"  step="0.1" unit="x"></ui-num-input>
+                <ui-num-input id="position.y" @change="onNumChange":value="node.position.y"  step="0.1" unit="y"></ui-num-input>
+                <ui-num-input id="position.z" @change="onNumChange":value="node.position.z"  step="0.1" unit="z"></ui-num-input>
             </div>
         </div>
 
         <div class="property">
             <label>Rotation:</label>
             <div class="vector-input">
-                <label>X: <input v-model.number="node.rotation.x" type="number" /></label>
-                <label>Y: <input v-model.number="node.rotation.y" type="number" /></label>
-                <label>Z: <input v-model.number="node.rotation.z" type="number" /></label>
+                <ui-num-input id="rotation.x" @change="onNumChange" :value="node.rotation.x"  step="0.1" unit="x"></ui-num-input>
+                <ui-num-input id="rotation.y" @change="onNumChange":value="node.rotation.y"  step="0.1" unit="y"></ui-num-input>
+                <ui-num-input id="rotation.z" @change="onNumChange":value="node.rotation.z"  step="0.1" unit="z"></ui-num-input>
+            
             </div>
         </div>
 
         <div class="property">
             <label>Scale:</label>
             <div class="vector-input">
-                <label>X: <input v-model.number="node.scale.x" type="number" /></label>
+                <!-- <label>X: <input v-model.number="node.scale.x" type="number" /></label>
                 <label>Y: <input v-model.number="node.scale.y" type="number" /></label>
-                <label>Z: <input v-model.number="node.scale.z" type="number" /></label>
+                <label>Z: <input v-model.number="node.scale.z" type="number" /></label> -->
+                <ui-num-input id="scale.x" @change="onNumChange" :value="node.scale.x"  step="0.1" unit="x"></ui-num-input>
+                <ui-num-input id="scale.y" @change="onNumChange":value="node.scale.y"  step="0.1" unit="y"></ui-num-input>
+                <ui-num-input id="scale.z" @change="onNumChange":value="node.scale.z"  step="0.1" unit="z"></ui-num-input>
+            
             </div>
         </div>
 
@@ -90,7 +99,9 @@ label {
     width: 60px;
 }
 
-
+ui-num-input {
+    width: 68px;
+}
 
 select {
     padding: 2px;
