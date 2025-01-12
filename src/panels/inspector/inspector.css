@@ -43,3 +43,11 @@
 input[type="number"] {
   width: 50px;
 }
+
+ui-asset {
+    min-width: 190px;
+}
+
+ui-color {
+    min-width: 190px;
+}

@@ -16,7 +16,7 @@ import view_Button from './inspector/view_Button.vue'
 /**客户端是否在线 */
 const isRuntimeOffline = ref(true)
 /**本地预览的地址 */
-const runtimePreviewUrl = ref(_funcs.getRuntimePreviewUrl())
+const runtimePreviewUrl = ref("http://localhost:7456")
 /**当前已加载的bundle列表 */
 const bundleNames = ref([])
 
@@ -51,7 +51,7 @@ _pluginSocket.listenSceneNodeTree((data)=>{
 })
 
 const width_asset_list = ref(_funcs.clamp(200,500,window.innerWidth * 0.3)); // 默认左面板宽度占窗口宽度的30%
-const width_node_tree = ref(_funcs.clamp(310,500,window.innerWidth * 0.3)); // 默认左面板宽度占窗口宽度的30%
+const width_node_tree = ref(_funcs.clamp(320,500,window.innerWidth * 0.3)); // 默认左面板宽度占窗口宽度的30%
 const resizer_ele_1 = ref(null); //拉伸左右边界的线
 const resizer_ele_2 = ref(null); //拉伸左右边界的线
 const isLoading_res = computed(()=>{
@@ -64,7 +64,7 @@ const isLoading_nodeTree = computed(()=>{
 
 const onMouseDown = (e:MouseEvent) => {
     const width_ref = e.target==resizer_ele_1.value?width_asset_list:width_node_tree
-    const minWidth = e.target==resizer_ele_1.value?200:310
+    const minWidth = e.target==resizer_ele_1.value?200:320
     
     const startX = e.clientX
     const startWidth = width_ref.value
@@ -92,6 +92,11 @@ onMounted(() => {
         _funcs.waitForElementMounted(resizer_ele_2).then(()=>{
             resizer_ele_2.value.addEventListener('mousedown', onMouseDown);
         })
+    })
+
+    _funcs.getRuntimePreviewUrl().then((url)=>{
+        console.log("预览地址",url)
+        runtimePreviewUrl.value = url
     })
     
 })

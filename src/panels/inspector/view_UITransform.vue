@@ -17,8 +17,8 @@ const uiTransform = reactive({
         <div class="property">
             <label>anchorPoint:</label>
             <div class="vector-input">
-                <input v-model.number="uiTransform.anchorPoint.x" type="number" />
-                <input v-model.number="uiTransform.anchorPoint.y" type="number" />
+                <input v-model.number="uiTransform.anchorPoint.x" type="number" step="0.01"/>
+                <input v-model.number="uiTransform.anchorPoint.y" type="number" step="0.01"/>
             </div>
         </div>
         <div class="property">
@@ -39,5 +39,7 @@ label {
     /* display: inline-block; */
 }
 
-
+input[type="number"] {
+  width: 80px;
+}
 </style>

@@ -135,20 +135,26 @@ export function getIconOfResType(type:string){
 /**
  * 获取运行时的预览地址
  */
-export function getRuntimePreviewUrl(){
-    let port = 7456
+export async function getRuntimePreviewUrl(){
+    const port = await new Promise((resolve)=>{
+        Editor.Message.request("server","query-port").then((port)=>{
+            console.log("query-port",port)
+            resolve(port)
+        })
+    })
+    
     let previewUrl = `http://localhost:${port}/`
-    let launchJsonPath = path.join(Editor.Project.path, '.vscode/launch.json')
-    if (pathExistsSync(launchJsonPath)) {
-        try{
-            let launchJson = JSON.parse(readFileSync(launchJsonPath, 'utf-8'))
-            if (launchJson.configurations && launchJson.configurations[0] && launchJson.configurations[0].url) {
-                previewUrl = launchJson.configurations[0].url
-            }
-        }catch(e){
+    // let launchJsonPath = path.join(Editor.Project.path, '.vscode/launch.json')
+    // if (pathExistsSync(launchJsonPath)) {
+    //     try{
+    //         let launchJson = JSON.parse(readFileSync(launchJsonPath, 'utf-8'))
+    //         if (launchJson.configurations && launchJson.configurations[0] && launchJson.configurations[0].url) {
+    //             previewUrl = launchJson.configurations[0].url
+    //         }
+    //     }catch(e){
 
-        }
-    }
+    //     }
+    // }
     return previewUrl
 }
 

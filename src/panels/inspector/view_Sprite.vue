@@ -1,18 +1,87 @@
 <script setup lang="ts">
-import { reactive } from 'vue';
+import { onMounted, onUnmounted, reactive, ref } from 'vue';
+
+enum _SizeMode {
+    CUSTOM = 0,
+    TRIMMED = 1,
+    RAW = 2
+}
+
+const enumDesc_SizeMode = [
+    "CUSTOM",
+    "TRIMMED",
+    "RAW",
+]
+
+enum _SpriteType {
+    SIMPLE = 0,
+    SLICED = 1,
+    TILED = 2,
+    FILLED = 3
+}
+
+const enumDesc_SpriteType = [
+    "SIMPLE",
+    "SLICED",
+    "TILED",
+    "FILLED",
+]
 
 const sprite = reactive({
     color: "#ffffff",
-    customMaterial: null,
+    customMaterial: "d3c7820c-2a98-4429-8bc7-b8453bc9ac41",
     grayscale: false,
-    sharedMaterials: ["@ui-sprite-material"],
-    sizeMode: "TRIMMED",
+    sharedMaterials: ["d3c7820c-2a98-4429-8bc7-b8453bc9ac41"],
+    sizeMode: _SizeMode.TRIMMED,
     spriteAtlas: null,
-    spriteFrame: "@按钮",
+    spriteFrame: "adc844c5-3225-4d5c-88d5-caae62248f8b@f9941",
     trim: true,
-    type: "SIMPLE",
+    type: _SpriteType.SIMPLE,
     enabled: true,
 });
+
+const ref_customMaterial = ref(null)
+const ref_spriteAtlas = ref(null)
+const ref_spriteFrame = ref(null)
+
+function onAssetConfirm(event:CustomEvent ){
+    const element = event.target as HTMLElement
+    //@ts-ignore
+    const assetUuid = element.value;
+    if(element==ref_customMaterial.value){
+        console.log("选中材质",assetUuid)
+    }else if(element==ref_spriteAtlas.value){
+        console.log("选中图集",assetUuid)
+    }else if(element==ref_spriteFrame.value){
+        console.log("选中精灵帧",assetUuid)
+    }
+}
+
+function onConfirmColor(arr){
+    const [r,g,b,a] = arr
+    console.log("r,g,b,a",r,g,b,a)
+}
+
+onMounted(()=>{
+    ref_customMaterial.value.addEventListener('confirm', onAssetConfirm);
+    ref_spriteAtlas.value.addEventListener('confirm', onAssetConfirm);
+    ref_spriteFrame.value.addEventListener('confirm', onAssetConfirm);
+})
+
+onUnmounted(()=>{
+    ref_customMaterial.value?.removeEventListener('confirm', onAssetConfirm);
+    ref_spriteAtlas.value?.removeEventListener('confirm', onAssetConfirm);
+    ref_spriteFrame.value?.removeEventListener('confirm', onAssetConfirm);
+})
+
+function onSelect_SizeMode(event){
+    console.log("sizeMode changed to:", event.target.value,sprite.sizeMode)
+}
+
+function onSelect_SpriteType(event){
+    console.log("Sprite type changed to:", event.target.value,sprite.type)
+}
+
 </script>
 
 <template>
@@ -22,37 +91,41 @@ const sprite = reactive({
             <h3>cc.Sprite</h3>
         </div>
         <div class="property">
-            <label>color:</label>
-            <input v-model="sprite.color" type="color" />
+            <label>CustomMaterial:</label>
+            <ui-asset droppable="cc.Material" ref="ref_customMaterial" :value="sprite.customMaterial"></ui-asset>
         </div>
         <div class="property">
-            <label>customMaterial:</label>
-            <input v-model="sprite.customMaterial" type="text" />
+            <label>Color:</label>
+            <ui-color @confirm="onConfirmColor($event.target.value)"></ui-color>
         </div>
         <div class="property">
-            <label>grayscale:</label>
+            <label>SpriteAtlas:</label>
+            <ui-asset droppable="cc.SpriteAtlas" ref="ref_spriteAtlas" :value="sprite.spriteAtlas"></ui-asset>
+        </div>
+        <div class="property">
+            <label>SpriteFrame:</label>
+            <ui-asset droppable="cc.SpriteFrame" ref="ref_spriteFrame" :value="sprite.spriteFrame"></ui-asset>
+        </div>
+        <div class="property">
+            <label>Grayscale:</label>
             <input v-model="sprite.grayscale" type="checkbox" />
         </div>
         <div class="property">
-            <label>sizeMode:</label>
-            <select v-model="sprite.sizeMode">
-                <option value="TRIMMED">TRIMMED</option>
-                <option value="RAW">RAW</option>
-                <option value="CUSTOM">CUSTOM</option>
+            <label>SizeMode:</label>
+            <select v-model="sprite.sizeMode" @change="onSelect_SizeMode">
+                <option v-for="(mode, index) in enumDesc_SizeMode" :key="index" :value="index">{{ mode }}</option>
+            </select>
+        </div>
+        
+        <div class="property">
+            <label>Type:</label>
+            <select v-model="sprite.type" @change="onSelect_SpriteType">
+                <option v-for="(mode, index) in enumDesc_SpriteType" :key="index" :value="index">{{ mode }}</option>
             </select>
         </div>
         <div class="property">
-            <label>spriteFrame:</label>
-            <input v-model="sprite.spriteFrame" type="text" />
-        </div>
-        <div class="property">
-            <label>type:</label>
-            <select v-model="sprite.type">
-                <option value="SIMPLE">SIMPLE</option>
-                <option value="SLICED">SLICED</option>
-                <option value="TILED">TILED</option>
-                <option value="FILLED">FILLED</option>
-            </select>
+            <label>Trim:</label>
+            <input v-model="sprite.trim" type="checkbox" />
         </div>
     </div>
 </template>
@@ -60,7 +133,7 @@ const sprite = reactive({
 <style scoped>
 @import "./inspector.css";
 label {
-    width: 80px;
+    width: 105px;
     display: inline-block;
 }
 </style>
