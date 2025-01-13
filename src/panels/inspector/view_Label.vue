@@ -39,10 +39,11 @@ const _compData = reactive({
     useSystemFont: true,
     font: null,
     lineHeight: 40,
-    color: "#000000",
+    color: "#00000000",
     horizontalAlign: "CENTER",
     verticalAlign: "CENTER",
     fontSize: 40,
+    underlineHeight:2,
     isUnderline: false,
     isBold: false,
     isItalic: false,
@@ -80,6 +81,8 @@ function onTextChange(event){
         _compData.fontFamily = val
     }else if(eleId=="id_spacingX"){
         _compData.spacingX = val
+    }else if(eleId=="id_underlineHeight"){
+        _compData.underlineHeight = val
     }
     console.log("event",val,eleId)
 }
@@ -130,6 +133,16 @@ function onAssetChange(event){
         _compData.customMaterial = sel
         console.log("customMaterial changed to:", event.target.value,_compData.customMaterial)
     }
+}
+
+function toggleBold() {
+    _compData.isBold = !_compData.isBold
+}
+function toggleItalic() {
+    _compData.isItalic = !_compData.isItalic
+}
+function toggleUnderline() {
+    _compData.isUnderline = !_compData.isUnderline
 }
 
 </script>
@@ -216,10 +229,14 @@ function onAssetChange(event){
         <div class="property">
             <label>FontStyle:</label>
             <div class="font-style">
-                <ui-button>B</ui-button>
-                <ui-button>I</ui-button>
-                <ui-button>U</ui-button>
+                <ui-button :class="{ bold: true, fontStyle_selected: _compData.isBold }" @click="toggleBold">B</ui-button>
+                <ui-button :class="{ italic: true, fontStyle_selected: _compData.isItalic }" @click="toggleItalic">I</ui-button>
+                <ui-button :class="{ underline: true, fontStyle_selected: _compData.isUnderline }" @click="toggleUnderline">U</ui-button>
             </div>
+        </div>
+        <div class="property" v-if="_compData.isUnderline">
+            <label>UnderlineHeight:</label>
+            <ui-num-input id="id_underlineHeight" @change="onTextChange" :value="_compData.underlineHeight"></ui-num-input>
         </div>
         
     </div>
@@ -229,7 +246,10 @@ function onAssetChange(event){
 @import "./inspector.css";
 label {
     width: 105px;
-    /* display: inline-block; */
+}
+
+label.long {
+    width: 120px;
 }
 
 ui-textarea {
@@ -240,10 +260,26 @@ ui-num-input {
     width: 190px;
 }
 
-font-style {
+.font-style {
     display: flex;
     flex-direction: row;
     gap: 10px;
 }
 
+.bold {
+    font-weight: bold;
+}
+
+.italic {
+    font-style: italic;
+}
+
+.underline {
+    text-decoration: underline;
+}
+
+.fontStyle_selected {
+    border: 1px dashed #ffffff;
+    background-color: #2B2B2B; /* 选中状态的背景色 */
+}
 </style>

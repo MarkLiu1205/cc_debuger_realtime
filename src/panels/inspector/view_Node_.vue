@@ -75,7 +75,7 @@ function onSelect(event){
         <div class="property">
             <ui-checkbox id="id_active" @change="onToggle" :value="_nodeData.active"></ui-checkbox>
 
-            <span style="padding-right: 10px;">Node: </span>
+            <h3 style="padding-right: 10px;">Node: </h3>
             <div v-if="!editingName" @click="toggleEditingName" style="min-width: 60px;">
                 <span >{{ _nodeData.name }}</span>
             </div>

@@ -172,12 +172,12 @@ function onSel_node(item){
                         <span style="margin-left: 10px;">正在加载节点数</span>
                     </div>
                     <div class="tree-view-container">
-                        <span>灌灌灌灌灌</span>
                         <view_Node></view_Node>
                         <view_UITransform></view_UITransform>
                         <view_Sprite></view_Sprite>
-                        <view_Label></view_Label>
                         <view_Button></view_Button>
+                        <view_Label></view_Label>
+                        
                         
                     </div>
                     
