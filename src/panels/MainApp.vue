@@ -19,6 +19,8 @@ import view_RichText from './inspector/view_RichText.vue';
 import view_UIOpacity from './inspector/view_UIOpacity.vue';
 import view_Camera from './inspector/view_Camera.vue';
 import view_EditBox from './inspector/view_EditBox.vue';
+import view_PageView from './inspector/view_PageView.vue';
+import view_Mask from './inspector/view_Mask.vue';
 
 /**客户端是否在线 */
 const isRuntimeOffline = ref(true)
@@ -180,6 +182,8 @@ function onSel_node(item){
                     </div>
                     <div class="tree-view-container">
                         <view_Node></view_Node>
+                        <view_Mask></view_Mask>
+                        <view_PageView></view_PageView>
                         <view_EditBox></view_EditBox>
                         <view_UITransform></view_UITransform>
                         <view_Camera></view_Camera>
