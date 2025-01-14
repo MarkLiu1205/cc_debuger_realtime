@@ -12,6 +12,13 @@ import view_Sprite from './inspector/view_Sprite.vue'
 import view_Label from './inspector/view_Label.vue'
 import view_UITransform from './inspector/view_UITransform.vue'
 import view_Button from './inspector/view_Button.vue'
+import view_ParticleSystem from './inspector/view_ParticleSystem.vue';
+import view_Layout from './inspector/view_Layout.vue';
+import view_Skeleton from './inspector/view_Skeleton.vue';
+import view_RichText from './inspector/view_RichText.vue';
+import view_UIOpacity from './inspector/view_UIOpacity.vue';
+import view_Camera from './inspector/view_Camera.vue';
+import view_EditBox from './inspector/view_EditBox.vue';
 
 /**客户端是否在线 */
 const isRuntimeOffline = ref(true)
@@ -173,7 +180,14 @@ function onSel_node(item){
                     </div>
                     <div class="tree-view-container">
                         <view_Node></view_Node>
+                        <view_EditBox></view_EditBox>
                         <view_UITransform></view_UITransform>
+                        <view_Camera></view_Camera>
+                        <view_RichText></view_RichText>
+                        <view_UIOpacity></view_UIOpacity>
+                        <view_Skeleton></view_Skeleton>
+                        <view_Layout></view_Layout>
+                        <view_ParticleSystem></view_ParticleSystem>
                         <view_Sprite></view_Sprite>
                         <view_Button></view_Button>
                         <view_Label></view_Label>
