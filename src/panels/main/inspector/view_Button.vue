@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { reactive } from 'vue';
-import { _funcs } from '../../tools/_funcs';
+import { _funcs } from '../../../tools/_funcs';
 
 enum Transition {
     NONE = 0,

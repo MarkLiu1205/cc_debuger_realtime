@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed, inject, onMounted, onUnmounted, reactive, ref, defineProps} from 'vue';
 import { ElMessage } from 'element-plus';
-import { _funcs } from '../../tools/_funcs';
-import { _dataCtx } from '../../tools/_dataCtx';
-import { _pluginSocket } from '../../tools/plugin_socket';
+import { _funcs } from '../../../tools/_funcs';
+import { _dataCtx } from '../../../tools/_dataCtx';
+import { _pluginSocket } from '../../../tools/plugin_socket';
 import { TreeNodeData,TreeNode, TreeOptionProps } from 'element-plus/es/components/tree-v2/src/types';
 
 

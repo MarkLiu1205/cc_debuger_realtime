@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import HelloWorld from './components/HelloWorld.vue';
-import TestFlow from './components/TestFlow.vue';
-import NodeTreeAndAssetList from './components/NodeTreeAndAssetList.vue';
+import HelloWorld from '../main/components/HelloWorld.vue';
+import TestFlow from '../main/components/TestFlow.vue';
+import NodeTreeAndAssetList from '../main/components/NodeTreeAndAssetList.vue';
 import { computed, inject, onMounted, onUnmounted, reactive, ref } from 'vue';
 import { ElMessage } from 'element-plus';
-import { _funcs } from '../tools/_funcs';
-import { _dataCtx } from '../tools/_dataCtx';
-import { _pluginSocket } from '../tools/plugin_socket';
+import { _funcs } from '../../tools/_funcs';
+import { _dataCtx } from '../../tools/_dataCtx';
+import { _pluginSocket } from '../../tools/plugin_socket';
 import view_Node from './inspector/view_Node.vue'
 import view_Sprite from './inspector/view_Sprite.vue'
 import view_Label from './inspector/view_Label.vue'

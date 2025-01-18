@@ -5,9 +5,9 @@ import './style.css';
 import 'element-plus/dist/index.css';
 import 'element-plus/theme-chalk/dark/css-vars.css';
 import { ElMessage } from 'element-plus';
-import { _funcs } from '../tools/_funcs';
-import { _serverSocket } from '../tools/server_socket';
-import { _pluginSocket } from '../tools/plugin_socket';
+import { _funcs } from '../../tools/_funcs';
+import { _serverSocket } from '../../tools/server_socket';
+import { _pluginSocket } from '../../tools/plugin_socket';
 
 const weakMap = new WeakMap();
 

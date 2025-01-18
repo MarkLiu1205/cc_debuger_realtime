@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, reactive, ref } from 'vue';
-import { _funcs } from '../../tools/_funcs';
+import { _funcs } from '../../../tools/_funcs';
 
 enum _SizeMode {
     CUSTOM = 0,
