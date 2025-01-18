@@ -215,11 +215,7 @@ function onNumChange(event) {
 <style scoped>
 @import "./inspector.css";
 
-label {
-    width: 105px;
-}
-
-label.small {
+/* label.small {
     width: 50px;
     text-align: right;
 }
@@ -228,9 +224,6 @@ label.small {
     display: flex;
     gap: 10px;
     align-items: center;
-}
+} */
 
-ui-num-input {
-    width: 190px;
-}
 </style>

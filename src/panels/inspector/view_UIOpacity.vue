@@ -46,11 +46,4 @@ function onNumChange(event) {
 <style scoped>
 @import "./inspector.css";
 
-label {
-    width: 105px;
-}
-
-ui-num-input{
-    width: 190px;
-}
 </style>

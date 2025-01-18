@@ -163,12 +163,6 @@ function onToggle(event){
 
 <style scoped>
 @import "./inspector.css";
-label {
-    width: 105px;
-    display: inline-block;
-}
 
-ui-select {
-    width: 190px;
-}
+
 </style>

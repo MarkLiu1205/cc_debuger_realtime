@@ -328,15 +328,6 @@ function onAssetChange(event) {
 <style scoped>
 @import "./inspector.css";
 
-label {
-    width: 105px;
-}
-
-
-ui-num-input,
-ui-select {
-    width: 190px;
-}
 
 ui-num-input.vector2 {
     width: 85px;

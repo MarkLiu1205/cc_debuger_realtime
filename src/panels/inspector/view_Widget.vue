@@ -202,8 +202,6 @@ function onSelectChange(event) {
 <style scoped>
 @import "./inspector.css";
 
-label {
-    width: 105px;
-}
+
 
 </style>

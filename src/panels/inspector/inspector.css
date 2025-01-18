@@ -39,19 +39,18 @@
     gap: 15px;
 }
 
-/* input[type="text"], */
-input[type="number"] {
-  width: 50px;
-}
-
-ui-asset {
-    min-width: 190px;
-}
-
+ui-component,
+ui-node,
+ui-slider,
+ui-textarea,
+ui-select,
+ui-asset,
+ui-input,
+ui-num-input,
 ui-color {
-    min-width: 190px;
+    width: 190px;
 }
 
-ui-node {
-    min-width: 190px;
+label {
+    width: 105px;
 }

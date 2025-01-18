@@ -132,13 +132,4 @@ function onSelectChange(event) {
 <style scoped>
 @import "./inspector.css";
 
-label {
-    width: 105px;
-}
-
-ui-num-input,
-ui-color-picker,
-ui-select {
-    width: 190px;
-}
 </style>

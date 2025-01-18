@@ -187,13 +187,4 @@ function onNodeChange(event) {
 <style scoped>
 @import "./inspector.css";
 
-label {
-    width: 105px;
-}
-
-ui-input,
-ui-num-input,
-ui-select {
-    width: 190px;
-}
 </style>

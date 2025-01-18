@@ -169,17 +169,4 @@ function onSelect(event){
 <style scoped>
 @import "./inspector.css";
 
-label {
-    width: 105px;
-}
-
-ui-textarea {
-    width: 190px;
-}
-
-ui-num-input {
-    width: 190px;
-}
-
-
 </style>

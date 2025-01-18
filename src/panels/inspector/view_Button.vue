@@ -176,9 +176,5 @@ function onAssetChange(event){
 
 <style scoped>
 @import "./inspector.css";
-label {
-    width: 105px;
-    display: inline-block;
-}
 
 </style>

@@ -244,20 +244,9 @@ function toggleUnderline() {
 
 <style scoped>
 @import "./inspector.css";
-label {
-    width: 105px;
-}
 
 label.long {
     width: 120px;
-}
-
-ui-textarea {
-    width: 190px;
-}
-
-ui-num-input {
-    width: 190px;
 }
 
 .font-style {

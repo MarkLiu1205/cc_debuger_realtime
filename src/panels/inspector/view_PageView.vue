@@ -178,16 +178,4 @@ function onSliderChange(event) {
 <style scoped>
 @import "./inspector.css";
 
-label {
-    width: 105px;
-}
-
-ui-num-input,
-ui-input,
-ui-component,
-ui-select,
-ui-slider,
-ui-asset {
-    width: 190px;
-}
 </style>
