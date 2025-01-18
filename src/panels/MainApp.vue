@@ -7,7 +7,7 @@ import { ElMessage } from 'element-plus';
 import { _funcs } from '../tools/_funcs';
 import { _dataCtx } from '../tools/_dataCtx';
 import { _pluginSocket } from '../tools/plugin_socket';
-import view_Node from './inspector/view_Node_.vue'
+import view_Node from './inspector/view_Node.vue'
 import view_Sprite from './inspector/view_Sprite.vue'
 import view_Label from './inspector/view_Label.vue'
 import view_UITransform from './inspector/view_UITransform.vue'
