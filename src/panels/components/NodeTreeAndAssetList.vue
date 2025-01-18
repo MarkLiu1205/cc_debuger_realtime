@@ -116,14 +116,14 @@ function onClick_asset (data: TreeNodeData, node: TreeNode, e: MouseEvent){
 <template>
     <div ref="parentContainer" class="parent-container">
         <div :style="{ height: height_nodeTree + 'px' }">
-            <!-- <el-tree-v2
+            <el-tree-v2
                 style="max-width: 600px;"
                 :data="props.nodeTree_datas"
                 :props="treeProp_node"
                 :height="height_nodeTree"
                 @node-click="onClick_node"
             >
-            </el-tree-v2> -->
+            </el-tree-v2>
         </div>
         <div class="gap_line" ref="gap_line"></div>
         <div   :style="{ height: height_resTree + 'px' }">

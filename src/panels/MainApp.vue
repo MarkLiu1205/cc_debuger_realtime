@@ -58,8 +58,10 @@ _pluginSocket.listenRuntimeList((nameArr)=>{
 
 _pluginSocket.listenSceneNodeTree((data)=>{
     _funcs.log_1("节点树变化：",data)
-    _dataCtx.curNodeTreeInfo = data
-    nodeTree_datas.value = [_dataCtx.curNodeTreeInfo]
+    if(data){
+        _dataCtx.curNodeTreeInfo = data
+        nodeTree_datas.value = [_dataCtx.curNodeTreeInfo]
+    }
 })
 
 const width_asset_list = ref(_funcs.clamp(200,500,window.innerWidth * 0.3)); // 默认左面板宽度占窗口宽度的30%
