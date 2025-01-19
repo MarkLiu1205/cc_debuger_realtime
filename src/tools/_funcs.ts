@@ -2,6 +2,7 @@ const path =  require('path');
 const net =  require('net');
 const { exec,spawn } = require('child_process');
 const { pathExists, pathExistsSync, readFileSync } = require('fs-extra');
+const os = require('os');
 
 import packageJSON from '../../package.json';
 
@@ -153,8 +154,23 @@ export async function getRuntimePreviewUrl(){
 }
 
 /**使用浏览器打开网页 */
-export function openWebSiteUrl(url:string){
-    const command = `start "" "${url}"`;
+export function openWebSiteUrl(url: string) {
+    let command;
+    switch (os.platform()) {
+        case 'win32':
+            command = `start "" "${url}"`;
+            break;
+        case 'darwin':
+            command = `open "${url}"`;
+            break;
+        case 'linux':
+            command = `xdg-open "${url}"`;
+            break;
+        default:
+            console.error(`Unsupported platform: ${os.platform()}`);
+            return;
+    }
+
     // 执行命令
     exec(command, (error, stdout, stderr) => {
         if (error) {
