@@ -21,7 +21,7 @@ export default defineConfig(({ mode }) => {
             lib: {
                 entry: {
                     browser: './src/browser/index.ts',
-                    panel: './src/panels/main/panel.ts',
+                    main_panel: './src/panels/main/main_panel.ts',
                 },
                 formats: ['cjs'],
                 fileName: (format, entryName) => `${entryName}.cjs`,

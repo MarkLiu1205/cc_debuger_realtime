@@ -1,37 +1,6 @@
 const path = require("path");
 import { _funcs } from "./_funcs";
 
-interface ResTreeItem{
-    /**名字 */
-    name:string;
-    /**路径 */
-    path:string;
-    /**当前是否是bundle文件夹 */
-    isBundleFloder?:boolean,
-    /**当前所属的bundle名字 */
-    bundleName?:string,
-    /**是不是资源,不是资源的就是目录 */
-    isAsset?:boolean;
-    /**资源类型 cc.Prefab cc.ImageAsset cc.SpriteFrame 之类 */
-    assetType?:string;
-    /**图标 */
-    icon?:string;
-    uuid?:string;
-    /**除了文件夹以外，ImageAsset也有SpriteFrame作为子节点 */
-    children?:Array<ResTreeItem>;
-}
-
-interface NodeTreeItem{
-    name:string
-    uuid:string
-    children:NodeTreeItem[]
-    active:boolean
-    activeInHierarchy:boolean
-    parentUuid:string,
-    path:string,
-    isSceneNode?:boolean,
-}
-
 class _DataContext{
     /**正在被使用的资源 */
     private m_using_uuids:Record<string,number> = {};
@@ -125,7 +94,7 @@ class _DataContext{
         // console.log("打印树结构",JSON.stringify(this._allAssetArr,null,4))
     }
 
-    private async _createNewItemToTreeDataFromPath(_path:string,isAsset:boolean,isDatabase:boolean,info: _funcs.AssetInfo){
+    private async _createNewItemToTreeDataFromPath(_path:string,isAsset:boolean,isDatabase:boolean,info: EditorAssetInfo){
         let name = path.basename(_path);
         let obj:ResTreeItem = {
             name: name,

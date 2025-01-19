@@ -1,17 +1,11 @@
 const path =  require('path');
+const net =  require('net');
 const { exec,spawn } = require('child_process');
 const { pathExists, pathExistsSync, readFileSync } = require('fs-extra');
 
 import packageJSON from '../../package.json';
 
 export namespace _funcs{
-
-export interface AssetInfo {
-    url:string,
-    type:string,
-    uuid:string,
-    path:string,
-}
 
 export function getPluginName(){
     return packageJSON.name
@@ -22,7 +16,7 @@ export function getPluginName(){
  * @param {string} uuid 
  * @returns {Promise<any>} 
  */
-export async function getAssetInfoByUuid(uuid):Promise<AssetInfo> {
+export async function getAssetInfoByUuid(uuid):Promise<EditorAssetInfo> {
     return Editor.Message.request('asset-db', 'query-asset-info', uuid);
 }
 
@@ -268,5 +262,20 @@ export function rgbaToHex(r, g, b, a) {
 
     return `#${toHex(r)}${toHex(g)}${toHex(b)}${toHex(a)}`;
 }
+
+export function findAvailablePort(startPort: number): Promise<number> {
+    return new Promise((resolve, reject) => {
+        const server = net.createServer();
+        server.unref();
+        server.on('error', () => {
+            resolve(findAvailablePort(startPort + 1));
+        });
+        server.listen(startPort, () => {
+            const port = server.address().port;
+            server.close(() => resolve(port));
+        });
+    });
+}
+
 
 }

@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import HelloWorld from '../main/components/HelloWorld.vue';
 import TestFlow from '../main/components/TestFlow.vue';
 import NodeTreeAndAssetList from '../main/components/NodeTreeAndAssetList.vue';
-import { computed, inject, onMounted, onUnmounted, reactive, ref } from 'vue';
-import { ElMessage } from 'element-plus';
+import { computed, createVNode, h, inject, onMounted, onUnmounted, reactive, ref, render } from 'vue';
+import { ElButton, ElDialog, ElMessage } from 'element-plus';
 import { _funcs } from '../../tools/_funcs';
 import { _dataCtx } from '../../tools/_dataCtx';
 import { _pluginSocket } from '../../tools/plugin_socket';
+import ScriptExecutor from './ScriptExecutor.vue'
 import view_Node from './inspector/view_Node.vue'
 import view_Sprite from './inspector/view_Sprite.vue'
 import view_Label from './inspector/view_Label.vue'
@@ -151,6 +151,12 @@ function onSel_node(item){
     console.log('选中节点:', item);
 }
 
+const scriptExecutorRef = ref(null);
+
+async function openEvalPanel(){
+    scriptExecutorRef.value.openDialog(`return 'Hello World!'`); // 打开并预填代码
+}
+
 </script>
 
 <template>
@@ -212,9 +218,10 @@ function onSel_node(item){
                 <div class="resizer-line-1" ref="resizer_ele_2"></div>
                 <div class="right-panel">
                     <h2 id="text-1" style="text-align: center;">哈哈哈哈哈哈2</h2>
-                    
+                    <ui-button style="width: 100px;" @click="openEvalPanel">在runtime执行JS</ui-button>
                 </div>
             </div>
+            <ScriptExecutor ref="scriptExecutorRef" />
         </div>
         
     </div>

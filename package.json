@@ -32,26 +32,31 @@
         "menu": [
             {
                 "path": "i18n:menu.extension",
-                "label": "i18n:cc_debuger_realtime.title",
-                "message": "open"
+                "label": "i18n:cc_debuger_realtime.menu_main",
+                "message": "open_main"
             }
         ],
         "messages": {
-            "open": {
+            "open_main": {
                 "methods": [
-                    "open"
+                    "open_main"
                 ]
             },
             "restart-self": {
                 "methods": [
                     "restart_self_ui"
                 ]
+            },
+            "open_eval": {
+                "methods": [
+                    "open_eval"
+                ]
             }
         }
     },
     "panels": {
         "default": {
-            "main": "./dist/panel.cjs",
+            "main": "./dist/main_panel.cjs",
             "size": {
                 "min-width": 400,
                 "min-height": 300,

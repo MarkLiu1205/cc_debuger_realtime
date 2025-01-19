@@ -1,14 +1,16 @@
 import packageJSON from '../../package.json'
 import { _funcs } from '../tools/_funcs';
+import { _pluginSocket } from '../tools/plugin_socket';
 import { load_ts_to_runtime, unload_ts_from_runtime } from '../tools/runtime_socket_helper';
 
 console.log("packageJSON",packageJSON)
 
 export const methods = {
-    async open() {
+    async open_main() {
         console.log("点击打开主面板")
         Editor.Panel.open(packageJSON.name);
     },
+    
     async restart_self_ui(){
         
 
@@ -20,6 +22,17 @@ export const methods = {
             Editor.Panel.open(packageJSON.name);
 
         },100)
+    },
+    open_eval() {
+        console.log("点击打开eval面板")
+        Editor.Panel.open(packageJSON.name+".eval");
+    },
+    async do_eval_js(str:string){
+        console.log("zzzzz 1")
+        const result = await _pluginSocket.evalJsInRuntime(str)
+        console.log("zzzzz 2")
+        console.log(result)
+        return result
     }
 };
 

@@ -1,4 +1,3 @@
-import App from './App.vue';
 import MainApp from './MainApp.vue';
 import { createApp } from 'vue';
 import './style.css';
@@ -48,8 +47,12 @@ export default Editor.Panel.define({
 });
 
 
-function startServer() {
-    let debugPort = 8085
+async function startServer() {
+    const debugPort = await _funcs.findAvailablePort(8085)
+    if(_pluginSocket.checkIsConnect()){
+        return
+    }
+    _funcs.log_1("本机端口号",debugPort)
     _serverSocket.start(`${debugPort}`)
 
     _pluginSocket.connectToServer(`ws://localhost:${debugPort}`)

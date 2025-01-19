@@ -3,6 +3,7 @@ import { sys } from 'cc';
 import { Asset } from 'cc';
 import { Color } from 'cc';
 import { Button } from 'cc';
+import { js } from 'cc';
 import { RichText } from 'cc';
 import { Scene } from 'cc';
 import { Director } from 'cc';
@@ -117,6 +118,20 @@ class RunTimeSocket {
 
         if(msg.type === 'request'){//表示是从插件发来的请求，需要进行回复
             let data:any = null;
+            if(msg.action=="eval_js"){
+                const content = js.formatStr("(async function(){%s})()",msg.data)
+                eval(content).then((ret)=>{
+                    const type = typeof ret;
+                    if(type=="object"){
+                        ret = JSON.stringify(ret)
+                    }else{
+                        ret = ret + ""
+                    }
+                    responseData.data = ret
+                    this._send(responseData);
+                })
+                return
+            }
             if (msg.action === 'getNewAddedAssets') {
                 const uuids:Array<string> = [];
                 assetManager.assets.forEach((_, uuid) => uuids.push(uuid));
@@ -462,7 +477,7 @@ class _RuntimeData{
         return componentsInfo;
     }
 
-    private _getComponentProperties(component: Component,name:string) {
+    private _getComponentProperties(component: Component,name:string):CompInfo_Base {
         
         if(name === "Sprite"){
             return _compUtil.getCompInfo_sprite(component as Sprite)
@@ -484,158 +499,91 @@ class _RuntimeData{
 }
 
 namespace _compUtil{
-    export interface _Color{
-        r:number,
-        g:number,
-        b:number,
-        a:number,
-    }
-    
-    export interface CompInfo_Sprite{
-        color:_Color,
-        uuid_atlas:string,
-        uuid_spriteFrame:string,
-        grayscale:boolean,
-        sizeMode:number,
-        type:number,
-        trim:boolean,
+    function getCompInfo_bass(comp:Component):CompInfo_Base{
+        return {
+            enabled:comp.enabled,
+            //@ts-ignore
+            typeStr:comp.__proto__.constructor.name,
+            uuid:comp.uuid,
+        }
     }
     
     export function getCompInfo_sprite(comp:Sprite):CompInfo_Sprite{
         return {
-            color:comp.color,
-            uuid_atlas:comp.spriteAtlas?.uuid || "",
-            uuid_spriteFrame:comp.spriteFrame?.uuid || "",
-            grayscale:comp.grayscale,
-            sizeMode:comp.sizeMode,
-            type:comp.type,
-            trim:comp.trim,
+            ...getCompInfo_bass(comp),...{
+                color:comp.color.toHEX(),
+                atlas:comp.spriteAtlas?.uuid || "",
+                spriteFrame:comp.spriteFrame?.uuid || "",
+                grayscale:comp.grayscale,
+                sizeMode:comp.sizeMode,
+                type:comp.type,
+                trim:comp.trim,
+            }
         }
         
-    }
-    
-    export interface CompInfo_Label{
-        color:_Color,
-        string:string,
-    
-        horizontalAlign:number,
-        verticalAlign:number,
-        
-        fontSize:number,
-        lineHeight:number,
-        overflow:number,
-        
-        enableWrapText:boolean,
-        fontFamily:string,
-        
-        useSystemFont:boolean,
-        uuid_font:string,
-        spacingX:number,
-    
-        isBold:boolean,
-        isItalic:boolean,
-        isUnderline:boolean,
     }
     
     export function getCompInfo_label(comp:Label):CompInfo_Label{
         return {
-            color:comp.color,
-            string:comp.string,
-            fontSize:comp.fontSize,
-            lineHeight:comp.lineHeight,
-            overflow:comp.overflow,
-            enableWrapText:comp.enableWrapText,
-            fontFamily:comp.fontFamily,
-            useSystemFont:comp.useSystemFont,
-            uuid_font:comp.font?.uuid || "",
-            spacingX:comp.spacingX,
-            isBold:comp.isBold,
-            isItalic:comp.isItalic,
-            isUnderline:comp.isUnderline,
-            horizontalAlign:comp.horizontalAlign,
-            verticalAlign:comp.verticalAlign,
+            ...getCompInfo_bass(comp),...{
+                color:comp.color.toHEX(),
+                string:comp.string,
+                fontSize:comp.fontSize,
+                lineHeight:comp.lineHeight,
+                overflow:comp.overflow,
+                enableWrapText:comp.enableWrapText,
+                fontFamily:comp.fontFamily,
+                useSystemFont:comp.useSystemFont,
+                font:comp.font?.uuid || "",
+                spacingX:comp.spacingX,
+                isBold:comp.isBold,
+                isItalic:comp.isItalic,
+                isUnderline:comp.isUnderline,
+                horizontalAlign:comp.horizontalAlign,
+                verticalAlign:comp.verticalAlign,
+            }
         }
     }
     
-    export interface CompInfo_RichText{
-        string:string,
-        horizontalAlign:number,
-        verticalAlign:number,
-        fontSize:number,
-        lineHeight:number,
-        fontFamily:string,
-        useSystemFont:boolean,
-        uuid_font:string,
-    
-        cacheMode:number,
-        maxWidth:number,
-        uuid_imageAtlas:string,
-    }
     
     export function getCompInfo_richText(comp:RichText):CompInfo_RichText{
         return {
-            string:comp.string,
-            fontSize:comp.fontSize,
-            lineHeight:comp.lineHeight,
-            fontFamily:comp.fontFamily,
-            useSystemFont:comp.useSystemFont,
-            uuid_font:comp.font?.uuid || "",
-            horizontalAlign:comp.horizontalAlign,
-            verticalAlign:comp.verticalAlign,
-            cacheMode:comp.cacheMode,
-            maxWidth:comp.maxWidth,
-            uuid_imageAtlas:comp.imageAtlas?.uuid || "",
+            ...getCompInfo_bass(comp),...{
+                string:comp.string,
+                fontSize:comp.fontSize,
+                lineHeight:comp.lineHeight,
+                fontFamily:comp.fontFamily,
+                useSystemFont:comp.useSystemFont,
+                font:comp.font?.uuid || "",
+                horizontalAlign:comp.horizontalAlign,
+                verticalAlign:comp.verticalAlign,
+                cacheMode:comp.cacheMode,
+                maxWidth:comp.maxWidth,
+                imageAtlas:comp.imageAtlas?.uuid || "",
+            }
         }
-    }
-
-    interface CompInfo_Button{
-        interactable:boolean,
-        transition:number,
-        
-        duration:number,
-        zoomScale:number,
-        
-        uuid_normalSprite:string,
-        uuid_pressedSprite:string,
-        uuid_hoverSprite:string,
-        uuid_disabledSprite:string,
-
-        normalColor:_Color,
-        pressedColor:_Color,
-        hoverColor:_Color,
-        disabledColor:_Color,
     }
 
     export function getCompInfo_button(comp:Button):CompInfo_Button{
         return {
-            interactable:comp.interactable,
-            transition:comp.transition,
-            duration:comp.duration,
-            zoomScale:comp.zoomScale,
-            uuid_normalSprite:comp.normalSprite?.uuid || "",
-            uuid_pressedSprite:comp.pressedSprite?.uuid || "",
-            uuid_hoverSprite:comp.hoverSprite?.uuid || "",
-            uuid_disabledSprite:comp.disabledSprite?.uuid || "",
-            normalColor:comp.normalColor,
-            pressedColor:comp.pressedColor,
-            hoverColor:comp.hoverColor,
-            disabledColor:comp.disabledColor,
+            ...getCompInfo_bass(comp),...{
+                interactable:comp.interactable,
+                transition:comp.transition,
+                duration:comp.duration,
+                zoomScale:comp.zoomScale,
+                normalSprite:comp.normalSprite?.uuid || "",
+                pressedSprite:comp.pressedSprite?.uuid || "",
+                hoverSprite:comp.hoverSprite?.uuid || "",
+                disabledSprite:comp.disabledSprite?.uuid || "",
+                normalColor:comp.normalColor.toHEX(),
+                pressedColor:comp.pressedColor.toHEX(),
+                hoverColor:comp.hoverColor.toHEX(),
+                disabledColor:comp.disabledColor.toHEX(),
+            }
         }
     }
        
 }
-
-interface NodeTreeItem{
-    name:string
-    uuid:string
-    children:NodeTreeItem[]
-    active:boolean
-    activeInHierarchy:boolean
-    parentUuid:string,
-    path:string,
-    isSceneNode?:boolean,
-}
-
 
 function _getSelfModelName() {
     let model = "";

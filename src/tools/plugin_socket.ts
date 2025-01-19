@@ -36,7 +36,7 @@ class PluginSocket {
         }
     }
 
-    private _checkIsConnect(){
+    public checkIsConnect(){
         if( this.m_socket && this.m_socket.readyState === WebSocket.OPEN){
             return true
         }
@@ -77,7 +77,7 @@ class PluginSocket {
     private _onOpenResolve:Array<(data:any)=>void> = []
     /**等待socket连接上 */
     async waitSocketOpen(){
-        if(this._checkIsConnect()){
+        if(this.checkIsConnect()){
             return
         }
         return new Promise((resolve, reject) => {
@@ -147,7 +147,7 @@ class PluginSocket {
      * 监听运行时的在线情况
      */
     listenRuntimeOnlineInfo(callback:(bIsOnline:boolean)=>void){
-        this.listenForPushData<boolean>(PushAction.otherSideOnlineChange,callback,this._checkIsConnect())
+        this.listenForPushData<boolean>(PushAction.otherSideOnlineChange,callback,this.checkIsConnect())
     }
 
     /**
@@ -252,6 +252,14 @@ class PluginSocket {
     async getNodeInfo(uuid:string) {
         await this.waitForRuntimeIsInline() //要先等plugin和runtime都连上服务器
         return this._sendRequest('getNodeInfo', { uuid });
+    }
+
+    /**执行js并返回执行结果 */
+    async evalJsInRuntime(str:string){
+        console.log("zzzzz 1.2")
+        await this.waitForRuntimeIsInline() //要先等plugin和runtime都连上服务器
+        console.log("zzzzz 1.5")
+        return this._sendRequest("eval_js",str)
     }
 };
 
