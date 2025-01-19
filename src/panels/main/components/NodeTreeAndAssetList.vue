@@ -5,7 +5,7 @@ import { _funcs } from '../../../tools/_funcs';
 import { _dataCtx } from '../../../tools/_dataCtx';
 import { _pluginSocket } from '../../../tools/plugin_socket';
 import { TreeNodeData,TreeNode, TreeOptionProps } from 'element-plus/es/components/tree-v2/src/types';
-
+import ContextMenu from './ContextMenu.vue';
 
 const props = defineProps({
     resTree_datas: {
@@ -111,6 +111,21 @@ function onClick_asset (data: TreeNodeData, node: TreeNode, e: MouseEvent){
     emit('onClick_asset', data);
 }
 
+const contextMenuRef = ref(null);
+
+// 菜单选项
+const menuOptions = [
+  { label: '选项 1', action: () => alert('选项 1 被点击') },
+  { label: '选项 2', action: () => alert('选项 2 被点击') },
+  { label: '选项 3', action: () => alert('选项 3 被点击') },
+];
+
+// 模拟触发右键菜单
+function handleNodeRightClick(node, event) {
+  event.preventDefault(); // 阻止默认右键菜单
+  contextMenuRef.value.showContextMenu(event, menuOptions);
+}
+
 </script>
 
 <template>
@@ -135,11 +150,18 @@ function onClick_asset (data: TreeNodeData, node: TreeNode, e: MouseEvent){
                 @node-click="onClick_asset"
             >
             <template #default="{ node }">
-                <ui-icon color="red" :value="node.data.icon"></ui-icon>
-                <span>{{ node.label }}</span>
+                <div
+                    class="custom-tree-node"
+                    @contextmenu.prevent="handleNodeRightClick(node, $event)"
+                >
+                    <ui-icon color="red" :value="node.data.icon"></ui-icon>
+                    <span>{{ node.label }}</span>
+                </div>
+                
             </template>
             </el-tree-v2>
         </div>
+        <ContextMenu ref="contextMenuRef" />
     </div>
     
 </template>
@@ -163,5 +185,15 @@ function onClick_asset (data: TreeNodeData, node: TreeNode, e: MouseEvent){
     cursor: row-resize; /* 改变鼠标光标样式 */
     user-select: none; /* 禁止用户选择文本 */
     background-color: #ccc; /* 分隔条背景色 */
+}
+
+.custom-tree-node:hover {
+  background-color: #f2f6fc;
+}
+
+/* 自定义选中状态样式 */
+.el-tree-node.is-current .custom-tree-node {
+  background-color: #409eff !important; /* 自定义背景色 */
+  color: white !important; /* 自定义字体颜色 */
 }
 </style>
