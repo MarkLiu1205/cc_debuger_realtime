@@ -4,12 +4,12 @@ import { ElMessage } from 'element-plus';
 import { _funcs } from '../../../tools/_funcs';
 import { _dataCtx } from '../../../tools/_dataCtx';
 import { _pluginSocket } from '../../../tools/plugin_socket';
-import { TreeNodeData,TreeNode, TreeOptionProps } from 'element-plus/es/components/tree-v2/src/types';
+import { TreeNodeData,TreeNode, TreeOptionProps,Tree } from 'element-plus/es/components/tree-v2/src/types';
 import ContextMenu from './ContextMenu.vue';
 
 const props = defineProps({
     resTree_datas: {
-        type: Array,
+        type: Array<ResTreeItem>,
         default:[]
     },
     bundleNames: {
@@ -17,7 +17,7 @@ const props = defineProps({
         default: () => [],
     },
     nodeTree_datas: {
-        type: Array,
+        type: Array<NodeTreeItem>,
         default:[]
     },
 })
@@ -104,26 +104,45 @@ onUnmounted(() => {
     }
 });
 
-function onClick_node (data: TreeNodeData, node: TreeNode, e: MouseEvent){
-    emit('onClick_node', data);
+// 记录当前选中的节点
+let selectedNodeId: string | null = null
+
+const customClass_Node = (nodeData): string => {
+  return nodeData.uuid === selectedNodeId ? 'custom-current' : ''
 }
-function onClick_asset (data: TreeNodeData, node: TreeNode, e: MouseEvent){
+function onClick_node (data: NodeTreeItem, node: TreeNode, e: MouseEvent){
+    emit('onClick_node', data);
+    selectedNodeId = data.uuid
+}
+
+let selectedAssetId: string | null = null
+const customClass_Asset = (nodeData): string => {
+  return nodeData.path === selectedAssetId ? 'custom-current' : ''
+}
+
+function onClick_asset (data: ResTreeItem, node: TreeNode, e: MouseEvent){
     emit('onClick_asset', data);
+    selectedAssetId = data.path
 }
 
 const contextMenuRef = ref(null);
 
 // 菜单选项
 const menuOptions = [
-  { label: '选项 1', action: () => alert('选项 1 被点击') },
-  { label: '选项 2', action: () => alert('选项 2 被点击') },
-  { label: '选项 3', action: () => alert('选项 3 被点击') },
+    { label: '选项 1', action: () => alert('选项 1 被点击') },
+    { label: '选项 2', action: () => alert('选项 2 被点击') },
+    { label: '选项 3', action: () => alert('选项 3 被点击') },
 ];
 
-// 模拟触发右键菜单
-function handleNodeRightClick(node, event) {
-  event.preventDefault(); // 阻止默认右键菜单
-  contextMenuRef.value.showContextMenu(event, menuOptions);
+/**右键点击节点项 */
+function onRightClick_node( event: MouseEvent, data: NodeTreeItem, node: TreeNode) {
+    console.log("右键点击节点",data)
+}
+
+/**右键点击资源项 */
+function onRightClick_asset( event: MouseEvent, data: ResTreeItem, node: TreeNode) {
+    contextMenuRef.value.showContextMenu(event, menuOptions);
+    console.log("右键点击资源",data)
 }
 
 </script>
@@ -134,9 +153,11 @@ function handleNodeRightClick(node, event) {
             <el-tree-v2
                 style="max-width: 600px;"
                 :data="props.nodeTree_datas"
-                :props="treeProp_node"
+                :props="{...treeProp_node,class: customClass_Node}"
                 :height="height_nodeTree"
                 @node-click="onClick_node"
+                :highlight-current="true"
+                @node-contextmenu="onRightClick_node"
             >
             </el-tree-v2>
         </div>
@@ -145,19 +166,15 @@ function handleNodeRightClick(node, event) {
             <el-tree-v2
                 style="max-width: 600px;"
                 :data="props.resTree_datas"
-                :props="treeProp_res"
+                :props="{...treeProp_res,class: customClass_Asset}"
                 :height="height_resTree"
                 @node-click="onClick_asset"
+                :highlight-current="true"
+                @node-contextmenu="onRightClick_asset"
             >
             <template #default="{ node }">
-                <div
-                    class="custom-tree-node"
-                    @contextmenu.prevent="handleNodeRightClick(node, $event)"
-                >
-                    <ui-icon color="red" :value="node.data.icon"></ui-icon>
-                    <span>{{ node.label }}</span>
-                </div>
-                
+                <ui-icon color="red" :value="node.data.icon"></ui-icon>
+                <span>{{ node.label }}</span>
             </template>
             </el-tree-v2>
         </div>
@@ -187,13 +204,21 @@ function handleNodeRightClick(node, event) {
     background-color: #ccc; /* 分隔条背景色 */
 }
 
-.custom-tree-node:hover {
-  background-color: #f2f6fc;
+/* 自定义高亮背景和文字颜色 */
+::v-deep .custom-current > .el-tree-node__content {
+    background-color: #227F9B !important; /* 金黄色背景 */
+    color: #000000 !important; /* 白色文字 */
 }
 
-/* 自定义选中状态样式 */
-.el-tree-node.is-current .custom-tree-node {
-  background-color: #409eff !important; /* 自定义背景色 */
-  color: white !important; /* 自定义字体颜色 */
+/* 修改 hover 状态下的背景色 */
+::v-deep .el-tree-node__content:hover {
+    background-color: #525252 !important; /* 橙色背景 */
+    color: #ffffff !important; /* 白色文字 */
+}
+
+/* 当前节点 hover 状态下应用高亮 */
+::v-deep .custom-current:hover > .el-tree-node__content {
+    background-color: #227F9B !important; /* 高亮背景色 */
+    color: #ffffff !important; /* 文字颜色 */
 }
 </style>
