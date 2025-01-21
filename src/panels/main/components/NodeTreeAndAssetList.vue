@@ -160,7 +160,11 @@ function onRightClick_asset( event: MouseEvent, data: ResTreeItem, node: TreeNod
 <template>
     <div ref="parentContainer" class="parent-container">
         <div :style="{ height: height_nodeTree + 'px' }">
-            <el-tree-v2
+            <div class="loading-div" v-if="nodeTree_datas.length==0">
+                <ui-loading></ui-loading>
+                <span style="margin-left: 10px;">正在加载资源节点树</span>
+            </div>
+            <el-tree-v2 v-else
                 style="max-width: 600px;"
                 :data="props.nodeTree_datas"
                 :props="{...treeProp_node,class: customClass_Node}"
@@ -173,7 +177,11 @@ function onRightClick_asset( event: MouseEvent, data: ResTreeItem, node: TreeNod
         </div>
         <div class="gap_line" ref="gap_line"></div>
         <div   :style="{ height: height_resTree + 'px' }">
-            <el-tree-v2
+            <div class="loading-div" v-if="resTree_datas.length==0">
+                <ui-loading></ui-loading>
+                <span style="margin-left: 10px;">正在加载资源列表</span>
+            </div>
+            <el-tree-v2 v-else
                 style="max-width: 600px;"
                 :data="props.resTree_datas"
                 :props="{...treeProp_res,class: customClass_Asset}"
@@ -214,6 +222,12 @@ function onRightClick_asset( event: MouseEvent, data: ResTreeItem, node: TreeNod
     background-color: #ccc; /* 分隔条背景色 */
 }
 
+.loading-div {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+}
 
 :deep(.el-tree-node__content) {
     cursor: default !important;

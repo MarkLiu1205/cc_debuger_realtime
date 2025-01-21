@@ -165,19 +165,15 @@ async function openEvalPanel(){
     </div> -->
     <div style="width: 100vw; height: 100vh; ">  
         <div style="border: 2px solid #f40909; width: calc(100% - 10px);height: calc(100% - 35px);">
-            <div class="loading-div" style="flex-direction: column;" v-if="isRuntimeOffline">
+            <div class="center-align" style="flex-direction: column;" v-if="isRuntimeOffline">
                 <h2>没有检测到可用运行时</h2>
                 <p>推荐打开预览：{{runtimePreviewUrl}}</p>
                 <ui-button type="default"  @confirm="doOpenRuntimePreview">点击打开预览 {{runtimePreviewUrl}}</ui-button>
             </div>
             <div id="eid_view_main" class="cls_view_main" v-else>
                 <div id="eid_view_asset_list" class="cls_view_asset_list" :style="{ width: width_asset_list + 'px' }">
-                    <div class="loading-div" v-if="isLoading_res">
-                        <ui-loading></ui-loading>
-                        <span style="margin-left: 10px;">正在加载资源列表</span>
-                    </div>
                     
-                    <NodeTreeAndAssetList v-else
+                    <NodeTreeAndAssetList
                         :resTree_datas="resTree_datas"
                         :nodeTree_datas="nodeTree_datas"
                         :bundleNames="bundleNames"
@@ -187,10 +183,6 @@ async function openEvalPanel(){
                 </div>
                 <div class="resizer-line-1" ref="resizer_ele_1"></div>
                 <div id="eid_view_node_tree" class="cls_view_node_tree" :style="{ width: width_node_tree + 'px' }">
-                    <div class="loading-div" v-if="isLoading_nodeTree"> 
-                        <ui-loading></ui-loading>
-                        <span style="margin-left: 10px;">正在加载节点数</span>
-                    </div>
                     <div class="tree-view-container">
                         <view_Node></view_Node>
                         <view_Widget></view_Widget>
@@ -256,8 +248,8 @@ async function openEvalPanel(){
     box-sizing: border-box; /* 包含内边距和边框在宽度内 */
 }
 
-.loading-div {
-    height: 500px;
+.center-align {
+    height: 100%;
     display: flex;
     justify-content: center;
     align-items: center;
