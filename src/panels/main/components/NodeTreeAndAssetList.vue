@@ -128,20 +128,30 @@ function onClick_asset (data: ResTreeItem, node: TreeNode, e: MouseEvent){
 const contextMenuRef = ref(null);
 
 // 菜单选项
-const menuOptions = [
-    { label: '选项 1', action: () => alert('选项 1 被点击') },
-    { label: '选项 2', action: () => alert('选项 2 被点击') },
-    { label: '选项 3', action: () => alert('选项 3 被点击') },
+const menuOptions_node = [
+    { label: '选项 1', action: () => {
+        console.log("点击1")
+    }},
+    { label: '选项选项选项 2', action: () => alert('选项 2 被点击') },
+    { label: '选项选项选项 3', action: () => alert('选项 3 被点击') },
 ];
-
 /**右键点击节点项 */
 function onRightClick_node( event: MouseEvent, data: NodeTreeItem, node: TreeNode) {
     console.log("右键点击节点",data)
+    contextMenuRef.value.showContextMenu(event, menuOptions_node);
 }
 
+// 菜单选项
+const menuOptions_asset = [
+    { label: '选项 1', action: () => {
+        console.log("点击1")
+    }},
+    { label: '选项选项选项 2', action: () => alert('选项 2 被点击') },
+    { label: '选项选项选项 3', action: () => alert('选项 3 被点击') },
+];
 /**右键点击资源项 */
 function onRightClick_asset( event: MouseEvent, data: ResTreeItem, node: TreeNode) {
-    contextMenuRef.value.showContextMenu(event, menuOptions);
+    contextMenuRef.value.showContextMenu(event, menuOptions_asset);
     console.log("右键点击资源",data)
 }
 
@@ -204,20 +214,25 @@ function onRightClick_asset( event: MouseEvent, data: ResTreeItem, node: TreeNod
     background-color: #ccc; /* 分隔条背景色 */
 }
 
+
+:deep(.el-tree-node__content) {
+    cursor: default !important;
+}
+
 /* 自定义高亮背景和文字颜色 */
-::v-deep .custom-current > .el-tree-node__content {
+:deep(.custom-current) > .el-tree-node__content {
     background-color: #227F9B !important; /* 金黄色背景 */
-    color: #000000 !important; /* 白色文字 */
+    color: #ffffff !important; /* 白色文字 */
 }
 
 /* 修改 hover 状态下的背景色 */
-::v-deep .el-tree-node__content:hover {
+:deep(.el-tree-node__content:hover) {
     background-color: #525252 !important; /* 橙色背景 */
     color: #ffffff !important; /* 白色文字 */
 }
 
 /* 当前节点 hover 状态下应用高亮 */
-::v-deep .custom-current:hover > .el-tree-node__content {
+:deep(.custom-current:hover) > .el-tree-node__content {
     background-color: #227F9B !important; /* 高亮背景色 */
     color: #ffffff !important; /* 文字颜色 */
 }

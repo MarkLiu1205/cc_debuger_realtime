@@ -1,18 +1,41 @@
 <script setup lang=ts>
-import { ref, reactive,onMounted, onUnmounted,watch} from 'vue';
+import { ref, reactive, onUnmounted, watch, nextTick } from 'vue';
+
+interface Option {
+    label?: string,
+    action?: () => void,
+    isDivider?: boolean,
+}
 
 // 控制菜单的显示状态与位置
 const isMenuVisible = ref(false);
 const menuPosition = reactive({ x: 0, y: 0 });
-const menuOptions = ref([]);
-const selfPopupRef = ref(null)
+const menuOptions = ref([] as Array<Option>);
+const selfPopupRef = ref(null);
 
 // 显示菜单方法
-function showContextMenu(event, options) {
+function showContextMenu(event, options: Array<Option>) {
     isMenuVisible.value = true;
-    menuPosition.x = event.clientX;
-    menuPosition.y = event.clientY;
     menuOptions.value = options || [];
+
+        // 获取菜单项的高度
+        const menuItemHeight = 36;
+        const totalHeight = menuOptions.value.length * menuItemHeight; // 计算菜单的总高度
+
+        // 获取鼠标点击位置
+        const { clientX, clientY } = event;
+        const windowHeight = window.innerHeight; // 窗口高度
+        const distanceToBottom = windowHeight - clientY;
+
+        // 判断菜单是否接近屏幕底部
+        if (distanceToBottom < totalHeight) {
+            menuPosition.x = clientX;
+            menuPosition.y = clientY - totalHeight; // 在点击位置的上方显示菜单
+        } else {
+            menuPosition.x = clientX;
+            menuPosition.y = clientY; // 正常显示在点击位置的下方
+        }
+    
 }
 
 // 隐藏菜单方法
@@ -20,29 +43,40 @@ function hideContextMenu() {
     isMenuVisible.value = false;
 }
 
-const handlerClickGlobal = (e:MouseEvent) => {
+// 全局点击事件处理
+const handlerClickGlobal = (e: MouseEvent) => {
     if (selfPopupRef.value == null) {
         return;
     }
     const rect = selfPopupRef.value.getBoundingClientRect();
     const isContain = e.clientX > rect.x && e.clientX < (rect.x + rect.width) && e.clientY > rect.y && e.clientY < (rect.y + rect.height);
-    console.log('rect',rect,e.clientX,e.clientY)
     if (!isContain) {
-        hideContextMenu()
-        e.stopPropagation()
+        hideContextMenu();
+        e.stopPropagation();
     }
 };
 
-watch(isMenuVisible, async (val) => {
-  if(val){
-    document.addEventListener('click', handlerClickGlobal,{capture:true});
-  }else{
-    document.removeEventListener('click', handlerClickGlobal,{capture:true});
-  }
-})
+function handleClick(option:Option) {
+    hideContextMenu();
+    setTimeout(() => {
+        if (typeof option.action === 'function') {
+            option.action();
+        }
+    }, 0);
+}
 
+// 监听菜单显示状态
+watch(isMenuVisible, (val) => {
+    if (val) {
+        document.addEventListener('click', handlerClickGlobal, { capture: true });
+    } else {
+        document.removeEventListener('click', handlerClickGlobal, { capture: true });
+    }
+});
+
+// 组件卸载时清理事件
 onUnmounted(() => {
-    document.removeEventListener('click', handlerClickGlobal,{capture:true});
+    document.removeEventListener('click', handlerClickGlobal, { capture: true });
 });
 
 // 公开方法供外部调用
@@ -56,30 +90,53 @@ defineExpose({
         v-if="isMenuVisible"
         class="context-menu"
         :style="{ top: `${menuPosition.y}px`, left: `${menuPosition.x}px` }"
-        @click="hideContextMenu"
         ref="selfPopupRef"
     >
-        <el-menu default-active="1" style="border: none;">
-            <el-menu-item
+        <ul class="menu-list">
+            <li
                 v-for="(option, index) in menuOptions"
                 :key="index"
-                @click="option.action; hideContextMenu()"
+                @click="!option.isDivider && handleClick(option)"
+                class="menu-item"
+                :class="{ 'divider': option.isDivider }"
             >
-                {{ option.label }}
-            </el-menu-item>
-        </el-menu>
+                <template v-if="!option.isDivider">
+                    {{ option.label }}
+                </template>
+            </li>
+        </ul>
     </div>
 </template>
 
 <style scoped>
 .context-menu {
-    position: absolute;
-    z-index: 9999;
-    background: white;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-    padding: 4px 0;
-    min-width: 150px;
+  position: absolute;
+  background: #fff; /* 深色背景 */
+  border: 1px solid #ccc;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+  min-width: 150px; /* 增加最小宽度 */
+  color: #000; /* 白色文字 */
+}
+
+.menu-list {
+  list-style: none;
+  margin: 0;
+}
+
+.menu-item {
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.menu-item.divider {
+  border-top: 1px solid #ccc;
+  margin: 4px 0;
+  padding: 0;
+  cursor: default;
+}
+
+.menu-item:hover {
+  background-color: #e2e2e2; /* 深色背景 */
 }
 </style>
