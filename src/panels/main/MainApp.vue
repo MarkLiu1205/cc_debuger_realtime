@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import TestFlow from '../main/components/TestFlow.vue';
-import NodeTreeAndAssetList from '../main/components/NodeTreeAndAssetList.vue';
+import TestFlow from './components/TestFlow.vue';
+import NodeTreeAndAssetList from './components/NodeTreeAndAssetList.vue';
+import Inspector_Node from './components/Inspector_Node.vue';
 import { computed, createVNode, h, inject, onMounted, onUnmounted, reactive, ref, render } from 'vue';
 import { ElButton, ElDialog, ElMessage } from 'element-plus';
 import { _funcs } from '../../tools/_funcs';
@@ -68,13 +69,8 @@ const width_asset_list = ref(_funcs.clamp(200,500,window.innerWidth * 0.3)); // 
 const width_node_tree = ref(_funcs.clamp(320,500,window.innerWidth * 0.3)); // 默认左面板宽度占窗口宽度的30%
 const resizer_ele_1 = ref(null); //拉伸左右边界的线
 const resizer_ele_2 = ref(null); //拉伸左右边界的线
-const isLoading_res = computed(()=>{
-    return resTree_datas.value.length==0
-})
 
-const isLoading_nodeTree = computed(()=>{
-    return nodeTree_datas.value.length==0
-})
+const cur_sel_node = ref(null as InspectorInfo_Node)
 
 const onMouseDown = (e:MouseEvent) => {
     const width_ref = e.target==resizer_ele_1.value?width_asset_list:width_node_tree
@@ -124,7 +120,7 @@ onUnmounted(() => {
     }
 })  
 
-function onSel_asset(item) {
+function onSel_asset(item:ResTreeItem) {
     if(item.isAsset){
         console.log('选中资源:', item);
     }
@@ -147,8 +143,11 @@ function onChange2TreeView(){
     console.log("切换tree")
 }
 
-function onSel_node(item){
-    console.log('选中节点:', item);
+async function onSel_node(item:NodeTreeItem){
+    // console.log('选中节点:', item);
+    let xx = await _pluginSocket.getNodeInfo(item.uuid)
+    // console.log(xx)
+    cur_sel_node.value = xx
 }
 
 const scriptExecutorRef = ref(null);
@@ -183,8 +182,11 @@ async function openEvalPanel(){
                 </div>
                 <div class="resizer-line-1" ref="resizer_ele_1"></div>
                 <div id="eid_view_node_tree" class="cls_view_node_tree" :style="{ width: width_node_tree + 'px' }">
-                    <div class="tree-view-container">
-                        <view_Node></view_Node>
+                    <!-- <div class="tree-view-container"> -->
+                        <Inspector_Node :info="cur_sel_node">
+
+                        </Inspector_Node>
+                        <!-- <view_Node></view_Node>
                         <view_Widget></view_Widget>
                         <view_Graphics></view_Graphics>
                         <view_Scrollview></view_Scrollview>
@@ -200,10 +202,10 @@ async function openEvalPanel(){
                         <view_ParticleSystem></view_ParticleSystem>
                         <view_Sprite></view_Sprite>
                         <view_Button></view_Button>
-                        <view_Label></view_Label>
+                        <view_Label></view_Label> -->
                         
                         
-                    </div>
+                    <!-- </div> -->
                     
                 
                 </div>

@@ -58,6 +58,10 @@ interface NodeInfo{
     layer: number
 }
 
+interface InspectorInfo_Node extends NodeInfo{
+    components:Array<CompInfo_Base>;
+}
+
 interface CompInfo_Base{
     enabled:boolean,
     typeStr:CompType,

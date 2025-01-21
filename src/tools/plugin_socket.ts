@@ -249,7 +249,7 @@ class PluginSocket {
         return this._sendRequest<number>('getRefCount', { uuid });
     }
 
-    async getNodeInfo(uuid:string) {
+    async getNodeInfo(uuid:string):Promise<InspectorInfo_Node> {
         await this.waitForRuntimeIsInline() //要先等plugin和runtime都连上服务器
         return this._sendRequest('getNodeInfo', { uuid });
     }
