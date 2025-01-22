@@ -21,7 +21,7 @@ export const methods = {
             console.log("时间到重启")
             Editor.Panel.open(packageJSON.name);
 
-        },100)
+        },2000)
     },
     open_eval() {
         console.log("点击打开eval面板")

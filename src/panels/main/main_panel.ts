@@ -54,8 +54,10 @@ async function startServer() {
     }
     _funcs.log_1("本机端口号",debugPort)
     _serverSocket.start(`${debugPort}`)
-
-    _pluginSocket.connectToServer(`ws://localhost:${debugPort}`)
+   
+    setTimeout(() => {
+        _pluginSocket.connectToServer(`ws://localhost:${debugPort}`)
+    }, 1000);
 }
 
 function registerF5(){
