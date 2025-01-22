@@ -2,7 +2,7 @@
 import TestFlow from './components/TestFlow.vue';
 import NodeTreeAndAssetList from './components/NodeTreeAndAssetList.vue';
 import Inspector_Node from './components/Inspector_Node.vue';
-import { computed, createVNode, h, inject, onMounted, onUnmounted, reactive, ref, render } from 'vue';
+import { computed, createVNode, h, inject, onMounted, onUnmounted, reactive, ref, render, watch } from 'vue';
 import { ElButton, ElDialog, ElMessage } from 'element-plus';
 import { _funcs } from '../../tools/_funcs';
 import { _dataCtx } from '../../tools/_dataCtx';
@@ -71,6 +71,10 @@ const resizer_ele_1 = ref(null); //拉伸左右边界的线
 const resizer_ele_2 = ref(null); //拉伸左右边界的线
 
 const cur_sel_node = ref(null as InspectorInfo_Node)
+watch(cur_sel_node, (newVal, oldVal) => {
+    console.log("newVal",newVal)
+   
+}, { deep: true })
 
 const onMouseDown = (e:MouseEvent) => {
     const width_ref = e.target==resizer_ele_1.value?width_asset_list:width_node_tree
@@ -183,7 +187,7 @@ async function openEvalPanel(){
                 <div class="resizer-line-1" ref="resizer_ele_1"></div>
                 <div id="eid_view_node_tree" class="cls_view_node_tree" :style="{ width: width_node_tree + 'px' }">
                     <!-- <div class="tree-view-container"> -->
-                        <Inspector_Node :info="cur_sel_node">
+                        <Inspector_Node v-model="cur_sel_node">
 
                         </Inspector_Node>
                         <!-- <view_Node></view_Node>

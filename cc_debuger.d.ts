@@ -52,9 +52,9 @@ type HexColor = string
 interface NodeInfo{
     active: boolean,
     name: string,
-    position: import("cc").Vec2,
-    rotation: import("cc").Vec2,
-    scale: import("cc").Vec2,
+    position: import("cc").Vec3,
+    rotation: import("cc").Quat,
+    scale: import("cc").Vec3,
     layer: number
 }
 

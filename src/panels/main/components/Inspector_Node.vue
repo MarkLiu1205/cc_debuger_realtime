@@ -2,24 +2,20 @@
 import { ref, reactive, onUnmounted, watch, nextTick, defineExpose,defineProps, onMounted } from 'vue';
 import view_Node from '../inspector/view_Node.vue'
 
-const props = defineProps({
-    info: {
-        type: Object,
-        default:null
-    },
-})
 
-const node_info = ref(null as NodeInfo)
+const model = defineModel<NodeInfo>()
 
 onMounted(()=>{
-    node_info.value = props.info as NodeInfo
+    
 })
 
 </script>
 
 <template>
-    <div class="inspector_container">
-        <view_Node :nodeData="props.info" v-if="info!=null" />
+    <label v-if="model==null">XXXX: {{ "没有" }}</label>
+    <div class="inspector_container" v-if="model!=null">
+        
+        <view_Node v-model="model" />
     </div>
 </template>
 

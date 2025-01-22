@@ -448,10 +448,11 @@ class _RuntimeData{
 
     getNodeInfo(uuid:string){
         const node = this.m_nodeUuidMap[uuid]
-        const nodeInfo = {
+        const nodeInfo:InspectorInfo_Node = {
             active: node.active,
             name: node.name,
             position: node.position,
+            rotation: node.rotation,
             scale: node.scale,
             layer: node.layer,
             components: this._getComponentsInfo(node)
@@ -460,18 +461,13 @@ class _RuntimeData{
     }
 
     private _getComponentsInfo(node: Node) {
-        const componentsInfo = [];
+        const componentsInfo:Array<CompInfo_Base> = [];
         const components = node.components;
 
         for (const component of components) {
             const name = component["__proto__"].constructor.name
-            const properties = this._getComponentProperties(component,name)
-            const componentInfo = {
-                name: name,
-                uuid: component.uuid,
-                properties: properties
-            };
-            componentsInfo.push(componentInfo);
+            const info = this._getComponentProperties(component,name)
+            componentsInfo.push(info);
         }
 
         return componentsInfo;
