@@ -20,6 +20,14 @@ const model = defineModel<NodeInfo>()
 const editingName = ref(false);
 const nameInputRef = ref<HTMLInputElement | null>(null);
 
+function onToggle(event) {
+    const id = event.target.id;
+    const checked = event.target.checked;
+    if (id === "id_active") {
+        model.value.active = checked;
+    }
+}
+
 const toggleEditingName = () => {
   editingName.value = !editingName.value;
   if (editingName.value) {
@@ -67,7 +75,7 @@ function onSelect(event){
 <template>
     <div class="node-properties" v-if="model!=null">
         <div class="property">
-            <ui-checkbox id="id_active" :value="model.active"></ui-checkbox>
+            <ui-checkbox id="id_active" :value="model.active" @change="onToggle"></ui-checkbox>
 
             <h3 style="padding-right: 10px;">Node: </h3>
             <div v-if="!editingName" @click="toggleEditingName" style="min-width: 60px;">

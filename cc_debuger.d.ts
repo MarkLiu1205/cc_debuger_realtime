@@ -50,6 +50,7 @@ type HexColor = string
 
 /**inspector 节点信息 */
 interface NodeInfo{
+    uuid: TypeUUID,
     active: boolean,
     name: string,
     position: import("cc").Vec3,

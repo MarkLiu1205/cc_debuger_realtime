@@ -449,6 +449,7 @@ class _RuntimeData{
     getNodeInfo(uuid:string){
         const node = this.m_nodeUuidMap[uuid]
         const nodeInfo:InspectorInfo_Node = {
+            uuid: node.uuid,
             active: node.active,
             name: node.name,
             position: node.position,

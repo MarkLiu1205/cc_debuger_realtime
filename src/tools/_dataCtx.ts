@@ -26,6 +26,23 @@ class _DataContext{
     /**节点树 */
     public curNodeTreeInfo:ResTreeItem = null
 
+    private _curSelectNodeUuid:TypeUUID = ""
+    private _nodeInspectorInfoMap:Record<TypeUUID,InspectorInfo_Node> = {}
+    public setCurSelectNodeInfo(info:InspectorInfo_Node){
+        if(this._nodeInspectorInfoMap[info.uuid]==null){
+
+        }
+        this._curSelectNodeUuid = info.uuid
+        this._nodeInspectorInfoMap[info.uuid] = info
+    }
+    /**当前选中的节点信息 */
+    public get curSelNodeInspectorInfo(){
+        if(!this._curSelectNodeUuid){
+            return null
+        }
+        return this._nodeInspectorInfoMap[this._curSelectNodeUuid]??null
+    }
+
     /**bundle列表 */
     public m_bundleNames:Array<string> = []
     /**

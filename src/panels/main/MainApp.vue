@@ -71,10 +71,98 @@ const resizer_ele_1 = ref(null); //拉伸左右边界的线
 const resizer_ele_2 = ref(null); //拉伸左右边界的线
 
 const cur_sel_node = ref(null as InspectorInfo_Node)
-watch(cur_sel_node, (newVal, oldVal) => {
+watch(cur_sel_node, (newVal,old) => {
+    if(old==null){
+        return
+    }
     console.log("newVal",newVal)
+    
+    const oldVal = _dataCtx.curSelNodeInspectorInfo;
+    console.log("xxx",_dataCtx._curSelectNodeUuid)
+    console.log("oldVal",oldVal)
+    if(oldVal==null){
+        return
+    }
+
+    compareChangedNodeInfo(newVal,oldVal)
    
 }, { deep: true })
+
+function compareChangedNodeInfo(newVal:InspectorInfo_Node,oldVal:InspectorInfo_Node){
+    const nodeChange:Record<string,Record<string,any>> = {}
+    const compChanges:Record<string,Record<string,any>> = {}
+    
+    for (let key in newVal) {
+        if (key === "components") {
+            continue;
+        }
+        if (typeof newVal[key] === 'object' && newVal[key] !== null) {
+            nodeChange[newVal.uuid] = nodeChange[newVal.uuid] ?? {};
+            nodeChange[newVal.uuid][key] = deepCompare(newVal[key], oldVal[key]);
+            if(nodeChange[newVal.uuid][key]==null){
+            delete nodeChange[newVal.uuid][key]
+        }
+        } else if (newVal[key] !== oldVal[key]) {
+            nodeChange[newVal.uuid] = nodeChange[newVal.uuid] ?? {};
+            nodeChange[newVal.uuid][key] = newVal[key];
+            oldVal[key] = newVal[key];
+        }
+    }
+    if(Object.keys(nodeChange[newVal.uuid]).length==0){
+        delete nodeChange[newVal.uuid]
+    }
+    for(let i=0;i<newVal.components.length;i++){
+        let newComp = newVal.components[i]
+        let oldComp = oldVal.components[i];
+        if(oldComp==null){
+            break
+        }
+
+        for(let key in newComp){
+            if (typeof newComp[key] === 'object' && newComp[key] !== null) {
+                compChanges[newComp.uuid] = compChanges[newComp.uuid] ?? {};
+                compChanges[newComp.uuid][key] = deepCompare(newComp[key], oldVal[key]);
+                if(compChanges[newComp.uuid][key]==null){
+                delete compChanges[newComp.uuid][key]
+            }
+            } else if (newComp[key] !== oldVal[key]) {
+                compChanges[newComp.uuid] = compChanges[newComp.uuid] ?? {};
+                compChanges[newComp.uuid][key] = newComp[key];
+                oldVal[key] = newComp[key];
+            }
+        }
+    }
+    if(Object.keys(nodeChange).length>0){
+        console.log("节点改变",JSON.stringify(nodeChange))
+    }
+    if(Object.keys(compChanges).length>0){
+        console.log("组件改变",JSON.stringify(compChanges))
+    }
+}
+
+/**递归比较两个对象 */
+function deepCompare(newObj: any, oldObj: any) {
+    let changes: Record<string, any> = {}
+    for (let key in newObj) {
+        if (typeof newObj[key] === 'object' && newObj[key] !== null) {
+            if (!oldObj[key]) {
+                changes[key] = newObj[key];
+            } else {
+                changes[key] = deepCompare(newObj[key], oldObj[key]);
+                if (Object.keys(changes[key]).length === 0) {
+                    delete changes[key];
+                }
+            }
+        } else if (newObj[key] !== oldObj[key]) {
+            changes[key] = newObj[key];
+            oldObj[key] = newObj[key];
+        }
+    }
+    if(Object.keys(changes).length==0){
+        return null
+    }
+    return changes;
+}
 
 const onMouseDown = (e:MouseEvent) => {
     const width_ref = e.target==resizer_ele_1.value?width_asset_list:width_node_tree
@@ -149,9 +237,10 @@ function onChange2TreeView(){
 
 async function onSel_node(item:NodeTreeItem){
     // console.log('选中节点:', item);
-    let xx = await _pluginSocket.getNodeInfo(item.uuid)
-    // console.log(xx)
-    cur_sel_node.value = xx
+    let newVal = await _pluginSocket.getNodeInfo(item.uuid)
+    // console.log(newVal)
+    cur_sel_node.value = newVal
+    _dataCtx.setCurSelectNodeInfo(JSON.parse(JSON.stringify(newVal)))
 }
 
 const scriptExecutorRef = ref(null);
