@@ -1,5 +1,6 @@
 
 type TypeUUID = string
+type TypeColor = string
 
 interface EditorAssetInfo {
     url:string,
@@ -69,6 +70,133 @@ interface CompInfo_Base{
     uuid:TypeUUID,
 }
 
+interface CompInfo_Camera extends CompInfo_Base{
+    priority: number,
+    visibility: number,
+    clearFlags: import("cc").Camera.ClearFlag,
+    clearColor: TypeColor,
+    clearDepth:number,
+    clearStencil:number,
+    projection: import("cc").Camera.CameraProjection,
+    fovAxis: import("cc").Camera.CameraFOVAxis,
+    fov: number,
+    near: number,
+    far: number,
+    orthoHeight: number,
+    targetTexture: TypeUUID,
+    aperture: import("cc").Camera.CameraAperture,
+    shutter: import("cc").Camera.CameraShutter,
+    iso: import("cc").Camera.CameraISO,
+    rect: import("cc").Rect,
+}
+
+interface CompInfo_EditBox extends CompInfo_Base{
+    string: string,
+    maxLength: number,
+    tabIndex: number,
+    inputMode: import("cc").EditBox.InputMode,
+    inputFlag: import("cc").EditBox.InputFlag,
+    keyboardReturnType: import("cc").EditBox.KeyboardReturnType,
+    placeholder: string
+    backgroundImage: string,
+    textLabel: string,
+    placeholderLabel: string,
+}
+
+interface CompInfo_Graphics extends CompInfo_Base{
+    lineWidth: number,
+    strokeColor: TypeColor,
+    fillColor: TypeColor,
+    miterLimit: number,
+    lineJoin: import("cc").Graphics.LineJoin,
+    lineCap: import("cc").Graphics.LineCap,
+}
+
+interface CompInfo_Layout extends CompInfo_Base{
+    type: import("cc").Layout.Type,
+    resizeMode: import("cc").Layout.ResizeMode,
+    paddingLeft: number,
+    paddingRight: number,
+    paddingTop: number,
+    paddingBottom: number,
+    spacingX: number,
+    spacingY: number,
+    alignHorizontal: boolean,
+    alignVertical: boolean,
+    affectByScale: boolean,
+    verticalDirection: import("cc").Layout.VerticalDirection,
+    horiazonDirection: import("cc").Layout.HoriazonDirection,
+    startAxis:import("cc").Layout.AxisDirection,
+    constraint:import("cc").Layout.Constraint,
+}
+
+interface CompInfo_Mask extends CompInfo_Base{
+    type: import("cc").Mask.MaskType,
+    inverted: boolean,
+    segments: number,
+    alphaThreshold: number,
+}
+
+interface CompInfo_UITransform extends CompInfo_Base{
+    anchorPoint:import("cc").Vec2,
+    contentSize:import("cc").Size,
+}
+
+interface CompInfo_PageView extends CompInfo_Base{
+    inertia: boolean,
+    elastic: boolean,
+    bounceDuration: number,
+    indicator: TypeUUID,
+    pageTurningSpeed: number,
+    autoPageTurningThreshold: number,
+    scrollThreshold: number,
+    pageTurningEventTiming: number,
+    brake:number,
+
+    content:TypeUUID,
+    sizeMode:import("cc").PageView.SizeMode,
+    direction:import("cc").PageView.Direction,
+}
+
+interface CompInfo_ParticleSystem2D extends CompInfo_Base{
+    customMaterial: TypeUUID,
+    preview: boolean,
+    playOnLoad: boolean,
+    autoRemoveOnFinish: boolean,
+    file: TypeUUID,
+    spriteFrame: TypeUUID,
+    totalParticles: number,
+    duration: number,
+    emissionRate: number,
+    life: number,
+    lifeVar: number,
+    startColor: TypeColor, 
+    startColorVar: TypeColor,
+    endColor: TypeColor,
+    endColorVar: TypeColor,
+    angle: number,
+    angleVar: number,
+    startSize: number,
+    startSizeVar: number,
+    endSize: number,
+    endSizeVar: number,
+    startSpin: number,
+    startSpinVar: number,
+    endSpin: number,
+    endSpinVar: number,
+    posVar: import("cc").Vec2,
+    positionType: import("cc").ParticleSystem2D.PositionType,
+    emitterMode: import("cc").ParticleSystem2D.EmitterMode,
+    gravity: import("cc").Vec2,
+    speed: number,
+    speedVar: number,
+    tangentialAccel: number,
+    tangentialAccelVar: number,
+    radialAccel: number,
+    radialAccelVar: number,
+    rotationIsDir: boolean,
+}
+
 interface CompInfo_Sprite extends CompInfo_Base{
     color:HexColor,
     atlas:TypeUUID,
@@ -134,4 +262,58 @@ interface CompInfo_Button extends CompInfo_Base{
     pressedColor:HexColor,
     hoverColor:HexColor,
     disabledColor:HexColor,
+}
+
+interface CompInfo_ScrollView extends CompInfo_Base{
+    horizontal: boolean,
+    vertical: boolean,
+    inertia: boolean,
+    brake: number,
+    bounceDuration: number,
+    elastic: boolean,
+        
+    cancelInnerEvents: boolean,
+    content: TypeUUID,
+    horizontalScrollBar: TypeUUID,
+    verticalScrollBar: TypeUUID,
+}
+
+interface CompInfo_Skeleton extends CompInfo_Base{
+    skeletonData: TypeUUID,
+    _defaultSkinIndex: number,
+    skinArr:Array<string>,
+    
+    animationArr: Array<string>,
+    _animationIndex: number,
+
+    loop: boolean,
+    timeScale: number,
+    premultipliedAlpha: boolean,
+    useTint: boolean,
+    debugSlots: boolean,
+    debugBones: boolean,
+    debugMesh: boolean,
+    enableBatch: boolean,
+
+    animationCacheMode:import("cc").sp.Skeleton.AnimationCacheMode,
+}
+
+interface CompInfo_UIOpacity extends CompInfo_Base{
+    opacity:number
+}
+
+interface CompInfo_Widget extends CompInfo_Base{
+    alignMode: import("cc").Widget.AlignMode,
+    left: number,
+    right: number,
+    top: number,
+    bottom: number,
+    horizontalCenter: number,
+    verticalCenter: number,
+    isAlignLeft: boolean,
+    isAlignRight: boolean,
+    isAlignTop: boolean,
+    isAlignBottom: boolean,
+    isAlignHorizontalCenter: boolean,
+    isAlignVerticalCenter: boolean,
 }

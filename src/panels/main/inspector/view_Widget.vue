@@ -1,9 +1,18 @@
 <script setup lang="ts">
 import { reactive, ref } from 'vue';
 
+enum AlignMode {
+    ONCE = 0,
+    ALWAYS = 1,
+    ON_WINDOW_RESIZE = 2
+}
+
+const enumDesc_AlignMode = ["ONCE", "ALWAYS", "ON_WINDOW_RESIZE"];
+
+
 const _compData = reactive({
     enabled: true,
-    alignMode: 'ON_WINDOW',
+    alignMode: AlignMode.ON_WINDOW_RESIZE,
     left: 0,
     right: 0,
     top: 0,
@@ -20,34 +29,6 @@ const _compData = reactive({
 
 const _tabVal_H = ref(0)
 const _tabVal_V = ref(0)
-
-function onToggle(event) {
-    const id = event.target.id;
-    const value = event.target.checked;
-
-    switch (id) {
-        case 'alignLeft':
-            _compData.isAlignLeft = value;
-            break;
-        case 'alignRight':
-            _compData.isAlignRight = value;
-            break;
-        case 'alignTop':
-            _compData.isAlignTop = value;
-            break;
-        case 'alignBottom':
-            _compData.isAlignBottom = value;
-            break;
-        case 'alignHorizontalCenter':
-            _compData.isAlignHorizontalCenter = value;
-            break;
-        case 'alignVerticalCenter':
-            _compData.isAlignVerticalCenter = value;
-            break;
-        default:
-            break;
-    }
-}
 
 function onTab(event){
     const id = event.target.id;
@@ -137,7 +118,12 @@ function onNumChange(event) {
 }
 
 function onSelectChange(event) {
-    _compData.alignMode = event.target.value;
+    const id = event.target.id;
+    const value = parseFloat(event.target.value);
+    if(id=="id_alignMode"){
+        _compData.alignMode = value;
+    }
+    
 }
 </script>
 
@@ -195,6 +181,14 @@ function onSelectChange(event) {
         <div class="property" v-if="_tabVal_V==3||_tabVal_V==4">
             <label>Bottom:</label>
             <ui-num-input id="bottom" :value="_compData.bottom" @change="onNumChange"></ui-num-input>
+        </div>
+        <div class="property">
+            <label>Animation Cache Mode:</label>
+            <ui-select id="id_alignMode" v-model="_compData.alignMode" @change="onSelectChange">
+                <option v-for="(mode, index) in enumDesc_AlignMode" :key="index" :value="index">
+                    {{ mode }}
+                </option>
+            </ui-select>
         </div>
     </div>
 </template>

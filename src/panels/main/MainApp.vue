@@ -75,11 +75,11 @@ watch(cur_sel_node, (newVal,old) => {
     if(old==null){
         return
     }
-    console.log("newVal",newVal)
+    // console.log("newVal",newVal)
     
     const oldVal = _dataCtx.curSelNodeInspectorInfo;
-    console.log("xxx",_dataCtx._curSelectNodeUuid)
-    console.log("oldVal",oldVal)
+    // console.log("xxx",_dataCtx._curSelectNodeUuid)
+    // console.log("oldVal",oldVal)
     if(oldVal==null){
         return
     }

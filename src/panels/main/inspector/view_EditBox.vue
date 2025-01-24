@@ -67,7 +67,6 @@ const _compData = reactive({
     keyboardReturnType: KeyboardReturnType.DEFAULT,
     placeholder: "Enter text here",
     backgroundImage: "",
-    color: "#FFFFFF",
     textLabel: "",
     placeholderLabel: "",
 });

@@ -12,11 +12,11 @@ const enumDesc_AnimationCacheMode = ["REALTIME", "SHARED_CACHE", "PRIVATE_CACHE"
 const _compData = reactive({
     enabled: true,
     skeletonData: "",
-    defaultSkin: "default",
+    _defaultSkinIndex: 0,
     skinArr:["default"],
     
     animationArr: ["animation"],
-    animation: "animation",
+    _animationIndex: 0,
 
     loop: true,
     timeScale: 1.0,
@@ -56,10 +56,6 @@ function onInput(event) {
     const value = event.target.value;
     if (eleId === "id_skeletonData") {
         _compData.skeletonData = value;
-    } else if (eleId === "id_defaultSkin") {
-        _compData.defaultSkin = value;
-    } else if (eleId === "id_animation") {
-        _compData.animation = value;
     }
 }
 
@@ -77,9 +73,9 @@ function onSelect(event) {
     if (eleId === "id_animationCacheMode") {
         _compData.animationCacheMode = sel;
     } else if (eleId === "id_defaultSkin") {
-        _compData.defaultSkin = sel;
+        _compData._defaultSkinIndex = parseInt(sel);
     }  else if (eleId === "id_animation") {
-        _compData.animation = sel;
+        _compData._animationIndex = parseInt(sel);
     } 
     console.log("eleId",eleId,"sel",sel)
 }
@@ -94,20 +90,20 @@ function onSelect(event) {
         </div>
         <div class="property">
             <label>Skeleton Data:</label>
-            <ui-asset id="id_skeletonData" type="sp.SkeletonData" :value="_compData.skeletonData" @change="onInput"></ui-asset>
+            <ui-asset id="id_skeletonData" type="cc.sp.SkeletonData" :value="_compData.skeletonData" @change="onInput"></ui-asset>
         </div>
         <div class="property">
             <label>Animation:</label>
-            <ui-select id="id_defaultSkin" v-model="_compData.defaultSkin" @change="onSelect">
-                <option v-for="(mode, index) in _compData.skinArr" :key="mode" :value="mode">
+            <ui-select id="id_defaultSkin" v-model="_compData._defaultSkinIndex" @change="onSelect">
+                <option v-for="(mode, index) in _compData.skinArr" :key="mode" :value="index">
                     {{ mode }}
                 </option>
             </ui-select>
         </div>
         <div class="property">
             <label>Animation:</label>
-            <ui-select id="id_animation" v-model="_compData.animation" @change="onSelect">
-                <option v-for="(mode, index) in _compData.animationArr" :key="mode" :value="mode">
+            <ui-select id="id_animation" v-model="_compData._animationIndex" @change="onSelect">
+                <option v-for="(mode, index) in _compData.animationArr" :key="mode" :value="index">
                     {{ mode }}
                 </option>
             </ui-select>

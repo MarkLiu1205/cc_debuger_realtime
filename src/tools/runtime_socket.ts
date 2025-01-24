@@ -3,6 +3,17 @@ import { sys } from 'cc';
 import { Asset } from 'cc';
 import { Color } from 'cc';
 import { Button } from 'cc';
+import { Camera } from 'cc';
+import { Graphics } from 'cc';
+import { Mask } from 'cc';
+import { PageView } from 'cc';
+import { ScrollView } from 'cc';
+import { Widget } from 'cc';
+import { UIOpacity } from 'cc';
+import { ParticleSystem2D } from 'cc';
+import { UITransform } from 'cc';
+import { Layout } from 'cc';
+import { EditBox } from 'cc';
 import { js } from 'cc';
 import { RichText } from 'cc';
 import { Scene } from 'cc';
@@ -477,17 +488,37 @@ class _RuntimeData{
     private _getComponentProperties(component: Component,name:string):CompInfo_Base {
         
         if(name === "Sprite"){
-            return _compUtil.getCompInfo_sprite(component as Sprite)
+            return _compUtil.getCompInfo_Sprite(component as Sprite)
         }else if(name === "Label"){
-            return _compUtil.getCompInfo_label(component as Label)
+            return _compUtil.getCompInfo_Label(component as Label)
         }else if(name === "RichText"){
-            return _compUtil.getCompInfo_richText(component as RichText)
+            return _compUtil.getCompInfo_RichText(component as RichText)
         }else if(name === "Button"){
-            return _compUtil.getCompInfo_button(component as Button)
-        }else if(name === "Animation"){
-            // return _compUtil.getCompInfo_animation(component as Animation)
-        }else if(name === "AudioSource"){
-            // return _compUtil.getCompInfo_audioSource(component as AudioSource)
+            return _compUtil.getCompInfo_Button(component as Button)
+        }else if(name === "Camera"){
+            return _compUtil.getCompInfo_Camera(component as Camera)
+        }else if(name === "EditBox"){
+            return _compUtil.getCompInfo_Editbox(component as EditBox)
+        }else if(name === "Graphics"){
+            return _compUtil.getCompInfo_Graphics(component as Graphics)
+        }else if(name === "Layout"){
+            return _compUtil.getCompInfo_lLayout(component as Layout)
+        }else if(name === "Mask"){
+            return _compUtil.getCompInfo_Mask(component as Mask)
+        }else if(name === "UITransform"){
+            return _compUtil.getCompInfo_UITransform(component as UITransform)
+        }else if(name === "PageView"){
+            return _compUtil.getCompInfo_PageView(component as PageView)
+        }else if(name === "ParticleSystem2D"){
+            return _compUtil.getCompInfo_ParticleSystem2D(component as ParticleSystem2D)
+        }else if(name === "ScrollView"){
+            return _compUtil.getCompInfo_ScrollView(component as ScrollView)
+        }else if(name === "Skeleton"){
+            return _compUtil.getCompInfo_Skeleton(component as sp.Skeleton)
+        }else if(name === "UIOpacity"){
+            return _compUtil.getCompInfo_UIOpacity(component as UIOpacity)
+        }else if(name === "Widget"){
+            return _compUtil.getCompInfo_Widget(component as Widget)
         }else{
 
         }
@@ -504,8 +535,177 @@ namespace _compUtil{
             uuid:comp.uuid,
         }
     }
+
+    export function getCompInfo_Camera(comp:Camera):CompInfo_Camera{
+        return {
+            ...getCompInfo_bass(comp),...{
+                priority: comp.priority,
+                visibility: comp.visibility,
+                clearFlags: comp.clearFlags,
+                clearColor: comp.clearColor.toHEX(),
+                projection: comp.projection,
+                fov: comp.fov,
+                orthoHeight: comp.orthoHeight,
+                targetTexture: comp.targetTexture?.uuid || "",
+                rect: comp.rect,
+                screenScale: comp.screenScale,
+                clearDepth: comp.clearDepth,
+                clearStencil: comp.clearStencil,
+
+                fovAxis: comp.fovAxis,
+                near: comp.near,
+                far: comp.far,
+                aperture: comp.aperture,
+                shutter: comp.shutter,
+                iso: comp.iso,
+            }
+        }
+        
+    }
+
+    export function getCompInfo_Editbox(comp:EditBox):CompInfo_EditBox{
+        return {
+            ...getCompInfo_bass(comp),...{
+                string: comp.string,
+                maxLength: comp.maxLength,
+                tabIndex: comp.tabIndex,
+                inputMode: comp.inputMode,
+                inputFlag: comp.inputFlag,
+                keyboardReturnType: comp.returnType,
+                placeholder: comp.placeholder,
+                backgroundImage: comp.backgroundImage.uuid,
+                textLabel: comp.textLabel.uuid,
+                placeholderLabel: comp.placeholderLabel.uuid,
+            }
+        }
+        
+    }
+
+    export function getCompInfo_Graphics(comp:Graphics):CompInfo_Graphics{
+        return {
+            ...getCompInfo_bass(comp),...{
+                lineWidth: comp.lineWidth,
+                strokeColor: comp.color.toHEX(),
+                fillColor: comp.fillColor.toHEX(),
+                miterLimit: comp.miterLimit,
+                lineJoin: comp.lineJoin,
+                lineCap: comp.lineCap,
+            }
+        }
+        
+    }
+
+    export function getCompInfo_lLayout(comp:Layout):CompInfo_Layout{
+        return {
+            ...getCompInfo_bass(comp),...{
+                type: comp.type,
+                resizeMode: comp.resizeMode,
+                paddingLeft: comp.paddingLeft,
+                paddingRight: comp.paddingRight,
+                paddingTop: comp.paddingTop,
+                paddingBottom: comp.paddingBottom,
+                spacingX: comp.spacingX,
+                spacingY: comp.spacingY,
+                alignHorizontal: comp.alignHorizontal,
+                alignVertical: comp.alignVertical,
+                affectByScale: comp.affectedByScale,
+                verticalDirection: comp.verticalDirection,
+                horiazonDirection: comp.horizontalDirection,
+                startAxis:comp.startAxis,
+                constraint:comp.constraint,
+            }
+        }
+        
+    }
+
+    export function getCompInfo_Mask(comp:Mask):CompInfo_Mask{
+        return {
+            ...getCompInfo_bass(comp),...{
+                type: comp.type,
+                inverted: comp.inverted,
+                segments: comp.segments,
+                alphaThreshold: comp.alphaThreshold,
+            }
+        }
+        
+    }
+
+    export function getCompInfo_UITransform(comp:UITransform):CompInfo_UITransform{
+        return {
+            ...getCompInfo_bass(comp),...{
+                anchorPoint:comp.anchorPoint,
+                contentSize:comp.contentSize
+            }
+        }
+        
+    }
+
+    export function getCompInfo_PageView(comp:PageView):CompInfo_PageView{
+        return {
+            ...getCompInfo_bass(comp),...{
+                inertia: comp.inertia,
+                elastic: comp.elastic,
+                bounceDuration: comp.bounceDuration,
+                indicator: comp.indicator.uuid,
+                pageTurningSpeed: comp.pageTurningSpeed,
+                autoPageTurningThreshold: comp.autoPageTurningThreshold,
+                scrollThreshold: comp.scrollThreshold,
+                pageTurningEventTiming: comp.pageTurningEventTiming,
+                brake:comp.brake,
+
+                content:comp.content.uuid,
+                sizeMode:comp.sizeMode,
+                direction:comp.direction,
+            }
+        }
+        
+    }
+
+    export function getCompInfo_ParticleSystem2D(comp:ParticleSystem2D):CompInfo_ParticleSystem2D{
+        return {
+            ...getCompInfo_bass(comp),...{
+                customMaterial: comp.customMaterial.uuid,
+                preview: comp.preview,
+                playOnLoad: comp.playOnLoad,
+                autoRemoveOnFinish: comp.autoRemoveOnFinish,
+                file: comp.file.uuid,
+                spriteFrame: comp.spriteFrame.uuid,
+                totalParticles: comp.totalParticles,
+                duration: comp.duration,
+                emissionRate: comp.emissionRate,
+                life: comp.life,
+                lifeVar: comp.lifeVar,
+                startColor: comp.startColor.toHEX(),
+                startColorVar: comp.startColorVar.toHEX(),
+                endColor: comp.endColor.toHEX(),
+                endColorVar: comp.endColorVar.toHEX(),
+                angle: comp.angle,
+                angleVar: comp.angleVar,
+                startSize: comp.startSize,
+                startSizeVar: comp.startSizeVar,
+                endSize: comp.endSize,
+                endSizeVar: comp.endSizeVar,
+                startSpin: comp.startSpin,
+                startSpinVar: comp.startSpinVar,
+                endSpin: comp.endSpin,
+                endSpinVar: comp.endSpinVar,
+                posVar: comp.posVar,
+                positionType: comp.positionType,
+                emitterMode: comp.emitterMode,
+                gravity: comp.gravity,
+                speed: comp.speed,
+                speedVar: comp.speedVar,
+                tangentialAccel: comp.tangentialAccel,
+                tangentialAccelVar: comp.tangentialAccelVar,
+                radialAccel: comp.radialAccel,
+                radialAccelVar: comp.radialAccelVar,
+                rotationIsDir: comp.rotationIsDir,
+            }
+        }
+        
+    }
     
-    export function getCompInfo_sprite(comp:Sprite):CompInfo_Sprite{
+    export function getCompInfo_Sprite(comp:Sprite):CompInfo_Sprite{
         return {
             ...getCompInfo_bass(comp),...{
                 color:comp.color.toHEX(),
@@ -520,7 +720,7 @@ namespace _compUtil{
         
     }
     
-    export function getCompInfo_label(comp:Label):CompInfo_Label{
+    export function getCompInfo_Label(comp:Label):CompInfo_Label{
         return {
             ...getCompInfo_bass(comp),...{
                 color:comp.color.toHEX(),
@@ -543,7 +743,7 @@ namespace _compUtil{
     }
     
     
-    export function getCompInfo_richText(comp:RichText):CompInfo_RichText{
+    export function getCompInfo_RichText(comp:RichText):CompInfo_RichText{
         return {
             ...getCompInfo_bass(comp),...{
                 string:comp.string,
@@ -561,7 +761,7 @@ namespace _compUtil{
         }
     }
 
-    export function getCompInfo_button(comp:Button):CompInfo_Button{
+    export function getCompInfo_Button(comp:Button):CompInfo_Button{
         return {
             ...getCompInfo_bass(comp),...{
                 interactable:comp.interactable,
@@ -579,7 +779,80 @@ namespace _compUtil{
             }
         }
     }
+
+    export function getCompInfo_ScrollView(comp:ScrollView):CompInfo_ScrollView{
+        return {
+            ...getCompInfo_bass(comp),...{
+                horizontal: comp.horizontal,
+                vertical: comp.vertical,
+                inertia: comp.inertia,
+                brake: comp.brake,
+                bounceDuration: comp.bounceDuration,
+                elastic: comp.elastic,
+                    
+                cancelInnerEvents: comp.cancelInnerEvents,
+                content: comp.content.uuid,
+                horizontalScrollBar: comp.horizontalScrollBar.uuid,
+                verticalScrollBar: comp.verticalScrollBar.uuid,
+            }
+        }
+        
+    }
+
+    export function getCompInfo_Skeleton(comp:sp.Skeleton):CompInfo_Skeleton{
+        return {
+            ...getCompInfo_bass(comp),...{
+                skeletonData: comp.skeletonData.uuid,
+                _defaultSkinIndex: comp._defaultSkinIndex,
+                skinArr:["default"],
+                
+                animationArr: ["animation"],
+                _animationIndex: comp._animationIndex,
+
+                loop: comp.loop,
+                timeScale: comp.timeScale,
+                premultipliedAlpha: comp.premultipliedAlpha,
+                useTint: comp.useTint,
+                debugSlots: comp.debugSlots,
+                debugBones: comp.debugBones,
+                debugMesh: comp.debugMesh,
+                enableBatch: comp.enableBatch,
+
+                animationCacheMode: comp.defaultCacheMode,
+            }
+        }
+        
+    }
        
+    export function getCompInfo_UIOpacity(comp:UIOpacity):CompInfo_UIOpacity{
+        return {
+            ...getCompInfo_bass(comp),...{
+                opacity:comp.opacity
+            }
+        }
+        
+    }
+
+    export function getCompInfo_Widget(comp:Widget):CompInfo_Widget{
+        return {
+            ...getCompInfo_bass(comp),...{
+                alignMode: comp.alignMode,
+                left: comp.left,
+                right: comp.right,
+                top: comp.top,
+                bottom: comp.bottom,
+                horizontalCenter: comp.horizontalCenter,
+                verticalCenter: comp.verticalCenter,
+                isAlignLeft: comp.isAlignLeft,
+                isAlignRight: comp.isAlignRight,
+                isAlignTop: comp.isAlignTop,
+                isAlignBottom: comp.isAlignBottom,
+                isAlignHorizontalCenter: comp.isAlignHorizontalCenter,
+                isAlignVerticalCenter: comp.isAlignVerticalCenter,
+            }
+        }
+        
+    }
 }
 
 function _getSelfModelName() {

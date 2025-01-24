@@ -12,8 +12,8 @@ const scrollViewData = reactive({
         
     cancelInnerEvents: true,
     content: null,
-    scrollbarHorizontal: null,
-    scrollbarVertical: null,
+    horizontalScrollBar: null,
+    verticalScrollBar: null,
 });
 
 function onToggle(event) {
@@ -49,10 +49,10 @@ function onAssetChange(event) {
     const value = event.target.value;
     if (id === "content") {
         scrollViewData.content = value;
-    } else if (id === "scrollbarHorizontal") {
-        scrollViewData.scrollbarHorizontal = value;
-    } else if (id === "scrollbarVertical") {
-        scrollViewData.scrollbarVertical = value;
+    } else if (id === "horizontalScrollBar") {
+        scrollViewData.horizontalScrollBar = value;
+    } else if (id === "verticalScrollBar") {
+        scrollViewData.verticalScrollBar = value;
     }
 }
 </script>
@@ -72,7 +72,7 @@ function onAssetChange(event) {
         </div>
         <div class="property" v-if="scrollViewData.horizontal">
             <label>Horizontal Scroll Bar:</label>
-            <ui-asset id="scrollbarHorizontal" :value="scrollViewData.scrollbarHorizontal" @change="onAssetChange" droppable="cc.Scrollbar"></ui-asset>
+            <ui-asset id="horizontalScrollBar" :value="scrollViewData.horizontalScrollBar" @change="onAssetChange" droppable="cc.Scrollbar"></ui-asset>
         </div>
 
         <div class="property">
@@ -82,7 +82,7 @@ function onAssetChange(event) {
 
         <div class="property" v-if="scrollViewData.vertical">
             <label>Vertical Scroll Bar:</label>
-            <ui-asset id="scrollbarVertical" :value="scrollViewData.scrollbarVertical" @change="onAssetChange" droppable="cc.Scrollbar"></ui-asset>
+            <ui-asset id="verticalScrollBar" :value="scrollViewData.verticalScrollBar" @change="onAssetChange" droppable="cc.Scrollbar"></ui-asset>
         </div>
 
         <div class="property">

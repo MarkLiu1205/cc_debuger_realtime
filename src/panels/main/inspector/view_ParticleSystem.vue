@@ -7,27 +7,31 @@ const _compData = reactive({
     preview: true,
     playOnLoad: true,
     autoRemoveOnFinish: false,
-    particleFile: "particle_file.plist",
+    file: "particle_file.plist",
     spriteFrame: "sprite_frame_id",
     totalParticles: 400,
     duration: -1,
     emissionRate: 250,
-    lifeMin: 0.3,
-    lifeMax: 0,
+    life: 0.3,
+    lifeVar: 0,
     startColor: "#00FF00FF", // Green
-    endColor: "#FFFFFFFF",  // White
-    angleMin: -90,
-    angleMax: 90,
+    startColorVar: "#00FF00FF",
+    endColor: "#FFFFFFFF",
+    endColorVar: "#FFFFFFFF",
+    angle: -90,
+    angleVar: 90,
     startSize: 30,
+    startSizeVar: 30,
     endSize: 16,
+    endSizeVar: 16,
     startSpin: 720,
+    startSpinVar: 720,
     endSpin: 0,
-    posVarX: 0,
-    posVarY: 0,
+    endSpinVar: 0,
+    posVar: {x:0,y:0},
     positionType: "FREE",
     emitterMode: "GRAVITY",
-    gravityX: 0,
-    gravityY: -533,
+    gravity: {x:0,y:0},
     speed: 150,
     speedVar: 50,
     tangentialAccel: 0,
@@ -82,7 +86,7 @@ function onSelectChange(event) {
         </div>
         <div class="property">
             <label>File:</label>
-            <ui-asset id="particleFile" @change="onTextChange" droppable="cc.ParticleAsset" :value="_compData.particleFile"></ui-asset>
+            <ui-asset id="file" @change="onTextChange" droppable="cc.ParticleAsset" :value="_compData.file"></ui-asset>
         </div>
         <div class="property">
             <label>Sprite Frame:</label>
@@ -103,8 +107,8 @@ function onSelectChange(event) {
         <div class="property">
             <label>Life:</label>
             <div class="vector-input">
-                <ui-num-input :class="{vertor2:true}" id="lifeMin" @change="onNumChange" :value="_compData.lifeMin"></ui-num-input>
-                <ui-num-input :class="{vertor2:true}" id="lifeMax" @change="onNumChange" :value="_compData.lifeMax"></ui-num-input>
+                <ui-num-input :class="{vertor2:true}" id="life" @change="onNumChange" :value="_compData.life"></ui-num-input>
+                <ui-num-input :class="{vertor2:true}" id="lifeVar" @change="onNumChange" :value="_compData.lifeVar"></ui-num-input>
             </div>
         </div>
         <div class="property">
@@ -118,8 +122,8 @@ function onSelectChange(event) {
         <div class="property">
             <label>Angle:</label>
             <div class="vector-input">
-                <ui-num-input :class="{vertor2:true}" id="angleMin" @change="onNumChange" :value="_compData.angleMin"></ui-num-input>
-                <ui-num-input :class="{vertor2:true}" id="angleMax" @change="onNumChange" :value="_compData.angleMax"></ui-num-input>
+                <ui-num-input :class="{vertor2:true}" id="angle" @change="onNumChange" :value="_compData.angle"></ui-num-input>
+                <ui-num-input :class="{vertor2:true}" id="angleVar" @change="onNumChange" :value="_compData.angleVar"></ui-num-input>
             </div>
         </div>
         <div class="property">
@@ -148,8 +152,8 @@ function onSelectChange(event) {
         <div class="property">
             <label>Gravity:</label>
             <div class="vector-input">
-                <ui-num-input :class="{vertor2:true}" id="gravityX" @change="onNumChange" :value="_compData.gravityX"></ui-num-input>
-                <ui-num-input :class="{vertor2:true}" id="gravityY" @change="onNumChange" :value="_compData.gravityY"></ui-num-input>
+                <ui-num-input :class="{vertor2:true}" id="gravityX" @change="onNumChange" :value="_compData.gravity.x"></ui-num-input>
+                <ui-num-input :class="{vertor2:true}" id="gravityY" @change="onNumChange" :value="_compData.gravity.y"></ui-num-input>
             </div>
         </div>
     </div>
