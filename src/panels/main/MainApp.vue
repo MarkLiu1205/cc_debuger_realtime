@@ -75,12 +75,15 @@ watch(cur_sel_node, (newVal,old) => {
     if(old==null){
         return
     }
-    // console.log("newVal",newVal)
+    // console.log("newVal",JSON.stringify(newVal))
     
     const oldVal = _dataCtx.curSelNodeInspectorInfo;
     // console.log("xxx",_dataCtx._curSelectNodeUuid)
     // console.log("oldVal",oldVal)
     if(oldVal==null){
+        return
+    }
+    if(oldVal.uuid!=newVal.uuid){
         return
     }
 
@@ -100,8 +103,8 @@ function compareChangedNodeInfo(newVal:InspectorInfo_Node,oldVal:InspectorInfo_N
             nodeChange[newVal.uuid] = nodeChange[newVal.uuid] ?? {};
             nodeChange[newVal.uuid][key] = deepCompare(newVal[key], oldVal[key]);
             if(nodeChange[newVal.uuid][key]==null){
-            delete nodeChange[newVal.uuid][key]
-        }
+                delete nodeChange[newVal.uuid][key]
+            }
         } else if (newVal[key] !== oldVal[key]) {
             nodeChange[newVal.uuid] = nodeChange[newVal.uuid] ?? {};
             nodeChange[newVal.uuid][key] = newVal[key];
@@ -114,6 +117,8 @@ function compareChangedNodeInfo(newVal:InspectorInfo_Node,oldVal:InspectorInfo_N
     for(let i=0;i<newVal.components.length;i++){
         let newComp = newVal.components[i]
         let oldComp = oldVal.components[i];
+        // console.log("newComp",JSON.stringify(newComp))
+        // console.log("oldComp",JSON.stringify(oldComp))
         if(oldComp==null){
             break
         }
@@ -121,14 +126,14 @@ function compareChangedNodeInfo(newVal:InspectorInfo_Node,oldVal:InspectorInfo_N
         for(let key in newComp){
             if (typeof newComp[key] === 'object' && newComp[key] !== null) {
                 compChanges[newComp.uuid] = compChanges[newComp.uuid] ?? {};
-                compChanges[newComp.uuid][key] = deepCompare(newComp[key], oldVal[key]);
+                compChanges[newComp.uuid][key] = deepCompare(newComp[key], oldComp[key]);
                 if(compChanges[newComp.uuid][key]==null){
-                delete compChanges[newComp.uuid][key]
-            }
-            } else if (newComp[key] !== oldVal[key]) {
+                    delete compChanges[newComp.uuid][key]
+                }
+            } else if (newComp[key] !== oldComp[key]) {
                 compChanges[newComp.uuid] = compChanges[newComp.uuid] ?? {};
                 compChanges[newComp.uuid][key] = newComp[key];
-                oldVal[key] = newComp[key];
+                oldComp[key] = newComp[key];
             }
         }
     }
@@ -142,6 +147,9 @@ function compareChangedNodeInfo(newVal:InspectorInfo_Node,oldVal:InspectorInfo_N
 
 /**递归比较两个对象 */
 function deepCompare(newObj: any, oldObj: any) {
+    if(oldObj==null){
+        return null
+    }
     let changes: Record<string, any> = {}
     for (let key in newObj) {
         if (typeof newObj[key] === 'object' && newObj[key] !== null) {

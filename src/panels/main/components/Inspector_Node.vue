@@ -1,21 +1,30 @@
 <script setup lang=ts>
-import { ref, reactive, onUnmounted, watch, nextTick, defineExpose,defineProps, onMounted } from 'vue';
+import { ref, reactive, onUnmounted, watch, nextTick, defineExpose,defineProps, onMounted, computed } from 'vue';
 import view_Node from '../inspector/view_Node.vue'
+import CompWrapper from './CompWrapper.vue'
 
 
-const model = defineModel<NodeInfo>()
+const nodeInfo = defineModel<InspectorInfo_Node>()
 
-onMounted(()=>{
-    
-})
+function updateInfo(index, newInfo) {
+    // nodeInfo.value.components[index] = newInfo;
+    // console.log("sssss",index)
+    // console.log("旧的",JSON.stringify(nodeInfo.value.components[index]))
+    // console.log("新的",JSON.stringify(newInfo))
+}
 
 </script>
 
 <template>
-    <label v-if="model==null">XXXX: {{ "没有" }}</label>
-    <div class="inspector_container" v-if="model!=null">
+    <label v-if="nodeInfo==null">XXXX: {{ "没有" }}</label>
+    <div class="inspector_container" v-if="nodeInfo!=null">
         
-        <view_Node v-model="model" />
+        <view_Node v-model="nodeInfo" />
+        <CompWrapper v-for="(info, index) in nodeInfo.components"
+            :key="index"
+            :compInfo="info"
+            @update:info="updateInfo(index, $event)"
+        />
     </div>
 </template>
 

@@ -400,11 +400,11 @@ class _RuntimeData{
             const childPath = parentPath?`${parentPath}/${child.name}`:child.name;
             const childTree: NodeTreeItem = {
                 name: child.name,
-                uuid: child.uuid,
+                uuid: child?.uuid??"",
                 children: [],
                 active: child.active,
                 activeInHierarchy: child.activeInHierarchy,
-                parentUuid: child.parent?.uuid,
+                parentUuid: child.parent?.uuid??"",
                 path: childPath
             }
             this.m_nodeUuidMap[child.uuid] = child;
@@ -439,7 +439,7 @@ class _RuntimeData{
         const sceneNode: Scene = director.getScene();
         this.m_sceneTree = {
             name: sceneNode.name,
-            uuid: sceneNode.uuid,
+            uuid: sceneNode?.uuid??"",
             children: [],
             active: true,
             activeInHierarchy: true,
@@ -460,7 +460,7 @@ class _RuntimeData{
     getNodeInfo(uuid:string){
         const node = this.m_nodeUuidMap[uuid]
         const nodeInfo:InspectorInfo_Node = {
-            uuid: node.uuid,
+            uuid: node?.uuid??"",
             active: node.active,
             name: node.name,
             position: node.position,
@@ -532,7 +532,7 @@ namespace _compUtil{
             enabled:comp.enabled,
             //@ts-ignore
             typeStr:comp.__proto__.constructor.name,
-            uuid:comp.uuid,
+            uuid:comp?.uuid??"",
         }
     }
 
@@ -573,9 +573,9 @@ namespace _compUtil{
                 inputFlag: comp.inputFlag,
                 keyboardReturnType: comp.returnType,
                 placeholder: comp.placeholder,
-                backgroundImage: comp.backgroundImage.uuid,
-                textLabel: comp.textLabel.uuid,
-                placeholderLabel: comp.placeholderLabel.uuid,
+                backgroundImage: comp.backgroundImage?.uuid??"",
+                textLabel: comp.textLabel?.uuid??"",
+                placeholderLabel: comp.placeholderLabel?.uuid??"",
             }
         }
         
@@ -646,14 +646,14 @@ namespace _compUtil{
                 inertia: comp.inertia,
                 elastic: comp.elastic,
                 bounceDuration: comp.bounceDuration,
-                indicator: comp.indicator.uuid,
+                indicator: comp.indicator?.uuid??"",
                 pageTurningSpeed: comp.pageTurningSpeed,
                 autoPageTurningThreshold: comp.autoPageTurningThreshold,
                 scrollThreshold: comp.scrollThreshold,
                 pageTurningEventTiming: comp.pageTurningEventTiming,
                 brake:comp.brake,
 
-                content:comp.content.uuid,
+                content:comp.content?.uuid??"",
                 sizeMode:comp.sizeMode,
                 direction:comp.direction,
             }
@@ -664,12 +664,12 @@ namespace _compUtil{
     export function getCompInfo_ParticleSystem2D(comp:ParticleSystem2D):CompInfo_ParticleSystem2D{
         return {
             ...getCompInfo_bass(comp),...{
-                customMaterial: comp.customMaterial.uuid,
+                customMaterial: comp.customMaterial?.uuid??"",
                 preview: comp.preview,
                 playOnLoad: comp.playOnLoad,
                 autoRemoveOnFinish: comp.autoRemoveOnFinish,
-                file: comp.file.uuid,
-                spriteFrame: comp.spriteFrame.uuid,
+                file: comp.file?.uuid??"",
+                spriteFrame: comp.spriteFrame?.uuid??"",
                 totalParticles: comp.totalParticles,
                 duration: comp.duration,
                 emissionRate: comp.emissionRate,
@@ -791,9 +791,9 @@ namespace _compUtil{
                 elastic: comp.elastic,
                     
                 cancelInnerEvents: comp.cancelInnerEvents,
-                content: comp.content.uuid,
-                horizontalScrollBar: comp.horizontalScrollBar.uuid,
-                verticalScrollBar: comp.verticalScrollBar.uuid,
+                content: comp.content?.uuid??"",
+                horizontalScrollBar: comp.horizontalScrollBar?.uuid??"",
+                verticalScrollBar: comp.verticalScrollBar?.uuid??"",
             }
         }
         
@@ -802,7 +802,7 @@ namespace _compUtil{
     export function getCompInfo_Skeleton(comp:sp.Skeleton):CompInfo_Skeleton{
         return {
             ...getCompInfo_bass(comp),...{
-                skeletonData: comp.skeletonData.uuid,
+                skeletonData: comp.skeletonData?.uuid??"",
                 _defaultSkinIndex: comp._defaultSkinIndex,
                 skinArr:["default"],
                 
