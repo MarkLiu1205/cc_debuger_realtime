@@ -502,7 +502,7 @@ class _RuntimeData{
         }else if(name === "Graphics"){
             return _compUtil.getCompInfo_Graphics(component as Graphics)
         }else if(name === "Layout"){
-            return _compUtil.getCompInfo_lLayout(component as Layout)
+            return _compUtil.getCompInfo_Layout(component as Layout)
         }else if(name === "Mask"){
             return _compUtil.getCompInfo_Mask(component as Mask)
         }else if(name === "UITransform"){
@@ -595,7 +595,7 @@ namespace _compUtil{
         
     }
 
-    export function getCompInfo_lLayout(comp:Layout):CompInfo_Layout{
+    export function getCompInfo_Layout(comp:Layout):CompInfo_Layout{
         return {
             ...getCompInfo_bass(comp),...{
                 type: comp.type,
@@ -708,8 +708,9 @@ namespace _compUtil{
     export function getCompInfo_Sprite(comp:Sprite):CompInfo_Sprite{
         return {
             ...getCompInfo_bass(comp),...{
+                customMaterial:comp.customMaterial?.uuid??"",
                 color:comp.color.toHEX(),
-                atlas:comp.spriteAtlas?.uuid || "",
+                spriteAtlas:comp.spriteAtlas?.uuid || "",
                 spriteFrame:comp.spriteFrame?.uuid || "",
                 grayscale:comp.grayscale,
                 sizeMode:comp.sizeMode,
@@ -723,6 +724,7 @@ namespace _compUtil{
     export function getCompInfo_Label(comp:Label):CompInfo_Label{
         return {
             ...getCompInfo_bass(comp),...{
+                customMaterial:comp.customMaterial?.uuid??"",
                 color:comp.color.toHEX(),
                 string:comp.string,
                 fontSize:comp.fontSize,
@@ -738,6 +740,8 @@ namespace _compUtil{
                 isUnderline:comp.isUnderline,
                 horizontalAlign:comp.horizontalAlign,
                 verticalAlign:comp.verticalAlign,
+                underlineHeight:comp.underlineHeight,
+                cacheMode:comp.cacheMode,
             }
         }
     }
@@ -757,6 +761,7 @@ namespace _compUtil{
                 cacheMode:comp.cacheMode,
                 maxWidth:comp.maxWidth,
                 imageAtlas:comp.imageAtlas?.uuid || "",
+                handleTouchEvent:comp.handleTouchEvent,
             }
         }
     }
@@ -768,6 +773,7 @@ namespace _compUtil{
                 transition:comp.transition,
                 duration:comp.duration,
                 zoomScale:comp.zoomScale,
+                target:comp.target?.uuid??"",
                 normalSprite:comp.normalSprite?.uuid || "",
                 pressedSprite:comp.pressedSprite?.uuid || "",
                 hoverSprite:comp.hoverSprite?.uuid || "",

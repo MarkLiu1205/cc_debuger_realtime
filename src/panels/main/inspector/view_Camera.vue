@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { reactive } from 'vue';
+import { _funcs } from '../../../tools/_funcs';
 
 
 enum ClearFlag {
@@ -127,35 +128,35 @@ const enumDesc_CameraISO = [
     "ISO800",
 ]
 
-const _compData = reactive({
-    enabled: true,
-    priority: 0,
-    visibility: 0,
-    clearFlags: ClearFlag.SOLID_COLOR,
-    clearColor: "#000000",
-    clearDepth:0,
-    clearStencil:0,
-    projection: CameraProjection.ORTHO,
-    fovAxis: CameraFOVAxis.VERTICAL,
-    fov: 45,
-    near: 0.1,
-    far: 1000,
-    orthoHeight: 10,
-    targetTexture: null,
-    postProcess: false,
-    aperture: CameraAperture.F16_0,
-    shutter: CameraShutter.D125,
-    iso: CameraISO.ISO200,
-    rect: {x:0,y:0,z:0,w:0},
-});
+// const _compData = reactive({
+//     enabled: true,
+//     priority: 0,
+//     visibility: 0,
+//     clearFlags: ClearFlag.SOLID_COLOR,
+//     clearColor: "#000000",
+//     clearDepth:0,
+//     clearStencil:0,
+//     projection: CameraProjection.ORTHO,
+//     fovAxis: CameraFOVAxis.VERTICAL,
+//     fov: 45,
+//     near: 0.1,
+//     far: 1000,
+//     orthoHeight: 10,
+//     targetTexture: null,
+//     postProcess: false,
+//     aperture: CameraAperture.F16_0,
+//     shutter: CameraShutter.D125,
+//     iso: CameraISO.ISO200,
+//     rect: {x:0,y:0,z:0,w:0},
+// });
+
+const compModel = defineModel<CompInfo_Camera>()
 
 function onToggle(event) {
     const id = event.target.id;
     const checked = event.target.checked;
     if (id === "enabled") {
-        _compData.enabled = checked;
-    } else if (id === "postProcess") {
-        _compData.postProcess = checked;
+        compModel.value.enabled = checked;
     }
 }
 
@@ -163,27 +164,27 @@ function onNumChange(event) {
     const id = event.target.id;
     const value = parseFloat(event.target.value);
     if (id === "priority") {
-        _compData.priority = value;
+        compModel.value.priority = value;
     } else if (id === "fov") {
-        _compData.fov = value;
+        compModel.value.fov = value;
     } else if (id === "near") {
-        _compData.near = value;
+        compModel.value.near = value;
     } else if (id === "far") {
-        _compData.far = value;
+        compModel.value.far = value;
     } else if (id === "id_orthoHeight") {
-        _compData.orthoHeight = value;
+        compModel.value.orthoHeight = value;
     } else if (id === "id_clearDepth") {
-        _compData.clearDepth = value;
+        compModel.value.clearDepth = value;
     } else if (id === "id_clearStencil") {
-        _compData.clearStencil = value;
+        compModel.value.clearStencil = value;
     } else if (id === "rect.x") {
-        _compData.rect.x = value;
+        compModel.value.rect.x = value;
     } else if (id === "rect.y") {
-        _compData.rect.y = value;
+        compModel.value.rect.y = value;
     } else if (id === "rect.z") {
-        _compData.rect.z = value;
+        compModel.value.rect.z = value;
     } else if (id === "rect.w") {
-        _compData.rect.w = value;
+        compModel.value.rect.w = value;
     }
 }
 
@@ -191,47 +192,48 @@ function onSelectChange(event) {
     const id = event.target.id;
     const value = event.target.value;
     if (id === "id_projection") {
-        _compData.projection = parseInt(value);
+        compModel.value.projection = parseInt(value);
     } else if (id === "id_clearFlags") {
-        _compData.clearFlags = parseInt(value);
+        compModel.value.clearFlags = parseInt(value);
     } else if (id === "id_fovAxis") {
-        _compData.fovAxis = parseInt(value);
+        compModel.value.fovAxis = parseInt(value);
     } else if (id === "id_aperture") {
-        _compData.aperture = parseInt(value);
+        compModel.value.aperture = parseInt(value);
     } else if (id === "id_shutter") {
-        _compData.shutter = parseInt(value);
+        compModel.value.shutter = parseInt(value);
     } else if (id === "id_iso") {
-        _compData.iso = parseInt(value);
+        compModel.value.iso = parseInt(value);
     } 
     console.log("value",value,typeof value,"id",id)
 }
 
-function onColorConfirm(arr) {
-    const [r, g, b] = arr;
-    _compData.clearColor = `#${((1 << 24) | (r << 16) | (g << 8) | b).toString(16).slice(1).toUpperCase()}`;
+function onConfirmColor(event){
+    const [r,g,b,a] = event.target.value
+    
+    compModel.value.clearColor = _funcs.rgbaToHex(r,g,b,a)
 }
 
 function onAssetChange(event) {
     const value = event.target.value;
-    _compData.targetTexture = value;
+    compModel.value.targetTexture = value;
 }
 </script>
 
 <template>
     <div class="component-properties">
         <div class="title">
-            <ui-checkbox id="enabled" :value="_compData.enabled" @change="onToggle"></ui-checkbox>
+            <ui-checkbox id="enabled" :value="compModel.enabled" @change="onToggle"></ui-checkbox>
             <h3>Camera</h3>
         </div>
 
         <div class="property">
             <label>Priority:</label>
-            <ui-num-input id="priority" :value="_compData.priority" @change="onNumChange"></ui-num-input>
+            <ui-num-input id="priority" :value="compModel.priority" @change="onNumChange" step="1" min="0"></ui-num-input>
         </div>
 
         <div class="property">
             <label>Clear Flags:</label>
-            <ui-select id="id_clearFlags" :value="_compData.clearFlags" @change="onSelectChange">
+            <ui-select id="id_clearFlags" :value="compModel.clearFlags" @change="onSelectChange">
                 <option :value="ClearFlag.DONT_CLEAR">DONT_CLEAR</option>
                 <option :value="ClearFlag.DEPTH_ONLY">DEPTH_ONLY</option>
                 <option :value="ClearFlag.SOLID_COLOR">SOLID_COLOR</option>
@@ -241,85 +243,85 @@ function onAssetChange(event) {
 
         <div class="property">
             <label>ClearColor:</label>
-            <ui-color :value="_compData.clearColor" @confirm="onColorConfirm"></ui-color>
+            <ui-color :value="compModel.clearColor" @confirm="onConfirmColor"></ui-color>
         </div>
         <div class="property">
             <label>Clear Depth:</label>
-            <ui-num-input id="id_clearDepth" :value="_compData.clearDepth" @change="onNumChange"></ui-num-input>
+            <ui-num-input id="id_clearDepth" :value="compModel.clearDepth" @change="onNumChange"></ui-num-input>
         </div>
         <div class="property">
             <label>Clear Stencil:</label>
-            <ui-num-input id="id_clearStencil" :value="_compData.clearStencil" @change="onNumChange"></ui-num-input>
+            <ui-num-input id="id_clearStencil" :value="compModel.clearStencil" @change="onNumChange"></ui-num-input>
         </div>
 
         <div class="property">
             <label>Projection:</label>
-            <ui-select id="id_projection" :value="_compData.projection" @change="onSelectChange">
+            <ui-select id="id_projection" :value="compModel.projection" @change="onSelectChange">
                 <option v-for="(mode, index) in enumDesc_CameraProjection" :key="index" :value="index">{{ mode }}</option>
             </ui-select>
         </div>
-        <div class="property" v-if="_compData.projection === CameraProjection.ORTHO">
+        <div class="property" v-if="compModel.projection === CameraProjection.ORTHO">
             <label>Ortho Height:</label>
-            <ui-num-input id="id_orthoHeight" :value="_compData.orthoHeight" @change="onNumChange"></ui-num-input>
+            <ui-num-input id="id_orthoHeight" :value="compModel.orthoHeight" @change="onNumChange"></ui-num-input>
         </div>
 
-        <div class="property" v-if="_compData.projection === CameraProjection.PERSPECTIVE">
+        <div class="property" v-if="compModel.projection === CameraProjection.PERSPECTIVE">
             <label>Fov Axis:</label>
-            <ui-select id="id_fovAxis" :value="_compData.fovAxis" @change="onSelectChange">
+            <ui-select id="id_fovAxis" :value="compModel.fovAxis" @change="onSelectChange">
                 <option v-for="(mode, index) in enumDesc_CameraFOVAxis" :key="index" :value="index">{{ mode }}</option>
             </ui-select>
         </div>
 
-        <div class="property" v-if="_compData.projection === CameraProjection.PERSPECTIVE">
+        <div class="property" v-if="compModel.projection === CameraProjection.PERSPECTIVE">
             <label>Fov:</label>
-            <ui-num-input id="id_fov" :value="_compData.fov" @change="onNumChange"></ui-num-input>
+            <ui-num-input id="id_fov" :value="compModel.fov" @change="onNumChange"></ui-num-input>
         </div>
 
         <div class="property">
             <label>Near:</label>
-            <ui-num-input id="near" :value="_compData.near" @change="onNumChange"></ui-num-input>
+            <ui-num-input id="near" :value="compModel.near" @change="onNumChange"></ui-num-input>
         </div>
 
         <div class="property">
             <label>Far:</label>
-            <ui-num-input id="far" :value="_compData.far" @change="onNumChange"></ui-num-input>
+            <ui-num-input id="far" :value="compModel.far" @change="onNumChange"></ui-num-input>
         </div>
         <div class="property">
             <label>Aperture:</label>
-            <ui-select id="id_aperture" :value="_compData.aperture" @change="onSelectChange">
+            <ui-select id="id_aperture" :value="compModel.aperture" @change="onSelectChange">
                 <option v-for="(mode, index) in enumDesc_CameraAperture" :key="index" :value="index">{{ mode }}</option>
             </ui-select>
         </div>
         <div class="property">
             <label>Shutter:</label>
-            <ui-select id="id_shutter" :value="_compData.shutter" @change="onSelectChange">
+            <ui-select id="id_shutter" :value="compModel.shutter" @change="onSelectChange">
                 <option v-for="(mode, index) in enumDesc_CameraShutter" :key="index" :value="index">{{ mode }}</option>
             </ui-select>
         </div>
         <div class="property">
             <label>Iso:</label>
-            <ui-select id="id_iso" :value="_compData.iso" @change="onSelectChange">
+            <ui-select id="id_iso" :value="compModel.iso" @change="onSelectChange">
                 <option v-for="(mode, index) in enumDesc_CameraISO" :key="index" :value="index">{{ mode }}</option>
             </ui-select>
         </div>
         <div class="property">
             <label>Rect:</label>
             <div class="vector-input">
-                <ui-num-input :class="{vector2:true}" id="rect.x" @change="onNumChange" :value="_compData.rect.x" unit="x"></ui-num-input>
-                <ui-num-input :class="{vector2:true}" id="rect.y" @change="onNumChange":value="_compData.rect.y" unit="y"></ui-num-input>
+                <ui-num-input :class="{vector2:true}" id="rect.x" @change="onNumChange" :value="compModel.rect.x" unit="x"></ui-num-input>
+                <ui-num-input :class="{vector2:true}" id="rect.y" @change="onNumChange":value="compModel.rect.y" unit="y"></ui-num-input>
             </div>
         </div>
         <div class="property">
             <label></label>
             <div class="vector-input">
-                <ui-num-input :class="{vector2:true}" id="rect.z" @change="onNumChange" :value="_compData.rect.z" unit="z"></ui-num-input>
-                <ui-num-input :class="{vector2:true}" id="rect.w" @change="onNumChange":value="_compData.rect.w" unit="w"></ui-num-input>
+                <ui-num-input :class="{vector2:true}" id="rect.z" @change="onNumChange" :value="compModel.rect.z" unit="z"></ui-num-input>
+                <ui-num-input :class="{vector2:true}" id="rect.w" @change="onNumChange":value="compModel.rect.w" unit="w"></ui-num-input>
             </div>
         </div>
 
         <div class="property">
             <label>TargetTexture:</label>
-            <ui-asset id="targetTexture" :value="_compData.targetTexture" @change="onAssetChange" droppable="cc.RenderTexture"></ui-asset>
+            <ui-asset id="targetTexture" :value="compModel.targetTexture" @change="onAssetChange" droppable="cc.RenderTexture"></ui-asset>
         </div>
 
     </div>

@@ -10,22 +10,24 @@ enum AlignMode {
 const enumDesc_AlignMode = ["ONCE", "ALWAYS", "ON_WINDOW_RESIZE"];
 
 
-const _compData = reactive({
-    enabled: true,
-    alignMode: AlignMode.ON_WINDOW_RESIZE,
-    left: 0,
-    right: 0,
-    top: 0,
-    bottom: 0,
-    horizontalCenter: 0,
-    verticalCenter: 0,
-    isAlignLeft: false,
-    isAlignRight: false,
-    isAlignTop: false,
-    isAlignBottom: false,
-    isAlignHorizontalCenter: false,
-    isAlignVerticalCenter: false,
-});
+// const compModel = reactive({
+//     enabled: true,
+//     alignMode: AlignMode.ON_WINDOW_RESIZE,
+//     left: 0,
+//     right: 0,
+//     top: 0,
+//     bottom: 0,
+//     horizontalCenter: 0,
+//     verticalCenter: 0,
+//     isAlignLeft: false,
+//     isAlignRight: false,
+//     isAlignTop: false,
+//     isAlignBottom: false,
+//     isAlignHorizontalCenter: false,
+//     isAlignVerticalCenter: false,
+// });
+
+const compModel = defineModel<CompInfo_Widget>()
 
 const _tabVal_H = ref(0)
 const _tabVal_V = ref(0)
@@ -37,53 +39,53 @@ function onTab(event){
     if(id=="id_h-align"){
         _tabVal_H.value = value
         if(value==0){
-            _compData.isAlignLeft = false
-            _compData.isAlignHorizontalCenter = false
-            _compData.isAlignRight = false
+            compModel.value.isAlignLeft = false
+            compModel.value.isAlignHorizontalCenter = false
+            compModel.value.isAlignRight = false
             
         }else if(value==1){
-            _compData.isAlignLeft = true
-            _compData.isAlignHorizontalCenter = false
-            _compData.isAlignRight = false
+            compModel.value.isAlignLeft = true
+            compModel.value.isAlignHorizontalCenter = false
+            compModel.value.isAlignRight = false
             
         }else if(value==2){
-            _compData.isAlignLeft = false
-            _compData.isAlignHorizontalCenter = true
-            _compData.isAlignRight = false
+            compModel.value.isAlignLeft = false
+            compModel.value.isAlignHorizontalCenter = true
+            compModel.value.isAlignRight = false
         }else if(value==3){
-            _compData.isAlignLeft = false
-            _compData.isAlignHorizontalCenter = false
-            _compData.isAlignRight = true
+            compModel.value.isAlignLeft = false
+            compModel.value.isAlignHorizontalCenter = false
+            compModel.value.isAlignRight = true
         }else if(value==4){
-            _compData.isAlignLeft = true
-            _compData.isAlignHorizontalCenter = false
-            _compData.isAlignRight = true
+            compModel.value.isAlignLeft = true
+            compModel.value.isAlignHorizontalCenter = false
+            compModel.value.isAlignRight = true
         }
     }else if(id=="id_v-align"){
         _tabVal_V.value = value
 
         if(value==0){
-            _compData.isAlignTop = false
-            _compData.isAlignVerticalCenter = false
-            _compData.isAlignBottom = false
+            compModel.value.isAlignTop = false
+            compModel.value.isAlignVerticalCenter = false
+            compModel.value.isAlignBottom = false
             
         }else if(value==1){
-            _compData.isAlignTop = true
-            _compData.isAlignVerticalCenter = false
-            _compData.isAlignBottom = false
+            compModel.value.isAlignTop = true
+            compModel.value.isAlignVerticalCenter = false
+            compModel.value.isAlignBottom = false
             
         }else if(value==2){
-            _compData.isAlignTop = false
-            _compData.isAlignVerticalCenter = true
-            _compData.isAlignBottom = false
+            compModel.value.isAlignTop = false
+            compModel.value.isAlignVerticalCenter = true
+            compModel.value.isAlignBottom = false
         }else if(value==3){
-            _compData.isAlignTop = false
-            _compData.isAlignVerticalCenter = false
-            _compData.isAlignBottom = true
+            compModel.value.isAlignTop = false
+            compModel.value.isAlignVerticalCenter = false
+            compModel.value.isAlignBottom = true
         }else if(value==4){
-            _compData.isAlignTop = true
-            _compData.isAlignVerticalCenter = false
-            _compData.isAlignBottom = true
+            compModel.value.isAlignTop = true
+            compModel.value.isAlignVerticalCenter = false
+            compModel.value.isAlignBottom = true
         }
     }
     console.log(id,value,_tabVal_H.value)
@@ -95,22 +97,22 @@ function onNumChange(event) {
 
     switch (id) {
         case 'left':
-            _compData.left = value;
+            compModel.value.left = value;
             break;
         case 'right':
-            _compData.right = value;
+            compModel.value.right = value;
             break;
         case 'top':
-            _compData.top = value;
+            compModel.value.top = value;
             break;
         case 'bottom':
-            _compData.bottom = value;
+            compModel.value.bottom = value;
             break;
         case 'horizontalCenter':
-            _compData.horizontalCenter = value;
+            compModel.value.horizontalCenter = value;
             break;
         case 'verticalCenter':
-            _compData.verticalCenter = value;
+            compModel.value.verticalCenter = value;
             break;
         default:
             break;
@@ -121,7 +123,7 @@ function onSelectChange(event) {
     const id = event.target.id;
     const value = parseFloat(event.target.value);
     if(id=="id_alignMode"){
-        _compData.alignMode = value;
+        compModel.value.alignMode = value;
     }
     
 }
@@ -130,7 +132,7 @@ function onSelectChange(event) {
 <template>
     <div class="component-properties">
         <div class="title">
-            <ui-checkbox id="enabled" :value="_compData.enabled" @change="(e) => (_compData.enabled = e.target.checked)"></ui-checkbox>
+            <ui-checkbox id="enabled" :value="compModel.enabled" @change="(e) => (compModel.enabled = e.target.checked)"></ui-checkbox>
             <h3>Widget</h3>
         </div>
         <div class="property">
@@ -147,15 +149,15 @@ function onSelectChange(event) {
         </div>
         <div class="property" v-if="_tabVal_H==1||_tabVal_H==4">
             <label>Left:</label>
-            <ui-num-input id="left" :value="_compData.left" @change="onNumChange"></ui-num-input>
+            <ui-num-input id="left" :value="compModel.left" @change="onNumChange"></ui-num-input>
         </div>
         <div class="property" v-if="_tabVal_H==2">
             <label>H-Center:</label>
-            <ui-num-input id="horizontalCenter" :value="_compData.horizontalCenter" @change="onNumChange"></ui-num-input>
+            <ui-num-input id="horizontalCenter" :value="compModel.horizontalCenter" @change="onNumChange"></ui-num-input>
         </div>
         <div class="property" v-if="_tabVal_H==3||_tabVal_H==4">
             <label>Right:</label>
-            <ui-num-input id="right" :value="_compData.right" @change="onNumChange"></ui-num-input>
+            <ui-num-input id="right" :value="compModel.right" @change="onNumChange"></ui-num-input>
         </div>
 
         <div class="property">
@@ -172,19 +174,19 @@ function onSelectChange(event) {
         </div>
         <div class="property" v-if="_tabVal_V==1||_tabVal_V==4">
             <label>Top:</label>
-            <ui-num-input id="top" :value="_compData.top" @change="onNumChange"></ui-num-input>
+            <ui-num-input id="top" :value="compModel.top" @change="onNumChange"></ui-num-input>
         </div>
         <div class="property" v-if="_tabVal_V==2">
             <label>V-Center:</label>
-            <ui-num-input id="verticalCenter" :value="_compData.verticalCenter" @change="onNumChange"></ui-num-input>
+            <ui-num-input id="verticalCenter" :value="compModel.verticalCenter" @change="onNumChange"></ui-num-input>
         </div>
         <div class="property" v-if="_tabVal_V==3||_tabVal_V==4">
             <label>Bottom:</label>
-            <ui-num-input id="bottom" :value="_compData.bottom" @change="onNumChange"></ui-num-input>
+            <ui-num-input id="bottom" :value="compModel.bottom" @change="onNumChange"></ui-num-input>
         </div>
         <div class="property">
             <label>Animation Cache Mode:</label>
-            <ui-select id="id_alignMode" v-model="_compData.alignMode" @change="onSelectChange">
+            <ui-select id="id_alignMode" v-model="compModel.alignMode" @change="onSelectChange">
                 <option v-for="(mode, index) in enumDesc_AlignMode" :key="index" :value="index">
                     {{ mode }}
                 </option>

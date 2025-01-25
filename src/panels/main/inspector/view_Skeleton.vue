@@ -9,45 +9,47 @@ enum AnimationCacheMode {
 
 const enumDesc_AnimationCacheMode = ["REALTIME", "SHARED_CACHE", "PRIVATE_CACHE"];
 
-const _compData = reactive({
-    enabled: true,
-    skeletonData: "",
-    _defaultSkinIndex: 0,
-    skinArr:["default"],
+// const _compData = reactive({
+//     enabled: true,
+//     skeletonData: "",
+//     _defaultSkinIndex: 0,
+//     skinArr:["default"],
     
-    animationArr: ["animation"],
-    _animationIndex: 0,
+//     animationArr: ["animation"],
+//     _animationIndex: 0,
 
-    loop: true,
-    timeScale: 1.0,
-    premultipliedAlpha: false,
-    useTint: false,
-    debugSlots: false,
-    debugBones: false,
-    debugMesh: false,
-    enableBatch: false,
+//     loop: true,
+//     timeScale: 1.0,
+//     premultipliedAlpha: false,
+//     useTint: false,
+//     debugSlots: false,
+//     debugBones: false,
+//     debugMesh: false,
+//     enableBatch: false,
 
-    animationCacheMode:AnimationCacheMode.REALTIME,
+//     animationCacheMode:AnimationCacheMode.REALTIME,
 
-});
+// });
+
+const compModel = defineModel<CompInfo_Skeleton>()
 
 function onToggle(event) {
     const eleId = event.target.id;
     const bool = event.target.value;
     if (eleId === "id_loop") {
-        _compData.loop = bool;
+        compModel.value.loop = bool;
     } else if (eleId === "id_premultipliedAlpha") {
-        _compData.premultipliedAlpha = bool;
+        compModel.value.premultipliedAlpha = bool;
     } else if (eleId === "id_useTint") {
-        _compData.useTint = bool;
+        compModel.value.useTint = bool;
     } else if (eleId === "id_debugSlots") {
-        _compData.debugSlots = bool;
+        compModel.value.debugSlots = bool;
     } else if (eleId === "id_debugBones") {
-        _compData.debugBones = bool;
+        compModel.value.debugBones = bool;
     } else if (eleId === "id_debugMesh") {
-        _compData.debugMesh = bool;
+        compModel.value.debugMesh = bool;
     } else if (eleId === "id_enableBatch") {
-        _compData.enableBatch = bool;
+        compModel.value.enableBatch = bool;
     }
 }
 
@@ -55,7 +57,7 @@ function onInput(event) {
     const eleId = event.target.id;
     const value = event.target.value;
     if (eleId === "id_skeletonData") {
-        _compData.skeletonData = value;
+        compModel.value.skeletonData = value;
     }
 }
 
@@ -63,7 +65,7 @@ function onNumChange(event) {
     const eleId = event.target.id;
     const num = parseFloat(event.target.value);
     if (eleId === "id_timeScale") {
-        _compData.timeScale = num;
+        compModel.value.timeScale = num;
     }
 }
 
@@ -71,11 +73,11 @@ function onSelect(event) {
     const eleId = event.target.id;
     const sel = event.target.value;
     if (eleId === "id_animationCacheMode") {
-        _compData.animationCacheMode = sel;
+        compModel.value.animationCacheMode = sel;
     } else if (eleId === "id_defaultSkin") {
-        _compData._defaultSkinIndex = parseInt(sel);
+        compModel.value._defaultSkinIndex = parseInt(sel);
     }  else if (eleId === "id_animation") {
-        _compData._animationIndex = parseInt(sel);
+        compModel.value._animationIndex = parseInt(sel);
     } 
     console.log("eleId",eleId,"sel",sel)
 }
@@ -85,32 +87,32 @@ function onSelect(event) {
 <template>
     <div class="component-properties">
         <div class="title">
-            <ui-checkbox id="id_enabled" @change="onToggle" :value="_compData.enabled"></ui-checkbox>
+            <ui-checkbox id="id_enabled" @change="onToggle" :value="compModel.enabled"></ui-checkbox>
             <h3>sp.Skeleton</h3>
         </div>
         <div class="property">
             <label>Skeleton Data:</label>
-            <ui-asset id="id_skeletonData" type="cc.sp.SkeletonData" :value="_compData.skeletonData" @change="onInput"></ui-asset>
+            <ui-asset id="id_skeletonData" type="cc.sp.SkeletonData" :value="compModel.skeletonData" @change="onInput"></ui-asset>
         </div>
         <div class="property">
             <label>Animation:</label>
-            <ui-select id="id_defaultSkin" v-model="_compData._defaultSkinIndex" @change="onSelect">
-                <option v-for="(mode, index) in _compData.skinArr" :key="mode" :value="index">
+            <ui-select id="id_defaultSkin" v-model="compModel._defaultSkinIndex" @change="onSelect">
+                <option v-for="(mode, index) in compModel.skinArr" :key="mode" :value="index">
                     {{ mode }}
                 </option>
             </ui-select>
         </div>
         <div class="property">
             <label>Animation:</label>
-            <ui-select id="id_animation" v-model="_compData._animationIndex" @change="onSelect">
-                <option v-for="(mode, index) in _compData.animationArr" :key="mode" :value="index">
+            <ui-select id="id_animation" v-model="compModel._animationIndex" @change="onSelect">
+                <option v-for="(mode, index) in compModel.animationArr" :key="mode" :value="index">
                     {{ mode }}
                 </option>
             </ui-select>
         </div>
         <div class="property">
             <label>Animation Cache Mode:</label>
-            <ui-select id="id_animationCacheMode" v-model="_compData.animationCacheMode" @change="onSelect">
+            <ui-select id="id_animationCacheMode" v-model="compModel.animationCacheMode" @change="onSelect">
                 <option v-for="(mode, index) in enumDesc_AnimationCacheMode" :key="index" :value="index">
                     {{ mode }}
                 </option>
@@ -118,35 +120,35 @@ function onSelect(event) {
         </div>
         <div class="property">
             <label>Loop:</label>
-            <ui-checkbox id="id_loop" @change="onToggle" :value="_compData.loop"></ui-checkbox>
+            <ui-checkbox id="id_loop" @change="onToggle" :value="compModel.loop"></ui-checkbox>
         </div>
         <div class="property">
             <label :class="{long:true}">Premultiplied Alpha:</label>
-            <ui-checkbox id="id_premultipliedAlpha" @change="onToggle" :value="_compData.premultipliedAlpha"></ui-checkbox>
+            <ui-checkbox id="id_premultipliedAlpha" @change="onToggle" :value="compModel.premultipliedAlpha"></ui-checkbox>
         </div>
         <div class="property">
             <label>Time Scale:</label>
-            <ui-num-input id="id_timeScale" :value="_compData.timeScale" @change="onNumChange"></ui-num-input>
+            <ui-num-input id="id_timeScale" :value="compModel.timeScale" @change="onNumChange"></ui-num-input>
         </div>
         <div class="property">
             <label>Debug Slots:</label>
-            <ui-checkbox id="id_debugSlots" @change="onToggle" :value="_compData.debugSlots"></ui-checkbox>
+            <ui-checkbox id="id_debugSlots" @change="onToggle" :value="compModel.debugSlots"></ui-checkbox>
         </div>
         <div class="property">
             <label>Debug Bones:</label>
-            <ui-checkbox id="id_debugBones" @change="onToggle" :value="_compData.debugBones"></ui-checkbox>
+            <ui-checkbox id="id_debugBones" @change="onToggle" :value="compModel.debugBones"></ui-checkbox>
         </div>
         <div class="property">
             <label>Debug Mesh:</label>
-            <ui-checkbox id="id_debugMesh" @change="onToggle" :value="_compData.debugMesh"></ui-checkbox>
+            <ui-checkbox id="id_debugMesh" @change="onToggle" :value="compModel.debugMesh"></ui-checkbox>
         </div>
         <div class="property">
             <label>Use Tint:</label>
-            <ui-checkbox id="id_useTint" @change="onToggle" :value="_compData.useTint"></ui-checkbox>
+            <ui-checkbox id="id_useTint" @change="onToggle" :value="compModel.useTint"></ui-checkbox>
         </div>
         <div class="property">
             <label>Enable Batch:</label>
-            <ui-checkbox id="id_enableBatch" @change="onToggle" :value="_compData.enableBatch"></ui-checkbox>
+            <ui-checkbox id="id_enableBatch" @change="onToggle" :value="compModel.enableBatch"></ui-checkbox>
         </div>
         
     </div>

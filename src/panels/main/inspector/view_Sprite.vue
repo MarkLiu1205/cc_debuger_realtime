@@ -28,17 +28,19 @@ const enumDesc_SpriteType = [
     "FILLED",
 ]
 
-const _compData = reactive({
-    color: "#ffffff",
-    customMaterial: "d3c7820c-2a98-4429-8bc7-b8453bc9ac41",
-    grayscale: false,
-    sizeMode: _SizeMode.TRIMMED,
-    spriteAtlas: null,
-    spriteFrame: "adc844c5-3225-4d5c-88d5-caae62248f8b@f9941",
-    trim: true,
-    type: _SpriteType.SIMPLE,
-    enabled: true,
-});
+// const _compData = reactive({
+//     color: "#ffffff",
+//     customMaterial: "d3c7820c-2a98-4429-8bc7-b8453bc9ac41",
+//     grayscale: false,
+//     sizeMode: _SizeMode.TRIMMED,
+//     spriteAtlas: null,
+//     spriteFrame: "adc844c5-3225-4d5c-88d5-caae62248f8b@f9941",
+//     trim: true,
+//     type: _SpriteType.SIMPLE,
+//     enabled: true,
+// });
+
+const compModel = defineModel<CompInfo_Sprite>()
 
 const ref_customMaterial = ref(null)
 const ref_spriteAtlas = ref(null)
@@ -50,18 +52,21 @@ function onAssetConfirm(event:CustomEvent ){
     const assetUuid = element.value;
     if(element==ref_customMaterial.value){
         console.log("选中材质",assetUuid)
+        compModel.value.customMaterial = assetUuid
     }else if(element==ref_spriteAtlas.value){
         console.log("选中图集",assetUuid)
+        compModel.value.spriteAtlas = assetUuid
     }else if(element==ref_spriteFrame.value){
         console.log("选中精灵帧",assetUuid)
+        compModel.value.spriteFrame = assetUuid
     }
 }
 
-function onConfirmColor(arr){
-    const [r,g,b,a] = arr
+function onConfirmColor(event){
+    const [r,g,b,a] = event.target.value
     
-    _compData.color = _funcs.rgbaToHex(r,g,b,a)
-    console.log("r,g,b,a",r,g,b,a,_compData.color)
+    compModel.value.color = _funcs.rgbaToHex(r,g,b,a)
+    console.log("r,g,b,a",r,g,b,a,compModel.value.color)
 }
 
 onMounted(()=>{
@@ -80,28 +85,28 @@ function onSelect(event){
     const eleId = event.target.id
     const sel = event.target.value
     if(eleId=="id_sizeMode"){
-        _compData.sizeMode = sel
-        console.log("sizeMode changed to:", event.target.value,_compData.sizeMode)
+        compModel.value.sizeMode = sel
+        console.log("sizeMode changed to:", event.target.value,compModel.value.sizeMode)
     }else if(eleId=="id_type"){
-        _compData.type = sel
-        console.log("Sprite type changed to:", event.target.value,_compData.type)
+        compModel.value.type = sel
+        console.log("Sprite type changed to:", event.target.value,compModel.value.type)
     }
     
 }
 
 function onSelect_SpriteType(event){
-    console.log("Sprite type changed to:", event.target.value,_compData.type)
+    console.log("Sprite type changed to:", event.target.value,compModel.value.type)
 }
 
 function onToggle(event){
     const eleId = event.target.id 
     const bool = event.target.value
     if(eleId=="id_enable"){
-        _compData.enabled = bool
+        compModel.value.enabled = bool
     }else if(eleId=="id_grayscale"){
-        _compData.grayscale = bool
+        compModel.value.grayscale = bool
     }else if(eleId=="id_trim"){
-        _compData.trim = bool
+        compModel.value.trim = bool
     }
     
     console.log("event.target.value",event.target.value,"id",event.target.id)
@@ -112,51 +117,51 @@ function onToggle(event){
 <template>
     <div class="component-properties">
         <div class="title">
-            <ui-checkbox id="id_enable" @change="onToggle" :value="_compData.enabled"></ui-checkbox>
+            <ui-checkbox id="id_enable" @change="onToggle" :value="compModel.enabled"></ui-checkbox>
             <h3>cc.Sprite</h3>
         </div>
         <div class="property">
             <label>CustomMaterial:</label>
-            <ui-asset droppable="cc.Material" ref="ref_customMaterial" :value="_compData.customMaterial"></ui-asset>
+            <ui-asset droppable="cc.Material" ref="ref_customMaterial" :value="compModel.customMaterial"></ui-asset>
         </div>
         <div class="property">
             <label>Color:</label>
-            <ui-color @confirm="onConfirmColor($event.target.value)" :value="_compData.color"></ui-color>
+            <ui-color @confirm="onConfirmColor" :value="compModel.color"></ui-color>
         </div>
         <div class="property">
             <label>SpriteAtlas:</label>
-            <ui-asset droppable="cc.SpriteAtlas" ref="ref_spriteAtlas" :value="_compData.spriteAtlas"></ui-asset>
+            <ui-asset droppable="cc.SpriteAtlas" ref="ref_spriteAtlas" :value="compModel.spriteAtlas"></ui-asset>
         </div>
         <div class="property">
             <label>SpriteFrame:</label>
-            <ui-asset droppable="cc.SpriteFrame" ref="ref_spriteFrame" :value="_compData.spriteFrame"></ui-asset>
+            <ui-asset droppable="cc.SpriteFrame" ref="ref_spriteFrame" :value="compModel.spriteFrame"></ui-asset>
         </div>
         <div class="property">
             <label>Grayscale:</label>
-            <ui-checkbox id="id_grayscale" @change="onToggle" :value="_compData.grayscale"></ui-checkbox>
+            <ui-checkbox id="id_grayscale" @change="onToggle" :value="compModel.grayscale"></ui-checkbox>
         </div>
         <div class="property">
             <label>SizeMode:</label>
-            <!-- <select v-model="_compData.sizeMode" @change="onSelect_SizeMode">
+            <!-- <select v-model="compModel.sizeMode" @change="onSelect_SizeMode">
                 <option v-for="(mode, index) in enumDesc_SizeMode" :key="index" :value="index">{{ mode }}</option>
             </select> -->
-            <ui-select id="id_sizeMode" v-model="_compData.sizeMode" @change="onSelect">
+            <ui-select id="id_sizeMode" v-model="compModel.sizeMode" @change="onSelect">
                 <option v-for="(mode, index) in enumDesc_SizeMode" :key="index" :value="index">{{ mode }}</option>
             </ui-select>
         </div>
         
         <div class="property">
             <label>Type:</label>
-            <!-- <select v-model="_compData.type" @change="onSelect_SpriteType">
+            <!-- <select v-model="compModel.type" @change="onSelect_SpriteType">
                 <option v-for="(mode, index) in enumDesc_SpriteType" :key="index" :value="index">{{ mode }}</option>
             </select> -->
-            <ui-select id="id_type" v-model="_compData.type" @change="onSelect">
+            <ui-select id="id_type" v-model="compModel.type" @change="onSelect">
                 <option v-for="(mode, index) in enumDesc_SpriteType" :key="index" :value="index">{{ mode }}</option>
             </ui-select>
         </div>
         <div class="property">
             <label>Trim:</label>
-            <ui-checkbox id="id_trim" @change="onToggle" :value="_compData.trim"></ui-checkbox>
+            <ui-checkbox id="id_trim" @change="onToggle" :value="compModel.trim"></ui-checkbox>
         </div>
     </div>
 </template>

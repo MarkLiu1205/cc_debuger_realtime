@@ -13,7 +13,7 @@ import view_Sprite from './inspector/view_Sprite.vue'
 import view_Label from './inspector/view_Label.vue'
 import view_UITransform from './inspector/view_UITransform.vue'
 import view_Button from './inspector/view_Button.vue'
-import view_ParticleSystem from './inspector/view_ParticleSystem.vue';
+import view_ParticleSystem from './inspector/view_ParticleSystem2D.vue';
 import view_Layout from './inspector/view_Layout.vue';
 import view_Skeleton from './inspector/view_Skeleton.vue';
 import view_RichText from './inspector/view_RichText.vue';

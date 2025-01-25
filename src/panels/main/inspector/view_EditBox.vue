@@ -57,25 +57,27 @@ const enumDesc_KeyboardReturnType = [
     "NEXT",
 ];
 
-const _compData = reactive({
-    enabled: true,
-    string: "EditBox text",
-    maxLength: 24,
-    tabIndex: 28,
-    inputMode: InputMode.ANY,
-    inputFlag: InputFlag.DEFAULT,
-    keyboardReturnType: KeyboardReturnType.DEFAULT,
-    placeholder: "Enter text here",
-    backgroundImage: "",
-    textLabel: "",
-    placeholderLabel: "",
-});
+// const _compData = reactive({
+//     enabled: true,
+//     string: "EditBox text",
+//     maxLength: 24,
+//     tabIndex: 28,
+//     inputMode: InputMode.ANY,
+//     inputFlag: InputFlag.DEFAULT,
+//     keyboardReturnType: KeyboardReturnType.DEFAULT,
+//     placeholder: "Enter text here",
+//     backgroundImage: "",
+//     textLabel: "",
+//     placeholderLabel: "",
+// });
+
+const compModel = defineModel<CompInfo_EditBox>()
 
 function onToggle(event) {
     const eleId = event.target.id;
     const value = event.target.checked;
     if (eleId === "id_enabled") {
-        _compData.enabled = value;
+        compModel.value.enabled = value;
     }
 }
 
@@ -83,9 +85,9 @@ function onTextChange(event) {
     const eleId = event.target.id;
     const value = event.target.value;
     if (eleId === "id_string") {
-        _compData.string = value;
+        compModel.value.string = value;
     } else if (eleId === "id_placeholder") {
-        _compData.placeholder = value;
+        compModel.value.placeholder = value;
     }
 }
 
@@ -93,9 +95,9 @@ function onNumChange(event) {
     const eleId = event.target.id;
     const value = parseInt(event.target.value, 10);
     if (eleId === "id_maxLength") {
-        _compData.maxLength = value;
+        compModel.value.maxLength = value;
     } else if (eleId === "id_tabIndex") {
-        _compData.tabIndex = value;
+        compModel.value.tabIndex = value;
     } 
 }
 
@@ -103,25 +105,25 @@ function onSelectChange(event) {
     const eleId = event.target.id;
     const value = parseInt(event.target.value, 10);
     if (eleId === "id_inputMode") {
-        _compData.inputMode = value;
+        compModel.value.inputMode = value;
     } else if (eleId === "id_inputFlag") {
-        _compData.inputFlag = value;
+        compModel.value.inputFlag = value;
     } else if (eleId === "id_keyboardReturnType") {
-        _compData.keyboardReturnType = value;
+        compModel.value.keyboardReturnType = value;
     }
 }
 function onAssetChange(event) {
     const uuid = event.target.value;
-    _compData.backgroundImage = uuid;
+    compModel.value.backgroundImage = uuid;
 }
 
 function onNodeChange(event) {
     const eleId = event.target.id;
     const uuid = event.target.value
     if (eleId === "id_textLabel") {
-        _compData.textLabel = uuid;
+        compModel.value.textLabel = uuid;
     } else if (eleId === "id_placeholderLabel") {
-        _compData.placeholderLabel = uuid;
+        compModel.value.placeholderLabel = uuid;
     }
 }
 
@@ -130,54 +132,54 @@ function onNodeChange(event) {
 <template>
     <div class="component-properties">
         <div class="title">
-            <ui-checkbox id="id_enabled" @change="onToggle" :value="_compData.enabled"></ui-checkbox>
+            <ui-checkbox id="id_enabled" @change="onToggle" :value="compModel.enabled"></ui-checkbox>
             <h3>EditBox</h3>
         </div>
         <div class="property">
             <label>String:</label>
-            <ui-input id="id_string" :value="_compData.string" @change="onTextChange"></ui-input>
+            <ui-input id="id_string" :value="compModel.string" @change="onTextChange"></ui-input>
         </div>
         <div class="property">
             <label>Placeholder:</label>
-            <ui-input id="id_placeholder" :value="_compData.placeholder" @change="onTextChange"></ui-input>
+            <ui-input id="id_placeholder" :value="compModel.placeholder" @change="onTextChange"></ui-input>
         </div>
         <div class="property">
             <label>Text Label:</label>
-            <ui-node id="id_textLabel" :value="_compData.textLabel" @change="onNodeChange" droppable="cc.Label"></ui-node>
+            <ui-node id="id_textLabel" :value="compModel.textLabel" @change="onNodeChange" droppable="cc.Label"></ui-node>
         </div>
         <div class="property">
             <label>Placeholder Label:</label>
-            <ui-node id="id_placeholderLabel" :value="_compData.placeholderLabel" @change="onNodeChange" droppable="cc.Label"></ui-node>
+            <ui-node id="id_placeholderLabel" :value="compModel.placeholderLabel" @change="onNodeChange" droppable="cc.Label"></ui-node>
         </div>
         <div class="property">
             <label>Background Image:</label>
-            <ui-asset id="id_backgroundImage" :value="_compData.backgroundImage" @change="onAssetChange" droppable="cc.SpriteFrame"></ui-asset>
+            <ui-asset id="id_backgroundImage" :value="compModel.backgroundImage" @change="onAssetChange" droppable="cc.SpriteFrame"></ui-asset>
         </div>
         <div class="property">
             <label>Input Flag:</label>
-            <ui-select id="id_inputFlag" :value="_compData.inputFlag" @change="onSelectChange">
+            <ui-select id="id_inputFlag" :value="compModel.inputFlag" @change="onSelectChange">
                 <option v-for="(flag, index) in enumDesc_InputFlag" :key="index" :value="index">{{ flag }}</option>
             </ui-select>
         </div>
         <div class="property">
             <label>Input Mode:</label>
-            <ui-select id="id_inputMode" :value="_compData.inputMode" @change="onSelectChange">
+            <ui-select id="id_inputMode" :value="compModel.inputMode" @change="onSelectChange">
                 <option v-for="(mode, index) in enumDesc_InputMode" :key="index" :value="index">{{ mode }}</option>
             </ui-select>
         </div>
         <div class="property">
             <label>Return Type:</label>
-            <ui-select id="id_keyboardReturnType" :value="_compData.keyboardReturnType" @change="onSelectChange">
+            <ui-select id="id_keyboardReturnType" :value="compModel.keyboardReturnType" @change="onSelectChange">
                 <option v-for="(type, index) in enumDesc_KeyboardReturnType" :key="index" :value="index">{{ type }}</option>
             </ui-select>
         </div>
         <div class="property">
             <label>Max Length:</label>
-            <ui-num-input id="id_maxLength" :value="_compData.maxLength" @change="onNumChange"></ui-num-input>
+            <ui-num-input id="id_maxLength" :value="compModel.maxLength" @change="onNumChange"></ui-num-input>
         </div>
         <div class="property">
             <label>Tab Index:</label>
-            <ui-num-input id="id_tabIndex" :value="_compData.tabIndex" @change="onNumChange"></ui-num-input>
+            <ui-num-input id="id_tabIndex" :value="compModel.tabIndex" @change="onNumChange"></ui-num-input>
         </div>
         
     </div>

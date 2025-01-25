@@ -21,32 +21,34 @@ const enumDesc_Direction = [
     "Vertical",
 ];
 
-const _compData = reactive({
-    enabled: true,
-    inertia: true,
-    elastic: true,
-    bounceDuration: 0.5,
-    indicator: null,
-    pageTurningSpeed: 0.3,
-    autoPageTurningThreshold: 0.1,
-    scrollThreshold: 0.5,
-    pageTurningEventTiming: 0.5,
-    brake:0.5,
+// const _compData = reactive({
+//     enabled: true,
+//     inertia: true,
+//     elastic: true,
+//     bounceDuration: 0.5,
+//     indicator: null,
+//     pageTurningSpeed: 0.3,
+//     autoPageTurningThreshold: 0.1,
+//     scrollThreshold: 0.5,
+//     pageTurningEventTiming: 0.5,
+//     brake:0.5,
 
-    content:"",
-    sizeMode:SizeMode.Unified,
-    direction:Direction.Horizontal,
-});
+//     content:"",
+//     sizeMode:SizeMode.Unified,
+//     direction:Direction.Horizontal,
+// });
+
+const compModel = defineModel<CompInfo_PageView>()
 
 function onToggle(event) {
     const id = event.target.id;
     const checked = event.target.checked;
     if (id === "enabled") {
-        _compData.enabled = checked;
+        compModel.value.enabled = checked;
     }else if (id === "inertia") {
-        _compData.inertia = checked;
+        compModel.value.inertia = checked;
     } else if (id === "elastic") {
-        _compData.elastic = checked;
+        compModel.value.elastic = checked;
     } 
 }
 
@@ -54,15 +56,17 @@ function onNumChange(event) {
     const id = event.target.id;
     const value = parseFloat(event.target.value);
     if (id === "bounceDuration") {
-        _compData.bounceDuration = value;
+        compModel.value.bounceDuration = value;
     } else if (id === "pageTurningSpeed") {
-        _compData.pageTurningSpeed = value;
+        compModel.value.pageTurningSpeed = value;
     } else if (id === "scrollThreshold") {
-        _compData.scrollThreshold = value;
+        compModel.value.scrollThreshold = value;
     } else if (id === "id_autoPageTurningThreshold") {
-        _compData.autoPageTurningThreshold = value;
+        compModel.value.autoPageTurningThreshold = value;
     } else if (id === "brake") {
-        _compData.brake = value;
+        compModel.value.brake = value;
+    } else if (id === "id_pageTurningSpeed") {
+        compModel.value.pageTurningSpeed = value;
     }
 }
 
@@ -70,7 +74,7 @@ function onNodeChange(event) {
     const id = event.target.id;
     const uuid = event.target.value
     if(id==="id_content"){
-        _compData.content = uuid
+        compModel.value.content = uuid
     }
 }
 
@@ -78,7 +82,7 @@ function onComponentChange(event) {
     const id = event.target.id;
     const uuid = event.target.value
     if(id==="id_indicator"){
-        _compData.indicator = uuid
+        compModel.value.indicator = uuid
     }
 }
 
@@ -86,9 +90,9 @@ function onSelectChange(event) {
     const eleId = event.target.id;
     const value = parseInt(event.target.value, 10);
     if (eleId === "id_sizeMode") {
-        _compData.sizeMode = value;
+        compModel.value.sizeMode = value;
     }else if (eleId === "id_direction") {
-        _compData.direction = value;
+        compModel.value.direction = value;
     }
 }
 
@@ -96,9 +100,9 @@ function onSliderChange(event) {
     const eleId = event.target.id;
     const value = event.target.value
     if (eleId === "id_scrollThreshold") {
-        _compData.scrollThreshold = value;
-    }else if (eleId === "id_id_pageTurningEventTiming") {
-        _compData.pageTurningEventTiming = value;
+        compModel.value.scrollThreshold = value;
+    }else if (eleId === "id_pageTurningEventTiming") {
+        compModel.value.pageTurningEventTiming = value;
     }
 }
 
@@ -107,69 +111,69 @@ function onSliderChange(event) {
 <template>
     <div class="component-properties">
         <div class="title">
-            <ui-checkbox id="enabled" :value="_compData.enabled" @change="onToggle"></ui-checkbox>
+            <ui-checkbox id="enabled" :value="compModel.enabled" @change="onToggle"></ui-checkbox>
             <h3>PageView</h3>
         </div>
 
         <div class="property">
             <label>Inertia:</label>
-            <ui-checkbox id="inertia" :value="_compData.inertia" @change="onToggle"></ui-checkbox>
+            <ui-checkbox id="inertia" :value="compModel.inertia" @change="onToggle"></ui-checkbox>
         </div>
 
-        <div class="property" v-if="_compData.inertia">
+        <div class="property" v-if="compModel.inertia">
             <label>Brake:</label>
-            <ui-num-input id="brake" :value="_compData.brake" @change="onNumChange"></ui-num-input>
+            <ui-num-input id="brake" :value="compModel.brake" @change="onNumChange" min="0" max="1"></ui-num-input>
         </div>
 
         <div class="property">
             <label>Elastic:</label>
-            <ui-checkbox id="elastic" :value="_compData.elastic" @change="onToggle"></ui-checkbox>
+            <ui-checkbox id="elastic" :value="compModel.elastic" @change="onToggle"></ui-checkbox>
         </div>
 
-        <div class="property" v-if="_compData.elastic">
+        <div class="property" v-if="compModel.elastic">
             <label>BounceDuration:</label>
-            <ui-num-input id="bounceDuration" :value="_compData.bounceDuration" @change="onNumChange"></ui-num-input>
+            <ui-num-input id="bounceDuration" :value="compModel.bounceDuration" @change="onNumChange" min="0"></ui-num-input>
         </div>
         <div class="property">
             <label>Content:</label>
-            <ui-node id="id_content" :value="_compData.content" @change="onNodeChange" droppable="cc.Node"></ui-node>
+            <ui-node id="id_content" :value="compModel.content" @change="onNodeChange" droppable="cc.Node"></ui-node>
         </div>
         <div class="property">
             <label>Size Mode:</label>
-            <ui-select id="id_sizeMode" :value="_compData.sizeMode" @change="onSelectChange">
+            <ui-select id="id_sizeMode" :value="compModel.sizeMode" @change="onSelectChange">
                 <option v-for="(mode, index) in enumDesc_SizeMode" :key="index" :value="index">{{ mode }}</option>
             </ui-select>
         </div>
         <div class="property">
             <label>Direction:</label>
-            <ui-select id="id_direction" :value="_compData.direction" @change="onSelectChange">
+            <ui-select id="id_direction" :value="compModel.direction" @change="onSelectChange">
                 <option v-for="(mode, index) in enumDesc_Direction" :key="index" :value="index">{{ mode }}</option>
             </ui-select>
         </div>
 
         <div class="property">
             <label>Scroll Threshold:</label>
-            <ui-slider id="id_scrollThreshold" min="0" max="1" step="0.01" :value="_compData.scrollThreshold" @change="onSliderChange"></ui-slider>
+            <ui-slider id="id_scrollThreshold" min="0" max="1" step="0.01" :value="compModel.scrollThreshold" @change="onSliderChange"></ui-slider>
         </div>
 
         <div class="property">
             <label>Page Turning Event Timing:</label>
-            <ui-slider id="id_pageTurningEventTiming" min="0" max="1" step="0.01" :value="_compData.pageTurningEventTiming" @change="onSliderChange"></ui-slider>
+            <ui-slider id="id_pageTurningEventTiming" min="0" max="1" step="0.01" :value="compModel.pageTurningEventTiming" @change="onSliderChange"></ui-slider>
         </div>
 
         <div class="property">
             <label>Indicator:</label>
-            <ui-component id="id_indicator" :value="_compData.indicator" @change="onComponentChange" droppable="cc.PageViewIndicator"></ui-component>
+            <ui-component id="id_indicator" :value="compModel.indicator" @change="onComponentChange" droppable="cc.PageViewIndicator"></ui-component>
         </div>
 
         <div class="property">
             <label>Page Turning Speed:</label>
-            <ui-num-input id="id_pageTurningSpeed" :value="_compData.pageTurningSpeed" @change="onNumChange"></ui-num-input>
+            <ui-num-input id="id_pageTurningSpeed" :value="compModel.pageTurningSpeed" @change="onNumChange"></ui-num-input>
         </div>
 
         <div class="property">
             <label>Auto Page Turning Threshold:</label>
-            <ui-num-input id="id_autoPageTurningThreshold" :value="_compData.autoPageTurningThreshold" @change="onNumChange"></ui-num-input>
+            <ui-num-input id="id_autoPageTurningThreshold" :value="compModel.autoPageTurningThreshold" @change="onNumChange"></ui-num-input>
         </div>
 
     </div>

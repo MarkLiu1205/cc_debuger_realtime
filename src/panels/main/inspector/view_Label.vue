@@ -27,39 +27,41 @@ const enumDesc_CacheMode = [
     "CHAR",
 ]
 
-const _compData = reactive({
-    customMaterial: "d3c7820c-2a98-4429-8bc7-b8453bc9ac41",
-    string:"hello label",
-    fontFamily: "Arial",
-    spacingX: 0,
-    overflow: Overflow.NONE,
-    cacheMode: CacheMode.NONE,
+// const _compData = reactive({
+//     customMaterial: "d3c7820c-2a98-4429-8bc7-b8453bc9ac41",
+//     string:"hello label",
+//     fontFamily: "Arial",
+//     spacingX: 0,
+//     overflow: Overflow.NONE,
+//     cacheMode: CacheMode.NONE,
 
-    enableWrapText: false,
-    useSystemFont: true,
-    font: null,
-    lineHeight: 40,
-    color: "#00000000",
-    horizontalAlign: "CENTER",
-    verticalAlign: "CENTER",
-    fontSize: 40,
-    underlineHeight:2,
-    isUnderline: false,
-    isBold: false,
-    isItalic: false,
+//     enableWrapText: false,
+//     useSystemFont: true,
+//     font: null,
+//     lineHeight: 40,
+//     color: "#00000000",
+//     horizontalAlign: "CENTER",
+//     verticalAlign: "CENTER",
+//     fontSize: 40,
+//     underlineHeight:2,
+//     isUnderline: false,
+//     isBold: false,
+//     isItalic: false,
 
-    enabled: true,
-});
+//     enabled: true,
+// });
+
+const compModel = defineModel<CompInfo_Label>()
 
 function onToggle(event){
     const eleId = event.target.id 
     const bool = event.target.value
     if(eleId=="id_enable"){
-        _compData.enabled = bool
+        compModel.value.enabled = bool
     }else if(eleId=="id_enableWrapText"){
-        _compData.enableWrapText = bool
+        compModel.value.enableWrapText = bool
     }else if(eleId=="id_useSystemFont"){
-        _compData.useSystemFont = bool
+        compModel.value.useSystemFont = bool
     }
     
     console.log("event.target.value",event.target.value,"id",event.target.id)
@@ -68,21 +70,21 @@ function onToggle(event){
 function onConfirmColor(arr){
     const [r,g,b,a] = arr
     
-    _compData.color = _funcs.rgbaToHex(r,g,b,a)
-    console.log("r,g,b,a",r,g,b,a,_compData.color)
+    compModel.value.color = _funcs.rgbaToHex(r,g,b,a)
+    console.log("r,g,b,a",r,g,b,a,compModel.value.color)
 }
 
 function onTextChange(event){
     const eleId = event.target.id 
     const val = event.target.value
     if(eleId=="id_string"){
-        _compData.string = val
+        compModel.value.string = val
     }else if(eleId=="id_fontFamily"){
-        _compData.fontFamily = val
+        compModel.value.fontFamily = val
     }else if(eleId=="id_spacingX"){
-        _compData.spacingX = val
+        compModel.value.spacingX = val
     }else if(eleId=="id_underlineHeight"){
-        _compData.underlineHeight = val
+        compModel.value.underlineHeight = val
     }
     console.log("event",val,eleId)
 }
@@ -92,9 +94,9 @@ function onTab(event){
     const eleId = event.target.id 
     const idx = event.target.value
     if(eleId=="id_h-align"){
-        _compData.horizontalAlign = idx
+        compModel.value.horizontalAlign = idx
     }else if(eleId=="id_v-align"){
-        _compData.verticalAlign = idx
+        compModel.value.verticalAlign = idx
     }
     console.log("idx",idx)
 }
@@ -103,9 +105,9 @@ function onNumChange(event){
     const num = event.target.value
     const eleId = event.target.id
     if(eleId=="id_fontSize"){
-        _compData.fontSize = num
+        compModel.value.fontSize = num
     }else if(eleId=="id_lineHeight"){
-        _compData.lineHeight = num
+        compModel.value.lineHeight = num
     }
     console.log("num",num,eleId)
 }
@@ -114,11 +116,11 @@ function onSelect(event){
     const eleId = event.target.id
     const sel = event.target.value
     if(eleId=="id_overFlow"){
-        _compData.overflow = sel
-        console.log("overflow changed to:", event.target.value,_compData.overflow)
+        compModel.value.overflow = sel
+        console.log("overflow changed to:", event.target.value,compModel.value.overflow)
     }else if(eleId=="id_cacheMode"){
-        _compData.cacheMode = sel
-        console.log("Sprite cacheMode changed to:", event.target.value,_compData.cacheMode)
+        compModel.value.cacheMode = sel
+        console.log("Sprite cacheMode changed to:", event.target.value,compModel.value.cacheMode)
     }
     
 }
@@ -127,22 +129,22 @@ function onAssetChange(event){
     const eleId = event.target.id
     const sel = event.target.value
     if(eleId=="id_font"){
-        _compData.font = sel
-        console.log("font changed to:", event.target.value,_compData.font)
+        compModel.value.font = sel
+        console.log("font changed to:", event.target.value,compModel.value.font)
     }else if(eleId=="id_customMaterial"){
-        _compData.customMaterial = sel
-        console.log("customMaterial changed to:", event.target.value,_compData.customMaterial)
+        compModel.value.customMaterial = sel
+        console.log("customMaterial changed to:", event.target.value,compModel.value.customMaterial)
     }
 }
 
 function toggleBold() {
-    _compData.isBold = !_compData.isBold
+    compModel.value.isBold = !compModel.value.isBold
 }
 function toggleItalic() {
-    _compData.isItalic = !_compData.isItalic
+    compModel.value.isItalic = !compModel.value.isItalic
 }
 function toggleUnderline() {
-    _compData.isUnderline = !_compData.isUnderline
+    compModel.value.isUnderline = !compModel.value.isUnderline
 }
 
 </script>
@@ -150,24 +152,24 @@ function toggleUnderline() {
 <template>
     <div class="component-properties">
         <div class="title">
-            <ui-checkbox id="id_enable" @change="onToggle" :value="_compData.enabled"></ui-checkbox>
+            <ui-checkbox id="id_enable" @change="onToggle" :value="compModel.enabled"></ui-checkbox>
             <h3>cc.Label</h3>
         </div>
         <div class="property">
             <label>CustomMaterial:</label>
-            <ui-asset @change="onAssetChange" droppable="cc.Material" id="id_customMaterial" :value="_compData.customMaterial"></ui-asset>
+            <ui-asset @change="onAssetChange" droppable="cc.Material" id="id_customMaterial" :value="compModel.customMaterial"></ui-asset>
         </div>
         <div class="property">
             <label>Color:</label>
-            <ui-color @confirm="onConfirmColor($event.target.value)" :value="_compData.color"></ui-color>
+            <ui-color @confirm="onConfirmColor($event.target.value)" :value="compModel.color"></ui-color>
         </div>
         <div class="property">
             <label>String:</label>
-            <ui-textarea @change="onTextChange" id="id_string" :value="_compData.string"></ui-textarea>
+            <ui-textarea @change="onTextChange" id="id_string" :value="compModel.string"></ui-textarea>
         </div>
         <div class="property">
             <label>H-Align:</label>
-            <ui-tab @change="onTab" id="id_h-align" :value="_compData.horizontalAlign">
+            <ui-tab @change="onTab" id="id_h-align" :value="compModel.horizontalAlign">
                 <ui-button><ui-icon value="align-left"></ui-icon></ui-button>
                 <ui-button><ui-icon value="align-h-center"></ui-icon></ui-button>
                 <ui-button><ui-icon value="align-right"></ui-icon></ui-button>
@@ -175,7 +177,7 @@ function toggleUnderline() {
         </div>
         <div class="property">
             <label>V-Align:</label>
-            <ui-tab @change="onTab" id="id_v-align" :value="_compData.verticalAlign">
+            <ui-tab @change="onTab" id="id_v-align" :value="compModel.verticalAlign">
                 <ui-button><ui-icon value="align-top"></ui-icon></ui-button>
                 <ui-button><ui-icon value="align-v-center"></ui-icon></ui-button>
                 <ui-button><ui-icon value="align-top"></ui-icon></ui-button>
@@ -184,59 +186,59 @@ function toggleUnderline() {
         <div class="property">
             <label>FontSize:</label>
             <div class="vector-input">
-                <ui-num-input id="id_fontSize" @change="onNumChange" :value="_compData.fontSize"  step="0.1"></ui-num-input>
+                <ui-num-input id="id_fontSize" @change="onNumChange" :value="compModel.fontSize"  step="0.1"></ui-num-input>
             </div>
         </div>
         <div class="property">
             <label>LineHeight:</label>
             <div class="vector-input">
-                <ui-num-input id="id_lineHeight" @change="onNumChange" :value="_compData.lineHeight"  step="0.1"></ui-num-input>
+                <ui-num-input id="id_lineHeight" @change="onNumChange" :value="compModel.lineHeight"  step="0.1"></ui-num-input>
             </div>
         </div>
         <div class="property">
             <label>OverFlow:</label>
-            <ui-select id="id_overFlow" v-model="_compData.overflow" @change="onSelect">
+            <ui-select id="id_overFlow" v-model="compModel.overflow" @change="onSelect">
                 <option v-for="(mode, index) in enumDesc_Overflow" :key="index" :value="index">{{ mode }}</option>
             </ui-select>
         </div>
         
         <div class="property">
             <label>EnableWrapText:</label>
-            <ui-checkbox id="id_enableWrapText" @change="onToggle" :value="_compData.enableWrapText"></ui-checkbox>
+            <ui-checkbox id="id_enableWrapText" @change="onToggle" :value="compModel.enableWrapText"></ui-checkbox>
         </div>
         <div class="property">
             <label>UseSystemFont:</label>
-            <ui-checkbox id="id_useSystemFont" @change="onToggle" :value="_compData.useSystemFont"></ui-checkbox>
+            <ui-checkbox id="id_useSystemFont" @change="onToggle" :value="compModel.useSystemFont"></ui-checkbox>
         </div>
-        <div class="property" v-if="!_compData.useSystemFont">
+        <div class="property" v-if="!compModel.useSystemFont">
             <label>Font:</label>
-            <ui-asset @change="onAssetChange" droppable="cc.Font" ref="id_font" :value="_compData.font"></ui-asset>
+            <ui-asset @change="onAssetChange" droppable="cc.Font" ref="id_font" :value="compModel.font"></ui-asset>
         </div>
-        <div class="property" v-if="!_compData.useSystemFont">
+        <div class="property" v-if="!compModel.useSystemFont">
             <label>SpacingX:</label>
-            <ui-num-input id="id_spacingX" @change="onTextChange" :value="_compData.spacingX"></ui-num-input>
+            <ui-num-input id="id_spacingX" @change="onTextChange" :value="compModel.spacingX"></ui-num-input>
         </div>
-        <div class="property" v-if="_compData.useSystemFont">
+        <div class="property" v-if="compModel.useSystemFont">
             <label>FontFamily:</label>
-            <ui-input id="id_fontFamily" @change="onTextChange" :value="_compData.fontFamily"></ui-input>
+            <ui-input id="id_fontFamily" @change="onTextChange" :value="compModel.fontFamily"></ui-input>
         </div>
         <div class="property">
             <label>CacheMode:</label>
-            <ui-select id="id_cacheMode" v-model="_compData.cacheMode" @change="onSelect">
+            <ui-select id="id_cacheMode" v-model="compModel.cacheMode" @change="onSelect">
                 <option v-for="(mode, index) in enumDesc_CacheMode" :key="index" :value="index">{{ mode }}</option>
             </ui-select>
         </div>
         <div class="property">
             <label>FontStyle:</label>
             <div class="font-style">
-                <ui-button :class="{ bold: true, fontStyle_selected: _compData.isBold }" @click="toggleBold">B</ui-button>
-                <ui-button :class="{ italic: true, fontStyle_selected: _compData.isItalic }" @click="toggleItalic">I</ui-button>
-                <ui-button :class="{ underline: true, fontStyle_selected: _compData.isUnderline }" @click="toggleUnderline">U</ui-button>
+                <ui-button :class="{ bold: true, fontStyle_selected: compModel.isBold }" @click="toggleBold">B</ui-button>
+                <ui-button :class="{ italic: true, fontStyle_selected: compModel.isItalic }" @click="toggleItalic">I</ui-button>
+                <ui-button :class="{ underline: true, fontStyle_selected: compModel.isUnderline }" @click="toggleUnderline">U</ui-button>
             </div>
         </div>
-        <div class="property" v-if="_compData.isUnderline">
+        <div class="property" v-if="compModel.isUnderline">
             <label>UnderlineHeight:</label>
-            <ui-num-input id="id_underlineHeight" @change="onTextChange" :value="_compData.underlineHeight"></ui-num-input>
+            <ui-num-input id="id_underlineHeight" @change="onTextChange" :value="compModel.underlineHeight"></ui-num-input>
         </div>
         
     </div>

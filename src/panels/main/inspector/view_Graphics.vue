@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { reactive } from 'vue';
+import { _funcs } from '../../../tools/_funcs';
 
 enum LineJoin {
     BEVEL = 0,
@@ -25,21 +26,23 @@ const enumDesc_LineCap = [
     "SQUARE",
 ]
 
-const _compData = reactive({
-    enabled: true,
-    lineWidth: 1,
-    strokeColor: '#FFFFFF',
-    fillColor: '#FFFFFF',
-    miterLimit: 10,
-    lineJoin: LineJoin.BEVEL,
-    lineCap: LineCap.BUTT,
-});
+// const _compData = reactive({
+//     enabled: true,
+//     lineWidth: 1,
+//     strokeColor: '#FFFFFF',
+//     fillColor: '#FFFFFF',
+//     miterLimit: 10,
+//     lineJoin: LineJoin.BEVEL,
+//     lineCap: LineCap.BUTT,
+// });
+
+const compModel = defineModel<CompInfo_Graphics>()
 
 function onToggle(event) {
     const id = event.target.id;
     const checked = event.target.checked;
     if (id === 'enabled') {
-        _compData.enabled = checked;
+        compModel.value.enabled = checked;
     }
 }
 
@@ -47,19 +50,21 @@ function onNumChange(event) {
     const id = event.target.id;
     const value = parseFloat(event.target.value);
     if (id === 'lineWidth') {
-        _compData.lineWidth = value;
+        compModel.value.lineWidth = value;
     } else if (id === 'miterLimit') {
-        _compData.miterLimit = value;
+        compModel.value.miterLimit = value;
     }
 }
 
 function onColorChange(event) {
     const id = event.target.id;
-    const value = event.target.value;
+    const [r,g,b,a] = event.target.value
+    
+    const value = _funcs.rgbaToHex(r,g,b,a)
     if (id === 'strokeColor') {
-        _compData.strokeColor = value;
+        compModel.value.strokeColor = value;
     } else if (id === 'fillColor') {
-        _compData.fillColor = value;
+        compModel.value.fillColor = value;
     }
 }
 
@@ -67,9 +72,9 @@ function onSelectChange(event) {
     const id = event.target.id;
     const value = event.target.value;
     if (id === 'lineJoin') {
-        _compData.lineJoin = value;
+        compModel.value.lineJoin = value;
     } else if (id === 'lineCap') {
-        _compData.lineCap = value;
+        compModel.value.lineCap = value;
     }
 }
 </script>
@@ -77,7 +82,7 @@ function onSelectChange(event) {
 <template>
     <div class="component-properties">
         <div class="title">
-            <ui-checkbox id="enabled" :value="_compData.enabled" @change="onToggle"></ui-checkbox>
+            <ui-checkbox id="enabled" :value="compModel.enabled" @change="onToggle"></ui-checkbox>
             <h3>Graphics</h3>
         </div>
 
@@ -85,7 +90,7 @@ function onSelectChange(event) {
             <label>Line Width:</label>
             <ui-num-input
                 id="lineWidth"
-                :value="_compData.lineWidth"
+                :value="compModel.lineWidth"
                 @change="onNumChange"
                 step="0.1"
                 min="0"
@@ -94,19 +99,19 @@ function onSelectChange(event) {
 
         <div class="property">
             <label>Stroke Color:</label>
-            <ui-color @confirm="onColorChange" id="strokeColor" :value="_compData.strokeColor"></ui-color>
+            <ui-color @confirm="onColorChange" id="strokeColor" :value="compModel.strokeColor"></ui-color>
         </div>
 
         <div class="property">
             <label>Fill Color:</label>
-            <ui-color @confirm="onColorChange" id="fillColor" :value="_compData.fillColor"></ui-color>
+            <ui-color @confirm="onColorChange" id="fillColor" :value="compModel.fillColor"></ui-color>
         </div>
 
         <div class="property">
             <label>Miter Limit:</label>
             <ui-num-input
                 id="miterLimit"
-                :value="_compData.miterLimit"
+                :value="compModel.miterLimit"
                 @change="onNumChange"
                 step="0.1"
                 min="0"
@@ -115,14 +120,14 @@ function onSelectChange(event) {
 
         <div class="property">
             <label>Line Join:</label>
-            <ui-select id="lineJoin" v-model="_compData.lineJoin" @change="onSelectChange">
+            <ui-select id="lineJoin" v-model="compModel.lineJoin" @change="onSelectChange">
                 <option v-for="(mode, index) in enumDesc_LineJoin" :key="index" :value="index">{{ mode }}</option>
             </ui-select>
         </div>
 
         <div class="property">
             <label>Line Cap:</label>
-            <ui-select id="lineCap" v-model="_compData.lineCap" @change="onSelectChange">
+            <ui-select id="lineCap" v-model="compModel.lineCap" @change="onSelectChange">
                 <option v-for="(mode, index) in enumDesc_LineCap" :key="index" :value="index">{{ mode }}</option>
             </ui-select>
         </div>

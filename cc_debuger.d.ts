@@ -33,7 +33,7 @@ type CompType = "Sprite" | "Label" | "UITransform" | "Button" | "Canvas" | "Edit
     "Mask" | "ParticleSystem2D" | "ProgressBar" | "RichText" | "ScrollView" | "Slider" | "Spine" | 
     "VideoPlayer" | "WebView" | "Widget" | "Animation" | "AudioSource" | "Camera" | "RenderTexture" | 
     "TiledMap" | "Graphics" | "Script" | "PageView" | "TiledTile" | "UIOpacity" | "LabelShadow" | 
-    "LabelOutline"
+    "LabelOutline" | "Skeleton"
 
 /**节点树信息 */
 interface NodeTreeItem{
@@ -198,8 +198,9 @@ interface CompInfo_ParticleSystem2D extends CompInfo_Base{
 }
 
 interface CompInfo_Sprite extends CompInfo_Base{
+    customMaterial:TypeUUID,
     color:HexColor,
-    atlas:TypeUUID,
+    spriteAtlas:TypeUUID,
     spriteFrame:TypeUUID,
     grayscale:boolean,
     sizeMode:number,
@@ -208,6 +209,7 @@ interface CompInfo_Sprite extends CompInfo_Base{
 }
 
 interface CompInfo_Label extends CompInfo_Base{
+    customMaterial:TypeUUID,
     color:HexColor,
     string:string,
 
@@ -228,6 +230,9 @@ interface CompInfo_Label extends CompInfo_Base{
     isBold:boolean,
     isItalic:boolean,
     isUnderline:boolean,
+
+    underlineHeight:number,
+    cacheMode:import("cc").CacheMode
 }
 
 
@@ -244,6 +249,7 @@ interface CompInfo_RichText extends CompInfo_Base{
     cacheMode:number,
     maxWidth:number,
     imageAtlas:TypeUUID,
+    handleTouchEvent:boolean,
 }
 
 interface CompInfo_Button extends CompInfo_Base{
@@ -252,6 +258,7 @@ interface CompInfo_Button extends CompInfo_Base{
     
     duration:number,
     zoomScale:number,
+    target:TypeUUID,
     
     normalSprite:TypeUUID,
     pressedSprite:TypeUUID,
