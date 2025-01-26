@@ -12,14 +12,14 @@ const compModel = defineModel<CompInfo_UITransform>()
 function onNumChange(event){
     const num = event.target.value
     const eleId = event.target.id
-    if(eleId=="anchorPoint.x"){
-        compModel.value.anchorPoint.x = num
-    }else if(eleId=="anchorPoint.y"){
-        compModel.value.anchorPoint.y = num
-    }else if(eleId=="contentSize.width"){
-        compModel.value.contentSize.width = num
-    }else if(eleId=="contentSize.height"){
-        compModel.value.contentSize.height = num
+    if(eleId=="anchorX"){
+        compModel.value.anchorX = num
+    }else if(eleId=="anchorY"){
+        compModel.value.anchorY = num
+    }else if(eleId=="width"){
+        compModel.value.width = num
+    }else if(eleId=="height"){
+        compModel.value.height = num
     }
     // console.log("-----onchange",JSON.stringify(compModel.value))
 }
@@ -40,15 +40,15 @@ function onToggle(event){
         <div class="property">
             <label>anchorPoint:</label>
             <div class="vector-input">
-                <ui-num-input id="anchorPoint.x" @change="onNumChange" :value="compModel.anchorPoint.x"  step="0.01" unit="x"></ui-num-input>
-                <ui-num-input id="anchorPoint.y" @change="onNumChange":value="compModel.anchorPoint.y"  step="0.01" unit="y"></ui-num-input>
+                <ui-num-input id="anchorX" @change="onNumChange" :value="compModel.anchorX"  step="0.01" unit="x"></ui-num-input>
+                <ui-num-input id="anchorY" @change="onNumChange":value="compModel.anchorY"  step="0.01" unit="y"></ui-num-input>
             </div>
         </div>
         <div class="property">
             <label>contentSize:</label>
             <div class="vector-input">
-                <ui-num-input id="contentSize.width" @change="onNumChange" :value="compModel.contentSize.width" placeholder="width"></ui-num-input>
-                <ui-num-input id="contentSize.height" @change="onNumChange":value="compModel.contentSize.height" placeholder="height"></ui-num-input>
+                <ui-num-input id="width" @change="onNumChange" :value="compModel.width" placeholder="width"></ui-num-input>
+                <ui-num-input id="height" @change="onNumChange":value="compModel.height" placeholder="height"></ui-num-input>
             </div>
         </div>
     </div>

@@ -9,6 +9,13 @@ import { Mask } from 'cc';
 import { PageView } from 'cc';
 import { ScrollView } from 'cc';
 import { Widget } from 'cc';
+import { Vec2 } from 'cc';
+import { color } from 'cc';
+import { Rect } from 'cc';
+import { Vec4 } from 'cc';
+import { Quat } from 'cc';
+import { Vec3 } from 'cc';
+import { Canvas } from 'cc';
 import { UIOpacity } from 'cc';
 import { ParticleSystem2D } from 'cc';
 import { UITransform } from 'cc';
@@ -153,6 +160,8 @@ class RunTimeSocket {
             } else if (msg.action === 'getNodeInfo') {
                 const uuid = msg.data.uuid;
                 data = _data.getNodeInfo(uuid)
+            } else if (msg.action === 'reqModifyNodeInfo') {
+                data = _data.doModifyNodeInfo(msg.data)
             }
     
             responseData.data = data
@@ -204,7 +213,7 @@ class RunTimeSocket {
 
 class _RuntimeData{
     /**记录出现过的uuid和相应引用计数 */
-    public m_assetUuidMap:Record<string,number> = {}
+    public m_assetUuidRefCountMap:Record<string,number> = {}
     /**当前节点数 */
     public m_sceneTree: NodeTreeItem = null;
 
@@ -212,13 +221,147 @@ class _RuntimeData{
     public m_curSceneName:string = ""
     /**记录当前节点的uuid映射 */
     public m_nodeUuidMap:Record<string,Node> = {}
+    /**记录当前所有组件实例的uuid映射 */
+    public m_compUuidMap:Record<string,Component> = {}
 
     constructor(){
         director.on(Director.EVENT_AFTER_SCENE_LAUNCH,this._onSceneChange,this)
     }
 
+    doModifyNodeInfo(obj:ChangedNodeInfo){
+        const _node = this.m_nodeUuidMap[obj.uuid]
+        if(_node==null){
+            return js.formatStr("[ERROR] node is error,uuid:%s",obj.uuid)
+        }
+        try{
+            let map:NodeInfo = obj.nodeChange as any
+            if(map){
+                if(map.position!=null){
+                    _node.setPosition(map.position.x??_node.position.x,map.position.y??_node.position.y,map.position.z??_node.position.z)
+                }
+                if(map.rotation!=null){
+                    _node.setRotation(map.rotation.x??_node.rotation.x,map.rotation.y??_node.rotation.y,map.rotation.z??_node.rotation.z,map.rotation.w??_node.rotation.w)
+                }
+                if(map.scale!=null){
+                    _node.setScale(map.scale.x??_node.scale.x,map.scale.y??_node.scale.y,map.scale.z??_node.scale.z)
+                }
+                if(map.active!=null){
+                    _node.active = map.active
+                }
+                if(map.layer!=null){
+                    _node.layer = map.layer
+                }
+                if(map.name!=null){
+                    _node.name = map.name
+                }
+            }
+        }catch(e){
+            return e.message
+        }
+            
+
+        //@ts-ignore
+        const components:Component[] = _node._components;
+        try{
+            for(let compUuid in obj.compChanges){
+                const _comp = components.find(item => item.uuid==compUuid)
+                if(_comp==null){
+                    continue
+                }
+                let map = obj.compChanges[compUuid]
+                
+                this.applyCompChange(_comp,map)
+            }
+        }catch(e){
+            return e.message
+        }
+        
+        return ""
+    }
+
+    async applyCompChange(_comp:Component,map:Record<string,any>){
+        for(let key in map){
+            const oldV = _comp[key]
+            let newV = map[key]
+            if(newV &&typeof newV=="string"){//如果是字符串，先检查一下是否是uuid
+                if(this.m_compUuidMap[newV]!=null){
+                    _comp[key] = this.m_compUuidMap[newV]
+                    continue
+                }else if(this.m_nodeUuidMap[newV]!=null){
+                    _comp[key] = this.m_nodeUuidMap[newV]
+                    continue
+                }else{
+                    //0bbc4349-d0e6-4676-b353-6a0d4108b6dd
+                    if(newV[8]=="-"&&newV[13]=="-"&&newV[18]=="-"&&newV[23]=="-"){
+                        let asset = await new Promise<Asset>((resolve)=>{
+                            assetManager.loadAny({uuid:newV},(err,asset)=>{
+                                resolve(asset)
+                            })
+                        })
+                        if(asset){
+                            _comp[key] = asset
+                            continue
+                        }
+                    }
+                }
+            }
+            if(oldV==null){
+                _comp[key] = newV
+            }else if(typeof oldV === "object"){
+                let _newV = null
+                if(oldV instanceof Node || oldV instanceof Asset || oldV instanceof Component){
+                    _comp[key] = null //不为null的情况，上面已经检查过了
+                    continue
+                }else {
+                    if(oldV instanceof Color){
+                        _newV = color().fromHEX(newV)
+                    }else if(oldV instanceof Vec2){
+                        _newV = new Vec2(newV.x??oldV.x,newV.y??oldV.y)
+                    }else if(oldV instanceof Vec3){
+                        _newV = new Vec3(newV.x??oldV.x,newV.y??oldV.y,newV.z??oldV.z)
+                    }else if(oldV instanceof Vec4){
+                        _newV = new Vec4(newV.x??oldV.x,newV.y??oldV.y,newV.z??oldV.z,newV.w??oldV.w)
+                    }else if(oldV instanceof Quat){
+                        _newV = new Quat(newV.x??oldV.x,newV.y??oldV.y,newV.z??oldV.z,newV.w??oldV.w)
+                    }else if(oldV instanceof Rect){
+                        _newV = new Rect(newV.x??oldV.x,newV.y??oldV.y,newV.width??oldV.width,newV.height??oldV.height)
+                    }
+                }
+
+                if(_newV!=null){
+                    _comp[key] = _newV
+                    continue
+                }
+            }
+            if(typeof newV === "object"){
+                this.applyCompChange(oldV,newV)
+            }else{
+                _comp[key] = newV
+            }
+        }
+    }
+
+    doModifyCompInfo(nodeUuid:string,obj:Record<string, Record<string, any>>){
+        const _node = this.m_nodeUuidMap[nodeUuid]
+        if(_node==null){
+            return -1
+        }
+        //@ts-ignore
+        const components:Component[] = _node._components;
+        for(let compUuid in obj){
+            const _comp = components.find(item => item.uuid==compUuid)
+
+            if(_comp==null){
+                continue
+            }
+        }
+        
+
+        return 0
+    }
+
     clear(){
-        this.m_assetUuidMap = {}
+        this.m_assetUuidRefCountMap = {}
         this.m_sceneTree = null
     }
 
@@ -234,9 +377,9 @@ class _RuntimeData{
     getNewAddedAssets() {
         const ret:Record<string,number> = {}
         assetManager.assets.forEach((info, uuid) =>{
-            if(this.m_assetUuidMap[uuid]==null || this.m_assetUuidMap[uuid]!=info.refCount){
+            if(this.m_assetUuidRefCountMap[uuid]==null || this.m_assetUuidRefCountMap[uuid]!=info.refCount){
                 ret[uuid] = info.refCount
-                this.m_assetUuidMap[uuid] = info.refCount
+                this.m_assetUuidRefCountMap[uuid] = info.refCount
             }   
         });
         return ret
@@ -408,6 +551,10 @@ class _RuntimeData{
                 path: childPath
             }
             this.m_nodeUuidMap[child.uuid] = child;
+            //@ts-ignore
+            child._components.forEach( (comp) =>{
+                this.m_compUuidMap[comp.uuid] = comp
+            })
             this._fillNodeTree(childTree, child.children, childPath);
             treeObj.children.push(childTree);
 
@@ -434,6 +581,7 @@ class _RuntimeData{
      */
     public searchNodeTree(): boolean {
         this.m_nodeUuidMap = {}
+        this.m_compUuidMap = {}
 
         const lastSceneTree = this.m_sceneTree;
         const sceneNode: Scene = director.getScene();
@@ -519,15 +667,17 @@ class _RuntimeData{
             return _compUtil.getCompInfo_UIOpacity(component as UIOpacity)
         }else if(name === "Widget"){
             return _compUtil.getCompInfo_Widget(component as Widget)
+        }else if(name === "Canvas"){
+            return _compUtil.getCompInfo_Canvas(component as Canvas)
         }else{
-
+            return _compUtil.getCompInfo_bass(component)
         }
         
     }
 }
 
 namespace _compUtil{
-    function getCompInfo_bass(comp:Component):CompInfo_Base{
+    export function getCompInfo_bass(comp:Component):CompInfo_Base{
         return {
             enabled:comp.enabled,
             //@ts-ignore
@@ -633,8 +783,10 @@ namespace _compUtil{
     export function getCompInfo_UITransform(comp:UITransform):CompInfo_UITransform{
         return {
             ...getCompInfo_bass(comp),...{
-                anchorPoint:comp.anchorPoint,
-                contentSize:comp.contentSize
+                anchorX:comp.anchorX,
+                anchorY:comp.anchorY,
+                width:comp.width,
+                height:comp.height,
             }
         }
         
@@ -855,6 +1007,16 @@ namespace _compUtil{
                 isAlignBottom: comp.isAlignBottom,
                 isAlignHorizontalCenter: comp.isAlignHorizontalCenter,
                 isAlignVerticalCenter: comp.isAlignVerticalCenter,
+            }
+        }
+        
+    }
+
+    export function getCompInfo_Canvas(comp:Canvas):CompInfo_Canvas{
+        return {
+            ...getCompInfo_bass(comp),...{
+                cameraComponent:comp.cameraComponent?.uuid??"",
+                alignCanvasWithScreen:comp.alignCanvasWithScreen,
             }
         }
         

@@ -138,8 +138,10 @@ interface CompInfo_Mask extends CompInfo_Base{
 }
 
 interface CompInfo_UITransform extends CompInfo_Base{
-    anchorPoint:import("cc").Vec2,
-    contentSize:import("cc").Size,
+    anchorX:number,
+    anchorY:number,
+    width:number,
+    height:number,
 }
 
 interface CompInfo_PageView extends CompInfo_Base{
@@ -323,4 +325,18 @@ interface CompInfo_Widget extends CompInfo_Base{
     isAlignBottom: boolean,
     isAlignHorizontalCenter: boolean,
     isAlignVerticalCenter: boolean,
+}
+
+interface CompInfo_Canvas extends CompInfo_Base{
+    cameraComponent:TypeUUID,
+    alignCanvasWithScreen:boolean,
+}
+
+/**改变的节点信息 */
+interface ChangedNodeInfo{
+    uuid:string,
+    /**节点信息健值对，旋转缩放坐标这些 */
+    nodeChange?:Record<string,any>,
+    /**节点的组件信息的改变，key为组件的uuid，val为组件信息健值对 */
+    compChanges?:Record<string,Record<string,any>>
 }

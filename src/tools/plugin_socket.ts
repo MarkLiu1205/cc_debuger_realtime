@@ -251,7 +251,9 @@ class PluginSocket {
 
     async getNodeInfo(uuid:string):Promise<InspectorInfo_Node> {
         await this.waitForRuntimeIsInline() //要先等plugin和runtime都连上服务器
-        return this._sendRequest('getNodeInfo', { uuid });
+        let info = await this._sendRequest('getNodeInfo', { uuid });
+        info = _funcs.roundNumbersToPrecision(info, 2)
+        return info as any as InspectorInfo_Node
     }
 
     /**执行js并返回执行结果 */
@@ -261,6 +263,16 @@ class PluginSocket {
         console.log("zzzzz 1.5")
         return this._sendRequest("eval_js",str)
     }
+
+    /**
+     * 修改节点（仅限于坐标旋转等，不包括组件）
+     * @param obj 改变的节点信息
+     */
+    async reqModifyNodeInfo(obj:ChangedNodeInfo){
+        await this.waitForRuntimeIsInline()
+        return this._sendRequest("reqModifyNodeInfo",obj)
+    }
+
 };
 
 enum PushAction{

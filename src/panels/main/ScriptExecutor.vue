@@ -11,7 +11,9 @@ const str_result = ref('');
 function openDialog(initialCode = '') {
   dialogVisible.value = true;
   if (initialCode) {
-    ref_js_input.value.value = initialCode; // 初始化脚本输入
+    if(ref_js_input.value!=null){
+      ref_js_input.value.value = initialCode; // 初始化脚本输入
+    }
   }
 }
 

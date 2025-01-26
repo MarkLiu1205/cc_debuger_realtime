@@ -92,28 +92,29 @@ watch(cur_sel_node, (newVal,old) => {
 }, { deep: true })
 
 function compareChangedNodeInfo(newVal:InspectorInfo_Node,oldVal:InspectorInfo_Node){
-    const nodeChange:Record<string,Record<string,any>> = {}
-    const compChanges:Record<string,Record<string,any>> = {}
+    const _obj:ChangedNodeInfo = {
+        uuid:newVal.uuid,
+        nodeChange:{},
+        compChanges:{}
+    }
     
     for (let key in newVal) {
         if (key === "components") {
             continue;
         }
         if (typeof newVal[key] === 'object' && newVal[key] !== null) {
-            nodeChange[newVal.uuid] = nodeChange[newVal.uuid] ?? {};
-            nodeChange[newVal.uuid][key] = deepCompare(newVal[key], oldVal[key]);
-            if(nodeChange[newVal.uuid][key]==null){
-                delete nodeChange[newVal.uuid][key]
+            _obj.nodeChange = _obj.nodeChange ?? {};
+            _obj.nodeChange[key] = deepCompare(newVal[key], oldVal[key]);
+            if(_obj.nodeChange[key]==null){
+                delete _obj.nodeChange[key]
             }
         } else if (newVal[key] !== oldVal[key]) {
-            nodeChange[newVal.uuid] = nodeChange[newVal.uuid] ?? {};
-            nodeChange[newVal.uuid][key] = newVal[key];
-            oldVal[key] = newVal[key];
+            _obj.nodeChange = _obj.nodeChange ?? {};
+            _obj.nodeChange[key] = newVal[key];
+            // oldVal[key] = newVal[key];
         }
     }
-    if(Object.keys(nodeChange[newVal.uuid]).length==0){
-        delete nodeChange[newVal.uuid]
-    }
+    
     for(let i=0;i<newVal.components.length;i++){
         let newComp = newVal.components[i]
         let oldComp = oldVal.components[i];
@@ -125,24 +126,39 @@ function compareChangedNodeInfo(newVal:InspectorInfo_Node,oldVal:InspectorInfo_N
 
         for(let key in newComp){
             if (typeof newComp[key] === 'object' && newComp[key] !== null) {
-                compChanges[newComp.uuid] = compChanges[newComp.uuid] ?? {};
-                compChanges[newComp.uuid][key] = deepCompare(newComp[key], oldComp[key]);
-                if(compChanges[newComp.uuid][key]==null){
-                    delete compChanges[newComp.uuid][key]
+                _obj.compChanges[newComp.uuid] = _obj.compChanges[newComp.uuid] ?? {};
+                _obj.compChanges[newComp.uuid][key] = deepCompare(newComp[key], oldComp[key]);
+                if(_obj.compChanges[newComp.uuid][key]==null){
+                    delete _obj.compChanges[newComp.uuid][key]
                 }
             } else if (newComp[key] !== oldComp[key]) {
-                compChanges[newComp.uuid] = compChanges[newComp.uuid] ?? {};
-                compChanges[newComp.uuid][key] = newComp[key];
-                oldComp[key] = newComp[key];
+                _obj.compChanges[newComp.uuid] = _obj.compChanges[newComp.uuid] ?? {};
+                _obj.compChanges[newComp.uuid][key] = newComp[key];
+                // oldComp[key] = newComp[key];
             }
+            // console.log("_obj.compChanges[newComp.uuid]",_obj.compChanges[newComp.uuid])
+            
         }
+        if(_obj.compChanges[newComp.uuid]!=null && Object.keys(_obj.compChanges[newComp.uuid]).length==0){
+            delete _obj.compChanges[newComp.uuid]
+        }else{
+            applyChange(oldComp,_obj.compChanges[newComp.uuid])
+        }
+
     }
-    if(Object.keys(nodeChange).length>0){
-        console.log("节点改变",JSON.stringify(nodeChange))
+    if(Object.keys(_obj.nodeChange).length==0){
+        delete _obj.nodeChange
+    }else{
+        applyChange(oldVal,_obj.nodeChange)
     }
-    if(Object.keys(compChanges).length>0){
-        console.log("组件改变",JSON.stringify(compChanges))
+    if(Object.keys(_obj.compChanges).length==0){
+        delete _obj.compChanges
     }
+    if(_obj.nodeChange==null && _obj.compChanges==null){
+        return
+    }
+    console.log("节点改变",JSON.stringify(_obj))
+    _pluginSocket.reqModifyNodeInfo(_obj)
 }
 
 /**递归比较两个对象 */
@@ -163,13 +179,26 @@ function deepCompare(newObj: any, oldObj: any) {
             }
         } else if (newObj[key] !== oldObj[key]) {
             changes[key] = newObj[key];
-            oldObj[key] = newObj[key];
+            // oldObj[key] = newObj[key];
         }
     }
     if(Object.keys(changes).length==0){
         return null
     }
     return changes;
+}
+
+function applyChange(oldoObj,changeMap:Record<string,any>){
+    for(let key in changeMap){
+        const oldVal = oldoObj[key]
+        const newVal = changeMap[key]
+        
+        if(typeof newVal === "object"){
+            applyChange(oldVal,newVal)
+        }else{
+            oldoObj[key] = newVal
+        }
+    }
 }
 
 const onMouseDown = (e:MouseEvent) => {
@@ -254,7 +283,9 @@ async function onSel_node(item:NodeTreeItem){
 const scriptExecutorRef = ref(null);
 
 async function openEvalPanel(){
-    scriptExecutorRef.value.openDialog(`return 'Hello World!'`); // 打开并预填代码
+    if(scriptExecutorRef.value!=null){
+        scriptExecutorRef.value.openDialog(`return 'Hello World!'`); // 打开并预填代码
+    }
 }
 
 </script>

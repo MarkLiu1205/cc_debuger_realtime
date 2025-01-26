@@ -81,7 +81,7 @@ function onSelect(event){
             <div v-if="!editingName" @click="toggleEditingName" style="min-width: 60px;">
                 <span >{{ nodeModel.name }}</span>
             </div>
-            <input ref="nameInputRef"
+            <ui-input ref="nameInputRef"
                 v-else 
                 v-model="nodeModel.name" 
                 type="text" 

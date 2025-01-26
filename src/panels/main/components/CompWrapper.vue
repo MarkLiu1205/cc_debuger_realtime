@@ -19,6 +19,8 @@ import view_Mask from '../inspector/view_Mask.vue';
 import view_ScrollView from '../inspector/view_Scrollview.vue';
 import view_Graphics from '../inspector/view_Graphics.vue';
 import view_Widget from '../inspector/view_Widget.vue';
+import view_Canvas from '../inspector/view_Canvas.vue';
+import View_ElseComp from '../inspector/view_ElseComp.vue';
 
 // const compInfo = defineModel<CompInfo_Base>()
 
@@ -38,21 +40,23 @@ watch(props.compInfo,(newVal)=>{
 
 <template>
     <view_UITransform v-if="compInfo!=null && compInfo.typeStr=='UITransform'" v-model="(props.compInfo as any)" />
-    <view_Label v-if="compInfo!=null && compInfo.typeStr=='Label'" v-model="(props.compInfo as any)" />
-    <view_Sprite v-if="compInfo!=null && compInfo.typeStr=='Sprite'" v-model="(props.compInfo as any)" />
-    <view_EditBox v-if="compInfo!=null && compInfo.typeStr=='EditBox'" v-model="(props.compInfo as any)" />
-    <view_Button v-if="compInfo!=null && compInfo.typeStr=='Button'" v-model="(props.compInfo as any)" />
-    <view_Camera v-if="compInfo!=null && compInfo.typeStr=='Camera'" v-model="(props.compInfo as any)" />
-    <view_Graphics v-if="compInfo!=null && compInfo.typeStr=='Graphics'" v-model="(props.compInfo as any)" />
-    <view_Layout v-if="compInfo!=null && compInfo.typeStr=='Layout'" v-model="(props.compInfo as any)" />
-    <view_Mask v-if="compInfo!=null && compInfo.typeStr=='Mask'" v-model="(props.compInfo as any)" />
-    <view_PageView v-if="compInfo!=null && compInfo.typeStr=='PageView'" v-model="(props.compInfo as any)" />
-    <view_ParticleSystem2D v-if="compInfo!=null && compInfo.typeStr=='ParticleSystem2D'" v-model="(props.compInfo as any)" />
-    <view_RichText v-if="compInfo!=null && compInfo.typeStr=='RichText'" v-model="(props.compInfo as any)" />
-    <view_ScrollView v-if="compInfo!=null && compInfo.typeStr=='ScrollView'" v-model="(props.compInfo as any)" />
-    <view_UIOpacity v-if="compInfo!=null && compInfo.typeStr=='UIOpacity'" v-model="(props.compInfo as any)" />
-    <view_Widget v-if="compInfo!=null && compInfo.typeStr=='Widget'" v-model="(props.compInfo as any)" />
-    <view_Skeleton v-if="compInfo!=null && compInfo.typeStr=='Skeleton'" v-model="(props.compInfo as any)" />
+    <view_Label v-else-if="compInfo!=null && compInfo.typeStr=='Label'" v-model="(props.compInfo as any)" />
+    <view_Sprite v-else-if="compInfo!=null && compInfo.typeStr=='Sprite'" v-model="(props.compInfo as any)" />
+    <view_EditBox v-else-if="compInfo!=null && compInfo.typeStr=='EditBox'" v-model="(props.compInfo as any)" />
+    <view_Button v-else-if="compInfo!=null && compInfo.typeStr=='Button'" v-model="(props.compInfo as any)" />
+    <view_Camera v-else-if="compInfo!=null && compInfo.typeStr=='Camera'" v-model="(props.compInfo as any)" />
+    <view_Graphics v-else-if="compInfo!=null && compInfo.typeStr=='Graphics'" v-model="(props.compInfo as any)" />
+    <view_Layout v-else-if="compInfo!=null && compInfo.typeStr=='Layout'" v-model="(props.compInfo as any)" />
+    <view_Mask v-else-if="compInfo!=null && compInfo.typeStr=='Mask'" v-model="(props.compInfo as any)" />
+    <view_PageView v-else-if="compInfo!=null && compInfo.typeStr=='PageView'" v-model="(props.compInfo as any)" />
+    <view_ParticleSystem2D v-else-if="compInfo!=null && compInfo.typeStr=='ParticleSystem2D'" v-model="(props.compInfo as any)" />
+    <view_RichText v-else-if="compInfo!=null && compInfo.typeStr=='RichText'" v-model="(props.compInfo as any)" />
+    <view_ScrollView v-else-if="compInfo!=null && compInfo.typeStr=='ScrollView'" v-model="(props.compInfo as any)" />
+    <view_UIOpacity v-else-if="compInfo!=null && compInfo.typeStr=='UIOpacity'" v-model="(props.compInfo as any)" />
+    <view_Widget v-else-if="compInfo!=null && compInfo.typeStr=='Widget'" v-model="(props.compInfo as any)" />
+    <view_Skeleton v-else-if="compInfo!=null && compInfo.typeStr=='Skeleton'" v-model="(props.compInfo as any)" />
+    <view_Canvas v-else-if="compInfo!=null && compInfo.typeStr=='Canvas'" v-model="(props.compInfo as any)" />
+    <View_ElseComp v-else="compInfo!=null" v-model="(props.compInfo as any)" />
 </template>
 
 <style scoped>

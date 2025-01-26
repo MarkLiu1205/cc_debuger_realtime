@@ -293,5 +293,33 @@ export function findAvailablePort(startPort: number): Promise<number> {
     });
 }
 
+/**
+ * 遍历一个对象，将其中所有的数字四舍五入到小数点后两位
+ * @param obj 
+ * @returns 
+ */
+export function roundNumbersToPrecision(obj, precision = 2) {
+    if (obj === null || typeof obj !== 'object') {
+        if (typeof obj === 'number') {
+            return Number(obj.toFixed(precision));
+        }
+        return obj;
+    }
+    if (Array.isArray(obj)) {
+        return obj.map(item => roundNumbersToPrecision(item, precision));
+    }
+    return Object.keys(obj).reduce((acc, key) => {
+        const value = obj[key];
+        if (typeof value === 'number') {
+            acc[key] = Number(value.toFixed(precision));
+        } else if (typeof value === 'object' && value !== null) {
+            acc[key] = roundNumbersToPrecision(value, precision);
+        } else {
+            acc[key] = value;
+        }
+        return acc;
+    }, {});
+}
+
 
 }

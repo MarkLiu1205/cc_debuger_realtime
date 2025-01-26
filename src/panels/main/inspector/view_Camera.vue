@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { reactive } from 'vue';
+import { nextTick, reactive, ref } from 'vue';
 import { _funcs } from '../../../tools/_funcs';
 
 
@@ -217,6 +217,22 @@ function onAssetChange(event) {
     const value = event.target.value;
     compModel.value.targetTexture = value;
 }
+
+const editingVisibility = ref(false);
+const visibilityInputRef = ref(null)
+const toggleVisibility = () => {
+  editingVisibility.value = !editingVisibility.value;
+  if (editingVisibility.value) {
+    nextTick(() => {
+      visibilityInputRef.value?.focus();
+    });
+  }
+};
+
+const handleNameBlur = () => {
+    editingVisibility.value = false;
+};
+
 </script>
 
 <template>
@@ -229,6 +245,20 @@ function onAssetChange(event) {
         <div class="property">
             <label>Priority:</label>
             <ui-num-input id="priority" :value="compModel.priority" @change="onNumChange" step="1" min="0"></ui-num-input>
+        </div>
+        <div class="property">
+            <label>Visibility:</label>
+            <div v-if="!editingVisibility" @click="toggleVisibility" style="min-width: 60px;">
+                <span >{{ compModel.visibility }}</span>
+            </div>
+            <ui-num-input ref="visibilityInputRef"
+                v-else 
+                v-model="compModel.visibility" 
+                type="text" 
+                @blur="handleNameBlur" 
+                @keydown.enter="handleNameBlur" 
+                step="1" min="0"
+            />
         </div>
 
         <div class="property">
