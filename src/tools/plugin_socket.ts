@@ -273,6 +273,15 @@ class PluginSocket {
         return this._sendRequest("reqModifyNodeInfo",obj)
     }
 
+    /**
+     * 筛选节点树中的组件
+     * @param typeStr 
+     * @returns 
+     */
+    async fiterCompsWithType(typeStr:CompType){
+        await this.waitForRuntimeIsInline()
+        return this._sendRequest("fiterCompsWithType",typeStr)
+    }
 };
 
 enum PushAction{

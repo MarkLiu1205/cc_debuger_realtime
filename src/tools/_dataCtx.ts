@@ -24,7 +24,7 @@ class _DataContext{
     }
 
     /**节点树 */
-    public curNodeTreeInfo:ResTreeItem = null
+    public curNodeTreeInfo:NodeTreeItem = null
 
     private _curSelectNodeUuid:TypeUUID = ""
     private _nodeInspectorInfoMap:Record<TypeUUID,InspectorInfo_Node> = {}

@@ -2,7 +2,8 @@
 import TestFlow from './components/TestFlow.vue';
 import NodeTreeAndAssetList from './components/NodeTreeAndAssetList.vue';
 import Inspector_Node from './components/Inspector_Node.vue';
-import { computed, createVNode, h, inject, onMounted, onUnmounted, reactive, ref, render, watch } from 'vue';
+import dlg_list_selecter from './components/dlg_list_selecter.vue';
+import { computed, createVNode, h, inject, onMounted, onUnmounted, provide, reactive, ref, render, watch } from 'vue';
 import { ElButton, ElDialog, ElMessage } from 'element-plus';
 import { _funcs } from '../../tools/_funcs';
 import { _dataCtx } from '../../tools/_dataCtx';
@@ -37,7 +38,10 @@ const bundleNames = ref([])
 const resTree_datas = ref([])
 
 /**节点数数据 */
-const nodeTree_datas = ref([])
+const nodeTree_datas = ref([]as Array<NodeTreeItem>)
+
+provide('nodeTreeDatas', nodeTree_datas);
+
 
 _pluginSocket.getNewAddedAssets().then((uuidMap:Record<string,number>)=>{
     console.log("全部列表",typeof uuidMap,uuidMap)
@@ -273,7 +277,7 @@ function onChange2TreeView(){
 }
 
 async function onSel_node(item:NodeTreeItem){
-    // console.log('选中节点:', item);
+    console.log('选中节点:', item);
     let newVal = await _pluginSocket.getNodeInfo(item.uuid)
     // console.log(newVal)
     cur_sel_node.value = newVal
@@ -282,9 +286,16 @@ async function onSel_node(item:NodeTreeItem){
 
 const scriptExecutorRef = ref(null);
 
-async function openEvalPanel(){
+async function openEvalPanel(event: MouseEvent){
     if(scriptExecutorRef.value!=null){
         scriptExecutorRef.value.openDialog(`return 'Hello World!'`); // 打开并预填代码
+    }
+}
+
+const dlg_list_selecterRef = ref(null)
+async function openSelecterDlg(event: MouseEvent){
+    if(dlg_list_selecterRef.value!=null){
+        dlg_list_selecterRef.value.openDialog(event);
     }
 }
 
@@ -343,11 +354,15 @@ async function openEvalPanel(){
                 </div>
                 <div class="resizer-line-1" ref="resizer_ele_2"></div>
                 <div class="right-panel">
+                    
+
                     <h2 id="text-1" style="text-align: center;">哈哈哈哈哈哈2</h2>
                     <ui-button style="width: 100px;" @click="openEvalPanel">在runtime执行JS</ui-button>
+                    <ui-button style="width: 100px;margin: 10px;padding: 10px;" @click="openSelecterDlg">测试选择狂</ui-button>
                 </div>
             </div>
             <ScriptExecutor ref="scriptExecutorRef" />
+            <dlg_list_selecter ref="dlg_list_selecterRef"/>
         </div>
         
     </div>
