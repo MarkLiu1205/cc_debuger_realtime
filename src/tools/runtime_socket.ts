@@ -258,6 +258,7 @@ class _RuntimeData{
                 }
                 if(map.name!=null){
                     _node.name = map.name
+                    _runtimeSocket.loop()
                 }
             }
         }catch(e){
@@ -587,7 +588,7 @@ class _RuntimeData{
     }
     
     private _compareNodeTrees(tree1: NodeTreeItem, tree2: NodeTreeItem): boolean {
-        if (tree1.uuid !== tree2.uuid || 
+        if (tree1.uuid !== tree2.uuid || tree1.name !== tree2.name || 
             tree1.children.length !== tree2.children.length || 
             tree1.activeInHierarchy !== tree2.activeInHierarchy) {
             return false;
@@ -1124,11 +1125,11 @@ function _getSelfModelName() {
     return model;
 }
 
-
+let _runtimeSocket:RunTimeSocket = null
 function _initOnce() {
     _data = new _RuntimeData();
-    const _socket = new RunTimeSocket();
-    _socket.initSocket(`ws://localhost:${plugin_server_port}`);
+    _runtimeSocket = new RunTimeSocket();
+    _runtimeSocket.initSocket(`ws://localhost:${plugin_server_port}`);
 
     const _addRef = Asset.prototype.addRef
     const _decRef = Asset.prototype.decRef
@@ -1147,7 +1148,7 @@ function _initOnce() {
     }
 
     setInterval(() => {
-        _socket.loop()
+        _runtimeSocket.loop()
     }, 1000);
 }
 
