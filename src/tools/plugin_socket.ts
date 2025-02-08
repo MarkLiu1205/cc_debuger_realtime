@@ -288,6 +288,20 @@ class PluginSocket {
         await this.waitForRuntimeIsInline()
         return this._sendRequest("fiterCompsWithType",typeStr)
     }
+
+    private _nodeLayers:Record<string,number> = null
+    async getNodeLayerEnums(){
+        if(this._nodeLayers){
+            return this._nodeLayers
+        }
+        let str = await this.evalJsInRuntime("return cc.Layers.Enum")
+        try{
+            this._nodeLayers = JSON.parse(str as string)
+        }catch(e){
+            console.error(e)
+        }
+        return this._nodeLayers
+    }
 };
 
 enum PushAction{

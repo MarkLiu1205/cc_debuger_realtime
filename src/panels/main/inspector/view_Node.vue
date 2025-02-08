@@ -1,18 +1,20 @@
 <script setup lang="ts">
-import { nextTick, reactive, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue';
+import { _pluginSocket } from '../../../tools/plugin_socket';
 
-const enumDesc_Layers = [
-    "UI_2D", "UI_3D", "World", "Background"
-]
+const enumDesc_Layers = ref<string[]>([])
+const enumsMap = ref({})
 
-// const _nodeData = reactive({
-//     name: "bg",
-//     active: true,
-//     position: { x: 0, y: 0, z: 0 },
-//     rotation: { x: 0, y: 0, z: 0 },
-//     scale: { x: 1, y: 1, z: 1 },
-//     layer: enumDesc_Layers.indexOf("UI_2D"),
-// });
+onMounted(async () => {
+    const enums = await _pluginSocket.getNodeLayerEnums()
+    const arr = Object.keys(enums).sort((a, b) => {
+        return enums[a] - enums[b]
+    })
+    enumDesc_Layers.value = arr
+    enumsMap.value = enums
+    // console.log("--------xx", enums)
+    // console.log("--------keys", arr)
+})
 
 const nodeModel = defineModel<NodeInfo>()
 
@@ -68,6 +70,7 @@ function onNumChange(event){
 
 function onSelect(event){
     console.log("layer changed to:", event.target.value)
+    nodeModel.value.layer = event.target.value
 }
 
 </script>
@@ -122,7 +125,7 @@ function onSelect(event){
         <div class="property">
             <label>Layer:</label>
             <ui-select id="layer" v-model="nodeModel.layer" @change="onSelect">
-                <option v-for="(mode, index) in enumDesc_Layers" :key="index" :value="index">{{ mode }}</option>
+                <option v-for="(mode, index) in enumDesc_Layers" :key="index" :value="enumsMap[mode]">{{ mode }}</option>
             </ui-select>
         </div>
     </div>

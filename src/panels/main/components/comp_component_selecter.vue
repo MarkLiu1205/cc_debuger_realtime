@@ -13,11 +13,11 @@ const emit = defineEmits(['change']);
 /**当前选中的组件的uuid */
 const curSelectUuid = computed({
     get: () => {
-        console.log("获取 curSelectUuid:", elementUuid.value);
+        // console.log("获取 curSelectUuid:", elementUuid.value);
         return elementUuid.value;
     },
     set: (val) => {
-        console.log("设置 curSelectUuid:", val);
+        // console.log("设置 curSelectUuid:", val);
         elementUuid.value = val;
         emit('change', val);
     }
@@ -29,7 +29,7 @@ async function _updateCurSelectName(){
     }
     
     const nodeObj = await _pluginSocket.getNodeOfComp(curSelectUuid.value)
-    console.log("获取节点名", curSelectUuid.value,nodeObj?.name??"没有");
+    // console.log("获取节点名", curSelectUuid.value,nodeObj?.name??"没有");
     curSelectName.value = nodeObj?.name??""
 }
 
@@ -49,9 +49,9 @@ const dlg_list_selecterRef = ref(null);
 
 async function openSelecterDlg(event: MouseEvent) {
     if (dlg_list_selecterRef.value != null) {
-        console.log("获取组件列表", props.compType);
+        // console.log("获取组件列表", props.compType);
         const arr = await _pluginSocket.fiterCompsWithType(props.compType);
-        console.log("组件列表", arr);
+        // console.log("组件列表", arr);
         const nodeArr = arr.map((item) => {
             const node = _dataCtx.getTreeNodeInfoWithUuid(item.nodeUuid);
             return {
@@ -62,7 +62,7 @@ async function openSelecterDlg(event: MouseEvent) {
             }
         });
         dlg_list_selecterRef.value.openDialog(event, nodeArr, (obj) => {
-            console.log("选中的节点", obj);
+            // console.log("选中的节点", obj);
             curSelectUuid.value = obj.compUuid; // 自动更新
         });
     }
