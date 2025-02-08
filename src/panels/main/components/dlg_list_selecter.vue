@@ -8,12 +8,13 @@ const menuPosition = reactive({ x: 0, y: 0 });
 let treeData:{
     name: string;
     path: string;
+    key: string;
 }[] = null
 
 // 定义树形结构的属性
 const treeProps = {
     label: 'name',
-    value: 'path',
+    value: 'key',
 };
 
 // 控制弹窗显示与隐藏
@@ -23,7 +24,10 @@ const selfPopupRef = ref(null);
 let _onSelect:(obj)=>void = null
 // 打开弹窗
 function openDialog(event,datas:Array<NodeTreeItem>,onSelect) {
-    treeData = datas
+    for(let obj of datas){
+        obj["key"] = obj.path+""+ obj.uuid
+    }
+    treeData = datas as any
     _onSelect = onSelect
     console.log('打开弹窗');
     dialogVisible.value = true;

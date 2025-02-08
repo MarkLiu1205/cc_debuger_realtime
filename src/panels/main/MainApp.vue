@@ -62,9 +62,20 @@ _pluginSocket.listenRuntimeList((nameArr)=>{
     _funcs.log_1("runtime 列表：",JSON.stringify(nameArr))
 })
 
+function _updateNodeTreeKeys(node:NodeTreeItem){
+    function traverse(node: NodeTreeItem) {
+        node["key"] = node.path+""+node.uuid
+        if (node.children) {
+            node.children.forEach(child => traverse(child));
+        }
+    }
+    traverse(node)
+}
+
 _pluginSocket.listenSceneNodeTree((data)=>{
     _funcs.log_1("节点树变化：",JSON.stringify(data,null,2))
     if(data){
+        _updateNodeTreeKeys(data)
         _dataCtx.curNodeTreeInfo = data
         nodeTree_datas.value = [_dataCtx.curNodeTreeInfo]
     }

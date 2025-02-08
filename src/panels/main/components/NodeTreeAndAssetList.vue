@@ -46,7 +46,7 @@ const treeProp_res:TreeOptionProps = {
 }
 
 const treeProp_node:TreeOptionProps = {
-  value: 'path',
+  value: 'key',
   label: 'name',
   children: 'children',
 }

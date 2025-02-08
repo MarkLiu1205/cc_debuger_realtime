@@ -258,7 +258,7 @@ class _RuntimeData{
                 }
                 if(map.name!=null){
                     _node.name = map.name
-                    _runtimeSocket.loop()
+                    _runtimeSocket?.loop()
                 }
             }
         }catch(e){
