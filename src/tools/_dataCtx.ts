@@ -180,7 +180,37 @@ class _DataContext{
         }
     }
 
+    getTreeNodeInfoWithUuid(uuid:string):NodeTreeItem{
+        if(this.curNodeTreeInfo==null){
+            return null
+        }
+        if(this.curNodeTreeInfo.uuid==uuid){
+            return this.curNodeTreeInfo
+        }
+        for(let obj of this.curNodeTreeInfo.children){
+            function traverse(node: NodeTreeItem) {
+                // console.log(node.uuid,node.uuid == uuid)
+                // console.log("path",node.path)
+                if(node.uuid == uuid){
+                    return node
+                }
+                if (node.children) {
+                    for(let child of node.children){
+                        let ret = traverse(child)
+                        if(ret){
+                            return ret
+                        }
+                    }
+                }
+            }
 
+            let ret = traverse(obj)
+            if(ret){
+                return ret
+            }
+        }
+        return null
+    }
 }
 
 export const _dataCtx = new _DataContext();

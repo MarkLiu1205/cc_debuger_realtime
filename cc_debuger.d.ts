@@ -33,7 +33,7 @@ type CompType = "Sprite" | "Label" | "UITransform" | "Button" | "Canvas" | "Edit
     "Mask" | "ParticleSystem2D" | "ProgressBar" | "RichText" | "ScrollView" | "Slider" | "Spine" | 
     "VideoPlayer" | "WebView" | "Widget" | "Animation" | "AudioSource" | "Camera" | "RenderTexture" | 
     "TiledMap" | "Graphics" | "Script" | "PageView" | "TiledTile" | "UIOpacity" | "LabelShadow" | 
-    "LabelOutline" | "Skeleton"
+    "LabelOutline" | "Skeleton" | "PageViewIndicator"
 
 /**节点树信息 */
 interface NodeTreeItem{

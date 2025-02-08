@@ -55,6 +55,10 @@ ui-color {
     width: 190px;
 }
 
+.comp_component_selecter {
+    width: 190px;
+}
+
 label {
     width: 105px;
 }

@@ -63,7 +63,7 @@ _pluginSocket.listenRuntimeList((nameArr)=>{
 })
 
 _pluginSocket.listenSceneNodeTree((data)=>{
-    _funcs.log_1("节点树变化：",data)
+    _funcs.log_1("节点树变化：",JSON.stringify(data,null,2))
     if(data){
         _dataCtx.curNodeTreeInfo = data
         nodeTree_datas.value = [_dataCtx.curNodeTreeInfo]
@@ -280,7 +280,7 @@ function onChange2TreeView(){
 async function onSel_node(item:NodeTreeItem){
     console.log('选中节点:', item);
     let newVal = await _pluginSocket.getNodeInfo(item.uuid)
-    // console.log(newVal)
+    console.log(newVal)
     cur_sel_node.value = newVal
     _dataCtx.setCurSelectNodeInfo(JSON.parse(JSON.stringify(newVal)))
 }

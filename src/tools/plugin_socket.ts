@@ -256,6 +256,12 @@ class PluginSocket {
         return info as any as InspectorInfo_Node
     }
 
+    async getNodeOfComp(uuid:string) {
+        await this.waitForRuntimeIsInline()
+        let info = await this._sendRequest('getNodeOfComp', { uuid });
+        return info as {name:string,uuid:string}
+    }
+
     /**执行js并返回执行结果 */
     async evalJsInRuntime(str:string){
         console.log("zzzzz 1.2")
@@ -278,7 +284,7 @@ class PluginSocket {
      * @param typeStr 
      * @returns 
      */
-    async fiterCompsWithType(typeStr:CompType){
+    async fiterCompsWithType(typeStr:CompType):Promise<Array<{uuid:string,nodeUuid:string}>>{
         await this.waitForRuntimeIsInline()
         return this._sendRequest("fiterCompsWithType",typeStr)
     }

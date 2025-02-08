@@ -5,36 +5,15 @@ import { ElDialog, ElTree } from 'element-plus';
 const menuPosition = reactive({ x: 0, y: 0 });
 
 // 模拟节点树数据
-let treeData = [
-    {name: 'Canvas',path: 'Canvas'},
-    {name: 'btn_jump_A',path: 'Canvas/btn_jump_A'},
-    {name: 'Label',path: 'Canvas/btn_jump_A/Label'},
-    {name: 'btn_jump_B',path: 'Canvas/btn_jump_A'},
-    {name: 'Label',path: 'Canvas/btn_jump_B/Label'},
-    {name: 'm_tip',path: 'Canvas/m_tip'},
-    {name: 'EditBox',path: 'Canvas/EditBox'},
-    {name: 'Canvas',path: 'Canvas'},
-    {name: 'btn_jump_A',path: 'Canvas/btn_jump_A'},
-    {name: 'Label',path: 'Canvas/btn_jump_A/Label'},
-    {name: 'btn_jump_B',path: 'Canvas/btn_jump_A'},
-    {name: 'Label',path: 'Canvas/btn_jump_B/Label'},
-    {name: 'm_tip',path: 'Canvas/m_tip'},
-    {name: 'EditBox',path: 'Canvas/EditBox'},
-    {name: 'Canvas',path: 'Canvas'},
-    {name: 'btn_jump_A',path: 'Canvas/btn_jump_A'},
-    {name: 'Label',path: 'Canvas/btn_jump_A/Label'},
-    {name: 'btn_jump_B',path: 'Canvas/btn_jump_A'},
-    {name: 'Label',path: 'Canvas/btn_jump_B/Label'},
-    {name: 'm_tip',path: 'Canvas/m_tip'},
-    {name: 'EditBox',path: 'Canvas/EditBox'},
-    
-];
+let treeData:{
+    name: string;
+    path: string;
+}[] = null
 
 // 定义树形结构的属性
 const treeProps = {
     label: 'name',
     value: 'path',
-    children: 'children',
 };
 
 // 控制弹窗显示与隐藏

@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { reactive } from 'vue';
+import comp_component_selecter from '../components/comp_component_selecter.vue';
+import comp_node_selecter from '../components/comp_node_selecter.vue';
 
 enum SizeMode {
     Unified = 0,
@@ -79,11 +81,11 @@ function onNodeChange(event) {
 }
 
 function onComponentChange(event) {
-    const id = event.target.id;
-    const uuid = event.target.value
-    if(id==="id_indicator"){
-        compModel.value.indicator = uuid
-    }
+    // const id = event.target.id;
+    // const uuid = event.target.value
+    // if(id==="id_indicator"){
+    //     compModel.value.indicator = uuid
+    // }
 }
 
 function onSelectChange(event) {
@@ -163,7 +165,8 @@ function onSliderChange(event) {
 
         <div class="property">
             <label>Indicator:</label>
-            <ui-component id="id_indicator" :value="compModel.indicator" @change="onComponentChange" droppable="cc.PageViewIndicator"></ui-component>
+            <comp_component_selecter class="comp_component_selecter" id="id_indicator" compType="PageViewIndicator" v-model="compModel.indicator" @change="onComponentChange"/>
+            <!-- <ui-component id="id_indicator" :value="compModel.indicator" @change="onComponentChange" droppable="cc.PageViewIndicator"></ui-component> -->
         </div>
 
         <div class="property">

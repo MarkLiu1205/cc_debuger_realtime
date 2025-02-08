@@ -162,6 +162,11 @@ class RunTimeSocket {
                 data = _data.getNodeInfo(uuid)
             } else if (msg.action === 'reqModifyNodeInfo') {
                 data = _data.doModifyNodeInfo(msg.data)
+            } else if (msg.action === 'fiterCompsWithType') {
+                data = _data.fiterCompsWithType(msg.data)
+            } else if (msg.action === 'getNodeOfComp') {
+                const uuid = msg.data.uuid;
+                data = _data.getNodeOfComp(uuid)
             }
     
             responseData.data = data
@@ -358,6 +363,26 @@ class _RuntimeData{
         
 
         return 0
+    }
+
+    fiterCompsWithType(typeStr:CompType){
+        const ret:Array<{uuid:string,nodeUuid:string}> = []
+        for(let uuid in this.m_compUuidMap){
+            const comp = this.m_compUuidMap[uuid]
+            if(comp["__proto__"].constructor.name === typeStr){
+                ret.push({uuid,nodeUuid:comp.node.uuid})
+            }
+        }
+        return ret
+
+    }
+
+    getNodeOfComp(uuid:string){
+        const comp = this.m_compUuidMap[uuid]
+        if(comp){
+            return {name:comp.node.name,uuid:comp.node.uuid}
+        }
+        return {name:"",uuid:""}
     }
 
     clear(){
