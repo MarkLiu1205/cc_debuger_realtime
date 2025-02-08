@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { reactive } from 'vue';
 import { _funcs } from '../../../tools/_funcs';
+import comp_node_selecter from '../components/comp_node_selecter.vue';
 
 enum Transition {
     NONE = 0,
@@ -104,13 +105,9 @@ function onAssetChange(event){
         console.log("disabledSprite changed to:", event.target.value,compModel.value.disabledSprite)
     }
 }
-
+//已经自动绑定了，不需要赋值
 function onNodeChange(event){
-    const eleId = event.target.id
-    const uuid = event.target.value
-    if(eleId=="id_target"){
-        compModel.value.target = uuid
-    }
+    // console.log("onNodeChange",event,compModel.value.target)
 }
 
 </script>
@@ -123,7 +120,7 @@ function onNodeChange(event){
         </div>
         <div class="property">
             <label>target:</label>
-            <ui-node id="id_target" droppable="cc.Node" @change="onNodeChange" :value="compModel.target"></ui-node>
+            <comp_node_selecter class="comp_node_selecter" id="id_target" v-model="compModel.target" @update:modelValue="onNodeChange"/>
         </div>
         <div class="property">
             <label >Interactable:</label>

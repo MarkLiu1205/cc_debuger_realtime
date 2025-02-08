@@ -3,6 +3,7 @@ import TestFlow from './components/TestFlow.vue';
 import NodeTreeAndAssetList from './components/NodeTreeAndAssetList.vue';
 import Inspector_Node from './components/Inspector_Node.vue';
 import dlg_list_selecter from './components/dlg_list_selecter.vue';
+import comp_node_selecter from './components/comp_node_selecter.vue';
 import { computed, createVNode, h, inject, onMounted, onUnmounted, provide, reactive, ref, render, watch } from 'vue';
 import { ElButton, ElDialog, ElMessage } from 'element-plus';
 import { _funcs } from '../../tools/_funcs';
@@ -295,9 +296,13 @@ async function openEvalPanel(event: MouseEvent){
 const dlg_list_selecterRef = ref(null)
 async function openSelecterDlg(event: MouseEvent){
     if(dlg_list_selecterRef.value!=null){
-        dlg_list_selecterRef.value.openDialog(event);
+        dlg_list_selecterRef.value.openDialog(event,(obj)=>{
+            console.log("选中的节点",obj)
+        });
     }
 }
+
+const xxx = {uuid:"123",name:"123"}
 
 </script>
 
@@ -359,6 +364,7 @@ async function openSelecterDlg(event: MouseEvent){
                     <h2 id="text-1" style="text-align: center;">哈哈哈哈哈哈2</h2>
                     <ui-button style="width: 100px;" @click="openEvalPanel">在runtime执行JS</ui-button>
                     <ui-button style="width: 100px;margin: 10px;padding: 10px;" @click="openSelecterDlg">测试选择狂</ui-button>
+                    <!-- <comp_node_selecter v-model="xxx" style="width: 220px;"/> -->
                 </div>
             </div>
             <ScriptExecutor ref="scriptExecutorRef" />

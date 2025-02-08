@@ -51,6 +51,10 @@ ui-color {
     width: 190px;
 }
 
+.comp_node_selecter {
+    width: 190px;
+}
+
 label {
     width: 105px;
 }

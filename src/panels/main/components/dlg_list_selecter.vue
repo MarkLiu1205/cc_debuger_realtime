@@ -3,37 +3,37 @@ import { ref,reactive,watch,onUnmounted } from 'vue';
 import { ElDialog, ElTree } from 'element-plus';
 
 const menuPosition = reactive({ x: 0, y: 0 });
-const fitlerStr = ref("")
 
 // 模拟节点树数据
-const treeData = [
-    {label: 'Canvas',path: 'Canvas'},
-    {label: 'btn_jump_A',path: 'Canvas/btn_jump_A'},
-    {label: 'Label',path: 'Canvas/btn_jump_A/Label'},
-    {label: 'btn_jump_B',path: 'Canvas/btn_jump_A'},
-    {label: 'Label',path: 'Canvas/btn_jump_B/Label'},
-    {label: 'm_tip',path: 'Canvas/m_tip'},
-    {label: 'EditBox',path: 'Canvas/EditBox'},
-    {label: 'Canvas',path: 'Canvas'},
-    {label: 'btn_jump_A',path: 'Canvas/btn_jump_A'},
-    {label: 'Label',path: 'Canvas/btn_jump_A/Label'},
-    {label: 'btn_jump_B',path: 'Canvas/btn_jump_A'},
-    {label: 'Label',path: 'Canvas/btn_jump_B/Label'},
-    {label: 'm_tip',path: 'Canvas/m_tip'},
-    {label: 'EditBox',path: 'Canvas/EditBox'},
-    {label: 'Canvas',path: 'Canvas'},
-    {label: 'btn_jump_A',path: 'Canvas/btn_jump_A'},
-    {label: 'Label',path: 'Canvas/btn_jump_A/Label'},
-    {label: 'btn_jump_B',path: 'Canvas/btn_jump_A'},
-    {label: 'Label',path: 'Canvas/btn_jump_B/Label'},
-    {label: 'm_tip',path: 'Canvas/m_tip'},
-    {label: 'EditBox',path: 'Canvas/EditBox'},
+let treeData = [
+    {name: 'Canvas',path: 'Canvas'},
+    {name: 'btn_jump_A',path: 'Canvas/btn_jump_A'},
+    {name: 'Label',path: 'Canvas/btn_jump_A/Label'},
+    {name: 'btn_jump_B',path: 'Canvas/btn_jump_A'},
+    {name: 'Label',path: 'Canvas/btn_jump_B/Label'},
+    {name: 'm_tip',path: 'Canvas/m_tip'},
+    {name: 'EditBox',path: 'Canvas/EditBox'},
+    {name: 'Canvas',path: 'Canvas'},
+    {name: 'btn_jump_A',path: 'Canvas/btn_jump_A'},
+    {name: 'Label',path: 'Canvas/btn_jump_A/Label'},
+    {name: 'btn_jump_B',path: 'Canvas/btn_jump_A'},
+    {name: 'Label',path: 'Canvas/btn_jump_B/Label'},
+    {name: 'm_tip',path: 'Canvas/m_tip'},
+    {name: 'EditBox',path: 'Canvas/EditBox'},
+    {name: 'Canvas',path: 'Canvas'},
+    {name: 'btn_jump_A',path: 'Canvas/btn_jump_A'},
+    {name: 'Label',path: 'Canvas/btn_jump_A/Label'},
+    {name: 'btn_jump_B',path: 'Canvas/btn_jump_A'},
+    {name: 'Label',path: 'Canvas/btn_jump_B/Label'},
+    {name: 'm_tip',path: 'Canvas/m_tip'},
+    {name: 'EditBox',path: 'Canvas/EditBox'},
     
 ];
 
 // 定义树形结构的属性
 const treeProps = {
-    label: 'label',
+    label: 'name',
+    value: 'path',
     children: 'children',
 };
 
@@ -41,16 +41,35 @@ const treeProps = {
 const dialogVisible = ref(false);
 const selfPopupRef = ref(null);
 
-// 选中的节点路径
-const selectedNodePath = ref('');
-
+let _onSelect:(obj)=>void = null
 // 打开弹窗
-function openDialog(event) {
+function openDialog(event,datas:Array<NodeTreeItem>,onSelect) {
+    treeData = datas
+    _onSelect = onSelect
     console.log('打开弹窗');
     dialogVisible.value = true;
+    // const { clientX, clientY } = event;
+    // menuPosition.x = clientX;
+    // menuPosition.y = clientY;
+    const totalWidth = 300
+    const totalHeight = 300
+
+    // 获取鼠标点击位置
     const { clientX, clientY } = event;
-    menuPosition.x = clientX;
-    menuPosition.y = clientY;
+    const distanceToBottom = window.innerHeight - clientY;
+    const distanceToRight = window.innerWidth - clientX;
+
+    // 判断菜单是否接近屏幕底部
+    if (distanceToBottom < totalHeight) {
+        menuPosition.y = clientY - (totalHeight - distanceToBottom); 
+    } else {
+        menuPosition.y = clientY; 
+    }
+    if (distanceToRight < totalWidth) {
+        menuPosition.x = clientX - (totalWidth - distanceToRight); 
+    } else {
+        menuPosition.x = clientX; 
+    }
 };
 
 defineExpose({
@@ -60,8 +79,9 @@ defineExpose({
 // 处理节点点击
 const handleNodeClick = (node) => {
     if (node.path) {
-    selectedNodePath.value = node.path;
-    console.log('选中的节点路径:', selectedNodePath.value);
+        
+        _onSelect(node)
+        hideContextMenu()
     }
 };
 
@@ -97,16 +117,22 @@ onUnmounted(() => {
 
 const treeRef = ref(null)
 
-function filterMethod(query: string, data,node){
-    console.log("filterMethod",fitlerStr.value,data.path)
-    return data.path.indexOf(fitlerStr.value)>=0
-}
-// const filterMethod = (query: string, node) =>
-//   node.label!.includes(query)
 
-const onQueryChanged = (query: string) => {
-  treeRef.value!.filter(query)
-}
+const filterMethod = (query, data,node) => {
+    if (!query) return true;
+    
+    if (!data || !data.path) return false;
+    const bMatch = data.path.toLowerCase().includes(query.toLowerCase());
+    console.log("筛选条件:", query,bMatch,typeof bMatch);
+    return bMatch;
+};
+
+const onQueryChanged = (event) => {
+    if (treeRef.value) {
+        console.log("开始筛选，输入值:", event.target.value);
+        treeRef.value.filter(event.target.value);
+    }
+};
 
 </script>
 
@@ -117,7 +143,7 @@ const onQueryChanged = (query: string) => {
         :style="{ top: `${menuPosition.y}px`, left: `${menuPosition.x}px` }"
         ref="selfPopupRef"
     >
-        <ui-input v-model="fitlerStr" @change="onQueryChanged" placeholder="筛选" type="text"/>
+        <ui-input @change="onQueryChanged" placeholder="筛选" type="text"/>
         <el-tree-v2
             ref="treeRef"
             :data="treeData"
@@ -125,11 +151,13 @@ const onQueryChanged = (query: string) => {
             :highlight-current="true"
             @node-click="handleNodeClick"
             :filter-method="filterMethod"
-            :height="240"
+            :height="260"
         >
             <template #default="{ node }">
                 
-                <span>{{ node.data.path }}</span>
+                <div style="margin-left: -16px;">
+                    <span>{{ node.data.path }}</span>
+                </div>
             </template>
         </el-tree-v2>
     </div>

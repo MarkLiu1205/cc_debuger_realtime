@@ -18,23 +18,27 @@ function showContextMenu(event, options: Array<Option>) {
     isMenuVisible.value = true;
     menuOptions.value = options || [];
 
-        // 获取菜单项的高度
-        const menuItemHeight = 36;
-        const totalHeight = menuOptions.value.length * menuItemHeight; // 计算菜单的总高度
+    // 获取菜单项的高度
+    const menuItemHeight = 36;
+    const totalHeight = menuOptions.value.length * menuItemHeight; // 计算菜单的总高度
+    const totalWidth = 150; // 计算菜单的总宽度
+    
+    // 获取鼠标点击位置
+    const { clientX, clientY } = event;
+    const distanceToBottom = window.innerHeight - clientY;
+    const distanceToRight = window.innerWidth - clientX;
 
-        // 获取鼠标点击位置
-        const { clientX, clientY } = event;
-        const windowHeight = window.innerHeight; // 窗口高度
-        const distanceToBottom = windowHeight - clientY;
-
-        // 判断菜单是否接近屏幕底部
-        if (distanceToBottom < totalHeight) {
-            menuPosition.x = clientX;
-            menuPosition.y = clientY - totalHeight; // 在点击位置的上方显示菜单
-        } else {
-            menuPosition.x = clientX;
-            menuPosition.y = clientY; // 正常显示在点击位置的下方
-        }
+    // 判断菜单是否接近屏幕底部
+    if (distanceToBottom < totalHeight) {
+        menuPosition.y = clientY - (totalHeight - distanceToBottom); 
+    } else {
+        menuPosition.y = clientY; 
+    }
+    if (distanceToRight < totalWidth) {
+        menuPosition.x = clientX - (totalWidth - distanceToRight); 
+    } else {
+        menuPosition.x = clientX; 
+    }
     
 }
 
