@@ -107,7 +107,7 @@ function onAssetChange(event){
 }
 //已经自动绑定了，不需要赋值
 function onNodeChange(event){
-    // console.log("onNodeChange",event,compModel.value.target)
+    console.log("onNodeChange",event,compModel.value.target)
 }
 
 </script>
@@ -120,7 +120,7 @@ function onNodeChange(event){
         </div>
         <div class="property">
             <label>target:</label>
-            <comp_node_selecter class="comp_node_selecter" id="id_target" v-model="compModel.target" @update:modelValue="onNodeChange"/>
+            <comp_node_selecter class="comp_node_selecter" id="id_target" v-model="compModel.target" @change="onNodeChange"/>
         </div>
         <div class="property">
             <label >Interactable:</label>
