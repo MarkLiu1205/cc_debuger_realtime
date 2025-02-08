@@ -173,6 +173,9 @@ function onRightClick_asset( event: MouseEvent, data: ResTreeItem, node: TreeNod
                 :highlight-current="true"
                 @node-contextmenu="onRightClick_node"
             >
+            <template #default="{ node }">
+                <ui-label class="nodeItem" :class="{noActive:!node.data.activeInHierarchy}">{{ node.label }}</ui-label>
+            </template>
             </el-tree-v2>
         </div>
         <div class="gap_line" ref="gap_line"></div>
@@ -249,5 +252,13 @@ function onRightClick_asset( event: MouseEvent, data: ResTreeItem, node: TreeNod
 :deep(.custom-current:hover) > .el-tree-node__content {
     background-color: #227F9B !important; /* 高亮背景色 */
     color: #ffffff !important; /* 文字颜色 */
+}
+
+.nodeItem{
+    color: #EDEDED;
+}
+
+.nodeItem.noActive{
+    color: #929292;
 }
 </style>

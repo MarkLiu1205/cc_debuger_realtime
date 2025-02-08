@@ -252,6 +252,7 @@ class _RuntimeData{
                 }
                 if(map.active!=null){
                     _node.active = map.active
+                    _runtimeSocket?.loop()
                 }
                 if(map.layer!=null){
                     _node.layer = map.layer
