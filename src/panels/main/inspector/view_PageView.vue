@@ -166,7 +166,6 @@ function onSliderChange(event) {
         <div class="property">
             <label>Indicator:</label>
             <comp_component_selecter class="comp_component_selecter" id="id_indicator" compType="PageViewIndicator" v-model="compModel.indicator" @change="onComponentChange"/>
-            <!-- <ui-component id="id_indicator" :value="compModel.indicator" @change="onComponentChange" droppable="cc.PageViewIndicator"></ui-component> -->
         </div>
 
         <div class="property">

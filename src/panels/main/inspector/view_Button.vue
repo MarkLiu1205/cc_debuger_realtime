@@ -120,7 +120,7 @@ function onNodeChange(event){
         </div>
         <div class="property">
             <label>target:</label>
-            <comp_node_selecter class="comp_node_selecter" id="id_target" v-model="compModel.target" @change="onNodeChange"/>
+            <comp_node_selecter class="comp_node_selecter" v-model="compModel.target" @change="onNodeChange"/>
         </div>
         <div class="property">
             <label >Interactable:</label>

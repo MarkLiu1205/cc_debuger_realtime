@@ -141,7 +141,7 @@ async function openSelecterDlg(event: MouseEvent) {
 
 .name {
     flex: 1;
-    font-size: 14px;
+    font-size: 12px;
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;

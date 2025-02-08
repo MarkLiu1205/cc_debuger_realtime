@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { reactive } from 'vue';
+import comp_component_selecter from '../components/comp_component_selecter.vue';
 
 enum InputMode {
     ANY = 0,
@@ -145,11 +146,11 @@ function onNodeChange(event) {
         </div>
         <div class="property">
             <label>Text Label:</label>
-            <ui-node id="id_textLabel" :value="compModel.textLabel" @change="onNodeChange" droppable="cc.Label"></ui-node>
+            <comp_component_selecter class="comp_component_selecter" compType="Label" v-model="compModel.textLabel"/>
         </div>
         <div class="property">
             <label>Placeholder Label:</label>
-            <ui-node id="id_placeholderLabel" :value="compModel.placeholderLabel" @change="onNodeChange" droppable="cc.Label"></ui-node>
+            <comp_component_selecter class="comp_component_selecter" compType="Label" v-model="compModel.placeholderLabel"/>
         </div>
         <div class="property">
             <label>Background Image:</label>

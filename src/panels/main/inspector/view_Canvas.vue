@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { reactive } from 'vue';
-
+import comp_component_selecter from '../components/comp_component_selecter.vue';
 
 const compModel = defineModel<CompInfo_Canvas>()
 
@@ -15,11 +15,7 @@ function onToggle(event) {
 }
 
 function onNodeChange(event){
-    const eleId = event.target.id
-    const uuid = event.target.value
-    if(eleId=="id_cameraComponent"){
-        compModel.value.cameraComponent = uuid
-    }
+    
 }
 
 </script>
@@ -32,7 +28,7 @@ function onNodeChange(event){
         </div>
         <div class="property">
             <label>Camera Component:</label>
-            <ui-node id="id_cameraComponent" droppable="cc.Node" @change="onNodeChange" :value="compModel.cameraComponent"></ui-node>
+            <comp_component_selecter class="comp_component_selecter" compType="Camera" v-model="compModel.cameraComponent"/>
         </div>
         <div class="property">
             <label>Align Canvas With Screen:</label>

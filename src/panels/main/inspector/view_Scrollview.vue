@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { reactive } from 'vue';
+import comp_node_selecter from '../components/comp_node_selecter.vue';
 
 // const scrollViewData = reactive({
 //     enabled: true,
@@ -109,7 +110,7 @@ function onAssetChange(event) {
 
         <div class="property">
             <label>Content:</label>
-            <ui-node id="content" :value="compModel.content" @change="onAssetChange" droppable="cc.Node"></ui-node>
+            <comp_node_selecter class="comp_node_selecter" v-model="compModel.content" />
         </div>
 
 
