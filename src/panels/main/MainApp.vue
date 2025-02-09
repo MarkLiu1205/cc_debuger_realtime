@@ -312,17 +312,6 @@ async function openEvalPanel(event: MouseEvent){
     }
 }
 
-const dlg_list_selecterRef = ref(null)
-async function openSelecterDlg(event: MouseEvent){
-    if(dlg_list_selecterRef.value!=null){
-        dlg_list_selecterRef.value.openDialog(event,(obj)=>{
-            console.log("选中的节点",obj)
-        });
-    }
-}
-
-const xxx = {uuid:"123",name:"123"}
-
 </script>
 
 <template>
@@ -330,7 +319,7 @@ const xxx = {uuid:"123",name:"123"}
         <TestFlow/>
     </div> -->
     <div style="width: 100vw; height: 100vh; ">  
-        <div style="border: 2px solid #f40909; width: calc(100% - 10px);height: calc(100% - 35px);">
+        <div style=" width: calc(100% - 10px);height: calc(100% - 35px);">
             <div class="center-align" style="flex-direction: column;" v-if="isRuntimeOffline">
                 <h2>没有检测到可用运行时</h2>
                 <p>推荐打开预览：{{runtimePreviewUrl}}</p>
@@ -349,45 +338,16 @@ const xxx = {uuid:"123",name:"123"}
                 </div>
                 <div class="resizer-line-1" ref="resizer_ele_1"></div>
                 <div id="eid_view_node_tree" class="cls_view_node_tree" :style="{ width: width_node_tree + 'px' }">
-                    <!-- <div class="tree-view-container"> -->
-                        <Inspector_Node v-model="cur_sel_node">
-
-                        </Inspector_Node>
-                        <!-- <view_Node></view_Node>
-                        <view_Widget></view_Widget>
-                        <view_Graphics></view_Graphics>
-                        <view_Scrollview></view_Scrollview>
-                        <view_Mask></view_Mask>
-                        <view_PageView></view_PageView>
-                        <view_EditBox></view_EditBox>
-                        <view_UITransform></view_UITransform>
-                        <view_Camera></view_Camera>
-                        <view_RichText></view_RichText>
-                        <view_UIOpacity></view_UIOpacity>
-                        <view_Skeleton></view_Skeleton>
-                        <view_Layout></view_Layout>
-                        <view_ParticleSystem></view_ParticleSystem>
-                        <view_Sprite></view_Sprite>
-                        <view_Button></view_Button>
-                        <view_Label></view_Label> -->
-                        
-                        
-                    <!-- </div> -->
-                    
-                
+                    <Inspector_Node v-model="cur_sel_node"/>
                 </div>
                 <div class="resizer-line-1" ref="resizer_ele_2"></div>
                 <div class="right-panel">
-                    
 
                     <h2 id="text-1" style="text-align: center;">哈哈哈哈哈哈2</h2>
                     <ui-button style="width: 100px;" @click="openEvalPanel">在runtime执行JS</ui-button>
-                    <ui-button style="width: 100px;margin: 10px;padding: 10px;" @click="openSelecterDlg">测试选择狂</ui-button>
-                    <!-- <comp_node_selecter v-model="xxx" style="width: 220px;"/> -->
                 </div>
             </div>
             <ScriptExecutor ref="scriptExecutorRef" />
-            <dlg_list_selecter ref="dlg_list_selecterRef"/>
         </div>
         
     </div>
@@ -432,7 +392,7 @@ const xxx = {uuid:"123",name:"123"}
 .tree-view-container {
     height: 100%;
     overflow-y: auto; /* 启用垂直滚动 */
-    border: 1px solid #ccc; /* 可选：为容器添加边框以明确可视区域 */
+    /* border: 1px solid #ccc;  */
 }
 
 .cls_view_node_tree {

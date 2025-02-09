@@ -266,15 +266,15 @@ function onRightClick_asset( event: MouseEvent, data: ResTreeItem, node: TreeNod
     display: flex;
     flex-direction: column;
     /* overflow-y: auto;  */
-    border: 1px solid #ccc; /* 可选：为容器添加边框以明确可视区域 */
+    /* border: 1px solid #ccc; */
 }
 
-.border {
+/* .border {
     border: 1px solid #ccc;
-}
+} */
 
 .gap_line {
-    height: 1px; /* 分隔条宽度 */
+    height: 2px; /* 分隔条宽度 */
     cursor: row-resize; /* 改变鼠标光标样式 */
     user-select: none; /* 禁止用户选择文本 */
     background-color: #ccc; /* 分隔条背景色 */
