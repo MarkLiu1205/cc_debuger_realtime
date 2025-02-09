@@ -210,9 +210,29 @@ class RunTimeSocket {
             return
         }
 
+        this.sendPush_updateSceneTree()
+    }
+
+    sendPush_updateSceneTree(){
+        if(!this._checkIsConnect()){
+            return
+        }
+        if(!this.m_isActive){
+            return
+        }
         if(_data.searchNodeTree()){
             this._send({ type: 'push', action: 'updateSceneTree', data: _data.m_sceneTree });
         }
+    }
+
+    sendPush_sceneLaunched(){
+        if(!this._checkIsConnect()){
+            return
+        }
+        if(!this.m_isActive){
+            return
+        }
+        this._send({ type: 'push', action: 'sceneLaunched', data: "" });
     }
 }
 
@@ -1151,6 +1171,12 @@ function _initOnce() {
     setInterval(() => {
         _runtimeSocket.loop()
     }, 1000);
+
+    
+    director.on(Director.EVENT_AFTER_SCENE_LAUNCH, () => {
+        _runtimeSocket.sendPush_sceneLaunched()
+        _runtimeSocket.sendPush_updateSceneTree()
+    })
 }
 
 if (!EDITOR) {

@@ -41,6 +41,8 @@ const resTree_datas = ref([])
 /**节点数数据 */
 const nodeTree_datas = ref([]as Array<NodeTreeItem>)
 
+const cur_sel_node = ref(null as InspectorInfo_Node)
+
 provide('nodeTreeDatas', nodeTree_datas);
 
 
@@ -56,6 +58,9 @@ _pluginSocket.getNewAddedAssets().then((uuidMap:Record<string,number>)=>{
 _pluginSocket.listenRuntimeOnlineInfo((bIsOnline)=>{
     _funcs.log_1("runtime在线吗?",bIsOnline)
     isRuntimeOffline.value = !bIsOnline
+    if(!bIsOnline){
+        cur_sel_node.value = null
+    }
 })
 
 _pluginSocket.listenRuntimeList((nameArr)=>{
@@ -81,12 +86,17 @@ _pluginSocket.listenSceneNodeTree((data)=>{
     }
 })
 
+_pluginSocket.listenSceneLaunched((name)=>{
+    _funcs.log_1("场景切换",name)
+    cur_sel_node.value = null
+})
+
 const width_asset_list = ref(_funcs.clamp(200,500,window.innerWidth * 0.3)); // 默认左面板宽度占窗口宽度的30%
 const width_node_tree = ref(_funcs.clamp(320,500,window.innerWidth * 0.3)); // 默认左面板宽度占窗口宽度的30%
 const resizer_ele_1 = ref(null); //拉伸左右边界的线
 const resizer_ele_2 = ref(null); //拉伸左右边界的线
 
-const cur_sel_node = ref(null as InspectorInfo_Node)
+
 watch(cur_sel_node, (newVal,old) => {
     if(old==null){
         return

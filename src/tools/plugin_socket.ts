@@ -164,6 +164,13 @@ class PluginSocket {
         this.listenForPushData<any>(PushAction.updateSceneTree,callback,null)
     }
 
+    /**
+     * 监听场景切换变化
+     */
+    listenSceneLaunched(callback:(data:any)=>void){
+        this.listenForPushData<any>(PushAction.sceneLaunched,callback,null)
+    }
+
     private _onWaitRuntimeOnlineResolves:Array<(data:any)=>void> = []
     /**等待runtime上线连接上plugin */
     async waitForRuntimeIsInline(){
@@ -311,6 +318,8 @@ enum PushAction{
     pushRuntimeList = "pushRuntimeList",
     /**实时刷新节点树 */
     updateSceneTree = "updateSceneTree",
+    /**场景切换 */
+    sceneLaunched = "sceneLaunched",
 
 }
 
