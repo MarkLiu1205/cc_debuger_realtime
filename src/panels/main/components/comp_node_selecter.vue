@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, inject, Ref, watch, defineModel } from 'vue';
 import dlg_list_selecter from './dlg_list_selecter.vue';
+import { eventBus } from '../../../tools/_enentBus';
 
 // 使用 defineModel 绑定 v-model 的属性
 const elementUuid = defineModel<string>();
@@ -72,6 +73,14 @@ async function openSelecterDlg(event: MouseEvent) {
     }
 }
 
+function handleClick() {
+    if(!curSelectUuid.value){
+        return
+    }
+    console.log('div clicked');
+    eventBus.emit("click-node-in-inspector", curSelectUuid.value);
+}
+
 </script>
 
 <template>
@@ -84,8 +93,8 @@ async function openSelecterDlg(event: MouseEvent) {
 
         <div class="content">
             <div class="name-box" :class="{empty: !curSelectUuid}">
-                <span class="name empty" v-if="!curSelectUuid">cc.Node</span>
-                <span class="name" v-else>@{{ curSelectName }}</span>
+                <span class="name" :class="{empty:true}" v-if="!curSelectUuid">cc.Node</span>
+                <span class="name" v-else @click="handleClick" >@{{ curSelectName }}</span>
                 <ui-icon 
                     v-if="isHover && curSelectUuid" 
                     class="delete-btn" 
@@ -149,10 +158,12 @@ async function openSelecterDlg(event: MouseEvent) {
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
+    cursor: pointer;
 }
 
 .name.empty {
     color: #404040;
+    cursor: default;
 }
 
 .delete-btn {

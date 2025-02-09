@@ -72,13 +72,6 @@ function onNumChange(event) {
     }
 }
 
-function onNodeChange(event) {
-    const id = event.target.id;
-    const uuid = event.target.value
-    if(id==="id_content"){
-        compModel.value.content = uuid
-    }
-}
 
 function onComponentChange(event) {
     // const id = event.target.id;
@@ -138,7 +131,7 @@ function onSliderChange(event) {
         </div>
         <div class="property">
             <label>Content:</label>
-            <ui-node id="id_content" :value="compModel.content" @change="onNodeChange" droppable="cc.Node"></ui-node>
+            <comp_node_selecter class="comp_node_selecter" v-model="compModel.content"/>
         </div>
         <div class="property">
             <label>Size Mode:</label>

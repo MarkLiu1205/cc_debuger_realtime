@@ -6,6 +6,7 @@ import { _dataCtx } from '../../../tools/_dataCtx';
 import { _pluginSocket } from '../../../tools/plugin_socket';
 import { TreeNodeData,TreeNode, TreeOptionProps,Tree } from 'element-plus/es/components/tree-v2/src/types';
 import ContextMenu from './ContextMenu.vue';
+import { eventBus } from '../../../tools/_enentBus';
 
 const props = defineProps({
     resTree_datas: {
@@ -135,6 +136,40 @@ onUnmounted(() => {
     document.removeEventListener('click', handleClickOutside)
 });
 
+function onClickNode_in_inspector(uuid: string) {
+    const info = _dataCtx.getTreeNodeInfoWithUuid(uuid);
+    const key = info ? info["key"] : null;
+
+    if (!key) return;
+    shakeTreeItem(key); // 触发抖动动画
+    const tree = ref_nodeTree.value;
+    if (!tree) return;
+    const nodeItem = tree.getNode(key);
+    if (!nodeItem) {
+        console.warn("节点未找到:", key);
+        return;
+    }
+    console.log("目标节点:", nodeItem);
+    // 递归展开所有父节点
+    let parent = nodeItem.parent;
+    while (parent) {
+        tree.expandNode(parent, true); // 确保父级被展开
+        parent = parent.parent;
+    }
+    // 滚动到目标节点
+    nextTick(() => {
+        tree.scrollToNode(nodeItem);
+    });
+}
+
+onMounted(() => {
+    eventBus.on("click-node-in-inspector", onClickNode_in_inspector);
+});
+
+onUnmounted(() => {
+    eventBus.off("click-node-in-inspector", onClickNode_in_inspector);
+});
+
 // 记录当前选中的节点
 let selectedNodeId: string | null = null
 
@@ -155,6 +190,7 @@ function onClick_node (data: NodeTreeItem, node: TreeNode, e: MouseEvent){
         selectedNodeId = data.uuid
         emit('onClick_node', data);
     }
+
 }
 
 let selectedAssetId: string | null = null
@@ -208,6 +244,18 @@ function onRightClick_asset( event: MouseEvent, data: ResTreeItem, node: TreeNod
     console.log("右键点击资源",data)
 }
 
+const shakingNodeKey = ref<string | null>(null);
+
+function shakeTreeItem(nodeKey: string) {
+    shakingNodeKey.value = nodeKey;
+
+    // 动画持续 1.2s，之后清除高亮状态
+    setTimeout(() => {
+        shakingNodeKey.value = null;
+    }, 0.8*1000);
+}
+
+
 </script>
 
 <template>
@@ -227,8 +275,16 @@ function onRightClick_asset( event: MouseEvent, data: ResTreeItem, node: TreeNod
                 :expand-on-click-node="false"
                 @node-contextmenu="onRightClick_node"
             >
-                <template #default="{ node }">
+                <!-- <template #default="{ node }">
                     <ui-label class="nodeItem" :class="{noActive:!node.data.activeInHierarchy}">{{ node.label }}</ui-label>
+                </template> -->
+                <template #default="{ node }">
+                    <ui-label 
+                        class="nodeItem" 
+                        :class="{ 'shake-animation': shakingNodeKey === node.data.key, noActive: !node.data.activeInHierarchy }"
+                    >
+                        {{ node.label }}
+                    </ui-label>
                 </template>
             </el-tree-v2>
         </div>
@@ -318,4 +374,21 @@ function onRightClick_asset( event: MouseEvent, data: ResTreeItem, node: TreeNod
 .nodeItem.noActive{
     color: #929292;
 }
+
+@keyframes shakeEffect {
+    0% { transform: scale(1) rotate(0deg); color: #C68D4B; }
+    10% { transform: scale(1.1) rotate(-5deg); }
+    20% { transform: scale(1.1) rotate(5deg); }
+    30% { transform: scale(1.1) rotate(-5deg); }
+    40% { transform: scale(1.1) rotate(5deg); }
+    50% { transform: scale(1.1) rotate(-5deg); }
+    60% { transform: scale(1.1) rotate(0deg); }
+    100% { transform: scale(1) rotate(0deg); color: inherit; }
+}
+
+.shake-animation {
+    animation: shakeEffect 0.8s ease-in-out;
+}
+
+
 </style>
