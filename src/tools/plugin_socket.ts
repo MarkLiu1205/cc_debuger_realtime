@@ -263,17 +263,25 @@ class PluginSocket {
         return info as any as InspectorInfo_Node
     }
 
+    /**
+     * 根据组件的uuid获取节点的uuid和节点名称
+     * @param uuid 
+     * @returns 
+     */
     async getNodeOfComp(uuid:string) {
         await this.waitForRuntimeIsInline()
         let info = await this._sendRequest('getNodeOfComp', { uuid });
-        return info as {name:string,uuid:string}
+        return info as {
+            /**所属节点的名字 */
+            name:string,
+            /**所属节点的uuid */
+            uuid:string
+        }
     }
 
     /**执行js并返回执行结果 */
     async evalJsInRuntime(str:string){
-        console.log("zzzzz 1.2")
         await this.waitForRuntimeIsInline() //要先等plugin和runtime都连上服务器
-        console.log("zzzzz 1.5")
         return this._sendRequest("eval_js",str)
     }
 

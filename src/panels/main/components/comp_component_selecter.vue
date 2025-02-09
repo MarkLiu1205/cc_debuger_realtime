@@ -3,6 +3,7 @@ import { ref, computed, inject, Ref, watch, defineModel, onMounted } from 'vue';
 import dlg_list_selecter from './dlg_list_selecter.vue';
 import { _pluginSocket } from '../../../tools/plugin_socket';
 import { _dataCtx } from '../../../tools/_dataCtx';
+import { eventBus } from '../../../tools/_enentBus';
 
 const props = defineProps<{compType:CompType}>()
 
@@ -68,6 +69,13 @@ async function openSelecterDlg(event: MouseEvent) {
     }
 }
 
+function handleClick() {
+    if(!curSelectUuid.value){
+        return
+    }
+    eventBus.emit("click-component-in-inspector", curSelectUuid.value);
+}
+
 </script>
 
 <template>
@@ -80,8 +88,8 @@ async function openSelecterDlg(event: MouseEvent) {
 
         <div class="content">
             <div class="name-box" :class="{empty: !curSelectUuid}">
-                <span class="name empty" v-if="!curSelectUuid">cc.{{ props.compType }}</span>
-                <span class="name" v-else>@{{ curSelectName }}</span>
+                <span class="name" :class="{empty:true}" v-if="!curSelectUuid">cc.{{ props.compType }}</span>
+                <span class="name" @click="handleClick" v-else>@{{ curSelectName }}</span>
                 <ui-icon 
                     v-if="isHover && curSelectUuid" 
                     class="delete-btn" 
@@ -145,10 +153,12 @@ async function openSelecterDlg(event: MouseEvent) {
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
+    cursor: pointer;
 }
 
 .name.empty {
     color: #404040;
+    cursor: default;
 }
 
 .delete-btn {

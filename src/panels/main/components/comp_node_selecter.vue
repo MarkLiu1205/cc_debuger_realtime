@@ -77,7 +77,6 @@ function handleClick() {
     if(!curSelectUuid.value){
         return
     }
-    console.log('div clicked');
     eventBus.emit("click-node-in-inspector", curSelectUuid.value);
 }
 

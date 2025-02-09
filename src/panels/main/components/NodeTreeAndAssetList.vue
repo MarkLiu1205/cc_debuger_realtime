@@ -136,7 +136,7 @@ onUnmounted(() => {
     document.removeEventListener('click', handleClickOutside)
 });
 
-function onClickNode_in_inspector(uuid: string) {
+function on_click_in_inspector_node(uuid: string) {
     const info = _dataCtx.getTreeNodeInfoWithUuid(uuid);
     const key = info ? info["key"] : null;
 
@@ -162,12 +162,19 @@ function onClickNode_in_inspector(uuid: string) {
     });
 }
 
+async function on_click_in_inspector_component(uuid: string){
+    const {uuid:nodeUuid} = await _pluginSocket.getNodeOfComp(uuid)
+    on_click_in_inspector_node(nodeUuid)
+}
+
 onMounted(() => {
-    eventBus.on("click-node-in-inspector", onClickNode_in_inspector);
+    eventBus.on("click-node-in-inspector", on_click_in_inspector_node);
+    eventBus.on("click-component-in-inspector", on_click_in_inspector_component);
 });
 
 onUnmounted(() => {
-    eventBus.off("click-node-in-inspector", onClickNode_in_inspector);
+    eventBus.off("click-node-in-inspector", on_click_in_inspector_node);
+    eventBus.off("click-component-in-inspector", on_click_in_inspector_component);
 });
 
 // 记录当前选中的节点

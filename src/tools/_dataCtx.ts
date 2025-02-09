@@ -179,7 +179,11 @@ class _DataContext{
             }
         }
     }
-
+    /**
+     * 根据uuid获取节点树中的项信息
+     * @param uuid 
+     * @returns 
+     */
     getTreeNodeInfoWithUuid(uuid:string):NodeTreeItem{
         if(this.curNodeTreeInfo==null){
             return null
