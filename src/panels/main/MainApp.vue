@@ -91,6 +91,9 @@ watch(cur_sel_node, (newVal,old) => {
     if(old==null){
         return
     }
+    if(newVal==null){
+        return
+    }
     // console.log("newVal",JSON.stringify(newVal))
     
     const oldVal = _dataCtx.curSelNodeInspectorInfo;
@@ -289,9 +292,14 @@ function onChange2TreeView(){
 }
 
 async function onSel_node(item:NodeTreeItem){
-    console.log('选中节点:', item);
+    // console.log('选中节点:', item);
+    if(item==null){
+        cur_sel_node.value = null
+        return
+    }
+    
     let newVal = await _pluginSocket.getNodeInfo(item.uuid)
-    console.log(newVal)
+    // console.log(newVal)
     cur_sel_node.value = newVal
     _dataCtx.setCurSelectNodeInfo(JSON.parse(JSON.stringify(newVal)))
 }

@@ -321,5 +321,16 @@ export function roundNumbersToPrecision(obj, precision = 2) {
     }, {});
 }
 
+/**
+ * 检查鼠标是否在元素内
+ * @param element 如div
+ * @param e 
+ * @returns 
+ */
+export function checkMouseIsInElemen(element:HTMLElement,e: MouseEvent){
+    const rect = element.getBoundingClientRect();
+    const isContain = e.clientX > rect.x && e.clientX < (rect.x + rect.width) && e.clientY > rect.y && e.clientY < (rect.y + rect.height);
+    return isContain
+}
 
 }

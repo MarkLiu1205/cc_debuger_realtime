@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, inject, onMounted, onUnmounted, reactive, ref, defineProps} from 'vue';
+import { computed, inject, onMounted, onUnmounted, reactive, ref, defineProps, nextTick} from 'vue';
 import { ElMessage } from 'element-plus';
 import { _funcs } from '../../../tools/_funcs';
 import { _dataCtx } from '../../../tools/_dataCtx';
@@ -54,8 +54,13 @@ const treeProp_node:TreeOptionProps = {
 const height_nodeTree = ref(200);
 const height_resTree = ref(200);
 
-const parentContainer = ref(null);
+const ref_parentContainer = ref(null);
 
+const ref_container_nodeTree = ref(null);
+const ref_nodeTree = ref(null);
+
+const ref_container_resTree = ref(null);
+const ref_resTree = ref(null);
 
 const gap_line = ref(null); //拉伸边界的线
 
@@ -64,7 +69,7 @@ const onMouseDown = (e:MouseEvent) => {
     const startHeight = height_nodeTree.value
 
     const onMouseMove = (moveEvent) => {
-        const parentHeight = parentContainer.value.clientHeight
+        const parentHeight = ref_parentContainer.value.clientHeight
         const newHeight = startHeight + (moveEvent.clientY - startY)
         // 限制最小和最大宽度
         height_nodeTree.value = _funcs.clamp(parentHeight*0.2,parentHeight*0.8,newHeight)
@@ -81,12 +86,34 @@ const onMouseDown = (e:MouseEvent) => {
 }
 
 const updateTreeHeight = () => {
-    if (parentContainer.value) {
-        const parentHeight = parentContainer.value.clientHeight
+    if (ref_parentContainer.value) {
+        const parentHeight = ref_parentContainer.value.clientHeight
         height_nodeTree.value = parentHeight * 0.5
         height_resTree.value = parentHeight * 0.5
     }
 };
+
+function handleClickOutside(event) {
+    if(_funcs.checkMouseIsInElemen(ref_container_nodeTree.value, event)){
+        if(selectedNodeId){
+            selectedNodeId = null
+            ref_nodeTree.value.setCurrentKey(null)   
+            nextTick(() => {
+                ref_nodeTree.value?.setCurrentKey(null); // 确保 UI 重新渲染
+            });
+            emit('onClick_node', null);
+        }
+    }else if(_funcs.checkMouseIsInElemen(ref_container_resTree.value, event)){
+        if(selectedAssetId){
+            selectedAssetId = null
+            ref_resTree.value.setCurrentKey(null)
+            nextTick(() => {
+                ref_resTree.value?.setCurrentKey(null); // 确保 UI 重新渲染
+            });
+            emit('onClick_asset', null);
+        }
+    }
+}
 
 onMounted(() => {
     window.addEventListener("resize", updateTreeHeight);
@@ -94,6 +121,8 @@ onMounted(() => {
 
 
     gap_line.value.addEventListener('mousedown', onMouseDown);
+
+    document.addEventListener('click', handleClickOutside);
 });
 
 onUnmounted(() => {
@@ -102,6 +131,8 @@ onUnmounted(() => {
     if (gap_line.value) {
         gap_line.value.removeEventListener('mousedown', onMouseDown)
     }
+
+    document.removeEventListener('click', handleClickOutside)
 });
 
 // 记录当前选中的节点
@@ -111,8 +142,19 @@ const customClass_Node = (nodeData): string => {
   return nodeData.uuid === selectedNodeId ? 'custom-current' : ''
 }
 function onClick_node (data: NodeTreeItem, node: TreeNode, e: MouseEvent){
-    emit('onClick_node', data);
-    selectedNodeId = data.uuid
+    if(selectedNodeId == data.uuid){
+        if(ref_nodeTree.value){            
+            selectedNodeId = null
+            ref_nodeTree.value.setCurrentKey(null)   
+            nextTick(() => {
+                ref_nodeTree.value?.setCurrentKey(null); // 确保 UI 重新渲染
+            });
+            emit('onClick_node', null);
+        }
+    }else{
+        selectedNodeId = data.uuid
+        emit('onClick_node', data);
+    }
 }
 
 let selectedAssetId: string | null = null
@@ -121,8 +163,19 @@ const customClass_Asset = (nodeData): string => {
 }
 
 function onClick_asset (data: ResTreeItem, node: TreeNode, e: MouseEvent){
-    emit('onClick_asset', data);
-    selectedAssetId = data.path
+    if(selectedAssetId==data.path){
+        if(ref_resTree.value){
+            ref_resTree.value.setCurrentKey(null)
+            selectedAssetId = null
+            nextTick(() => {
+                ref_resTree.value?.setCurrentKey(null); // 确保 UI 重新渲染
+            });
+            emit('onClick_asset', null);
+        }
+    }else{
+        selectedAssetId = data.path
+        emit('onClick_asset', data);
+    }
 }
 
 const contextMenuRef = ref(null);
@@ -158,39 +211,41 @@ function onRightClick_asset( event: MouseEvent, data: ResTreeItem, node: TreeNod
 </script>
 
 <template>
-    <div ref="parentContainer" class="parent-container">
-        <div :style="{ height: height_nodeTree + 'px' }">
+    <div ref="ref_parentContainer" class="parent-container">
+        <div ref="ref_container_nodeTree"  :style="{ height: height_nodeTree + 'px'}">
             <div class="loading-div" v-if="nodeTree_datas.length==0">
                 <ui-loading></ui-loading>
                 <span style="margin-left: 10px;">正在加载资源节点树</span>
             </div>
-            <el-tree-v2 v-else
+            <el-tree-v2 v-else ref="ref_nodeTree"
                 style="max-width: 600px;"
                 :data="props.nodeTree_datas"
                 :props="{...treeProp_node,class: customClass_Node}"
                 :height="height_nodeTree"
                 @node-click="onClick_node"
                 :highlight-current="true"
+                :expand-on-click-node="false"
                 @node-contextmenu="onRightClick_node"
             >
-            <template #default="{ node }">
-                <ui-label class="nodeItem" :class="{noActive:!node.data.activeInHierarchy}">{{ node.label }}</ui-label>
-            </template>
+                <template #default="{ node }">
+                    <ui-label class="nodeItem" :class="{noActive:!node.data.activeInHierarchy}">{{ node.label }}</ui-label>
+                </template>
             </el-tree-v2>
         </div>
         <div class="gap_line" ref="gap_line"></div>
-        <div   :style="{ height: height_resTree + 'px' }">
+        <div ref="ref_container_resTree" :style="{ height: height_resTree + 'px' }">
             <div class="loading-div" v-if="resTree_datas.length==0">
                 <ui-loading></ui-loading>
                 <span style="margin-left: 10px;">正在加载资源列表</span>
             </div>
-            <el-tree-v2 v-else
+            <el-tree-v2 v-else  ref="ref_resTree"
                 style="max-width: 600px;"
                 :data="props.resTree_datas"
                 :props="{...treeProp_res,class: customClass_Asset}"
                 :height="height_resTree"
                 @node-click="onClick_asset"
                 :highlight-current="true"
+                :expand-on-click-node="false"
                 @node-contextmenu="onRightClick_asset"
             >
             <template #default="{ node }">
@@ -219,10 +274,12 @@ function onRightClick_asset( event: MouseEvent, data: ResTreeItem, node: TreeNod
 }
 
 .gap_line {
-    height: 2px; /* 分隔条宽度 */
+    height: 1px; /* 分隔条宽度 */
     cursor: row-resize; /* 改变鼠标光标样式 */
     user-select: none; /* 禁止用户选择文本 */
     background-color: #ccc; /* 分隔条背景色 */
+    padding-top: 1px;
+    /* padding-bottom: 2px; */
 }
 
 .loading-div {

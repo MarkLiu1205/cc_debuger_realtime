@@ -53,8 +53,9 @@ const handlerClickGlobal = (e: MouseEvent) => {
     if (selfPopupRef.value == null) {
         return;
     }
-    const rect = selfPopupRef.value.getBoundingClientRect();
-    const isContain = e.clientX > rect.x && e.clientX < (rect.x + rect.width) && e.clientY > rect.y && e.clientY < (rect.y + rect.height);
+    const isContain = _funcs.checkMouseIsInElemen(selfPopupRef.value, e);
+    // const rect = selfPopupRef.value.getBoundingClientRect();
+    // const isContain = e.clientX > rect.x && e.clientX < (rect.x + rect.width) && e.clientY > rect.y && e.clientY < (rect.y + rect.height);
     if (!isContain) {
         hideContextMenu();
         e.stopPropagation();
