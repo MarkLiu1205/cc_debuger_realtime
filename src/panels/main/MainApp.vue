@@ -322,6 +322,23 @@ async function openEvalPanel(event: MouseEvent){
     }
 }
 
+async function testXX(){
+    
+
+    const panelId = _funcs.getPluginName()+".eval_panel"
+    
+    if(await Editor.Panel.has(panelId)){
+        Editor.Panel.focus(panelId);
+    }else{
+        const _callback = _pluginSocket.evalJsInRuntime.bind(_pluginSocket)
+        console.log("panelId 2",panelId,_callback)
+        await Editor.Panel.open(panelId,"aaaaaa",111);
+        console.log("打开了吗2")
+    }
+
+    Editor.Message.request(_funcs.getPluginName(), 'testMsg',"return 'aa12'",123, false);
+}
+
 </script>
 
 <template>
@@ -355,6 +372,7 @@ async function openEvalPanel(event: MouseEvent){
 
                     <h2 id="text-1" style="text-align: center;">哈哈哈哈哈哈2</h2>
                     <ui-button style="width: 100px;" @click="openEvalPanel">在runtime执行JS</ui-button>
+                    <ui-button style="width: 100px;" @click="testXX">测试</ui-button>
                 </div>
             </div>
             <ScriptExecutor ref="scriptExecutorRef" />

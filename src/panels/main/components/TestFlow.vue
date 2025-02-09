@@ -8,7 +8,7 @@ import '@vue-flow/core/dist/theme-default.css';
 
 import { nextTick, ref } from 'vue'
 import { Panel, VueFlow, useVueFlow } from '@vue-flow/core'
-import { useLayout } from "../../tools/dagre_auto_layout"
+import { useLayout } from "../../../tools/dagre_auto_layout"
 
 const position = { x: 0, y: 0 }
 

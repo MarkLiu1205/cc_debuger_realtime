@@ -15,9 +15,15 @@ export default Editor.Panel.define({
     $: {
         root: '#app',
     },
+    methods: {
+        async doEvalJs(str) {
+            return await _pluginSocket.evalJsInRuntime(str)
+        },
+        async doWaitForRuntimeIsInline() {
+            return await _pluginSocket.waitForRuntimeIsInline()
+        }
+    },
     ready() {
-        console.log("aaaaaaaa启动1123")
-        console.log("ssssssssaa",_funcs.getCurPluginPath())
         if (!this.$.root) return;
 
         const app = createApp(MainApp);

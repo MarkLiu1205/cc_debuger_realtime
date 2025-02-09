@@ -48,9 +48,14 @@
                     "restart_self_ui"
                 ]
             },
-            "open_eval": {
+            "doEvalJs": {
                 "methods": [
-                    "open_eval"
+                    "default.doEvalJs"
+                ]
+            },
+            "doWaitForRuntimeIsInline": {
+                "methods": [
+                    "default.doWaitForRuntimeIsInline"
                 ]
             }
         }
@@ -63,6 +68,15 @@
                 "min-height": 300,
                 "width": 1000,
                 "height": 800
+            }
+        },
+        "eval_panel": {
+            "main": "./dist/eval_panel.cjs",
+            "size": {
+                "min-width": 400,
+                "min-height": 300,
+                "width": 800,
+                "height": 600
             }
         }
     }

@@ -23,10 +23,7 @@ export const methods = {
 
         },2000)
     },
-    open_eval() {
-        console.log("点击打开eval面板")
-        Editor.Panel.open(packageJSON.name+".eval");
-    },
+    
     async do_eval_js(str:string){
         console.log("zzzzz 1")
         const result = await _pluginSocket.evalJsInRuntime(str)
