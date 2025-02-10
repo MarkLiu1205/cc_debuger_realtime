@@ -13,6 +13,7 @@ import { Vec2 } from 'cc';
 import { color } from 'cc';
 import { Rect } from 'cc';
 import { Size } from 'cc';
+import { CCClass } from 'cc';
 import { Vec4 } from 'cc';
 import { Quat } from 'cc';
 import { Vec3 } from 'cc';
@@ -392,7 +393,7 @@ class _RuntimeData{
         const ret:Array<{uuid:string,nodeUuid:string}> = []
         for(let uuid in this.m_compUuidMap){
             const comp = this.m_compUuidMap[uuid]
-            if(comp["__proto__"].constructor.name === typeStr){
+            if(comp["__proto__"]["__classname__"] === typeStr){
                 ret.push({uuid,nodeUuid:comp.node.uuid})
             }
         }
@@ -683,9 +684,6 @@ class _RuntimeData{
     private _getComponentProperties(component: Component):CompInfo_Base {
         const clsPrototype = component["__proto__"]
         const clsName = clsPrototype.__classname__
-        if(clsName=="cc.Button"){
-            let g = 0
-        }
         let map = getAttrInfosOfComponent(clsPrototype)
         let data = {}
         for(let k in map){
@@ -713,13 +711,12 @@ class _RuntimeData{
         }
         const ret = {
             enabled:component.enabled,
-            //@ts-ignore
-            typeStr:component.__proto__.constructor.name,
+            typeStr:clsName,
             uuid:component?.uuid??"",
 
             ...data
-        }
-        return ret
+        } 
+        return ret 
 
         // if(name === "Sprite"){
         //     return _compUtil.getCompInfo_Sprite(component as Sprite)
@@ -783,6 +780,17 @@ function getAttrInfosOfComponent(clsPrototype){
         if(v==null&&p!="visible"&&p!="hasGetter"){
             if(_getAttr(attrs,name,"hasGetter")){
                 v = _getAttr(attrs,`_${name}`,p)
+                if(v==null){
+                    if(clsName=="cc.Camera"){//camera有bug,手动修复
+                        if(name=="clearColor"){
+                            v = _getAttr(attrs,`_color`,p)
+                        }else if(name=="clearDepth"){
+                            v = _getAttr(attrs,`_depth`,p)
+                        }else if(name=="clearStencil"){
+                            v = _getAttr(attrs,`_stencil`,p)
+                        }
+                    }
+                }
             }
         }
         return v
@@ -790,7 +798,7 @@ function getAttrInfosOfComponent(clsPrototype){
     
     const _ctor = clsPrototype.constructor
     const props:Array<string> = _ctor.__props__
-    const attrs = _ctor.__attrs__
+    const attrs = CCClass.Attr.getClassAttrs(_ctor)
 
     const data = {}
     for(let k of props){

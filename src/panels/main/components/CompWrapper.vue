@@ -39,23 +39,23 @@ watch(props.compInfo,(newVal)=>{
 </script>
 
 <template>
-    <view_UITransform v-if="compInfo!=null && compInfo.typeStr=='UITransform'" v-model="(props.compInfo as any)" />
-    <view_Label v-else-if="compInfo!=null && compInfo.typeStr=='Label'" v-model="(props.compInfo as any)" />
-    <view_Sprite v-else-if="compInfo!=null && compInfo.typeStr=='Sprite'" v-model="(props.compInfo as any)" />
-    <view_EditBox v-else-if="compInfo!=null && compInfo.typeStr=='EditBox'" v-model="(props.compInfo as any)" />
-    <view_Button v-else-if="compInfo!=null && compInfo.typeStr=='Button'" v-model="(props.compInfo as any)" />
-    <view_Camera v-else-if="compInfo!=null && compInfo.typeStr=='Camera'" v-model="(props.compInfo as any)" />
-    <view_Graphics v-else-if="compInfo!=null && compInfo.typeStr=='Graphics'" v-model="(props.compInfo as any)" />
-    <view_Layout v-else-if="compInfo!=null && compInfo.typeStr=='Layout'" v-model="(props.compInfo as any)" />
-    <view_Mask v-else-if="compInfo!=null && compInfo.typeStr=='Mask'" v-model="(props.compInfo as any)" />
-    <view_PageView v-else-if="compInfo!=null && compInfo.typeStr=='PageView'" v-model="(props.compInfo as any)" />
-    <view_ParticleSystem2D v-else-if="compInfo!=null && compInfo.typeStr=='ParticleSystem2D'" v-model="(props.compInfo as any)" />
-    <view_RichText v-else-if="compInfo!=null && compInfo.typeStr=='RichText'" v-model="(props.compInfo as any)" />
-    <view_ScrollView v-else-if="compInfo!=null && compInfo.typeStr=='ScrollView'" v-model="(props.compInfo as any)" />
-    <view_UIOpacity v-else-if="compInfo!=null && compInfo.typeStr=='UIOpacity'" v-model="(props.compInfo as any)" />
-    <view_Widget v-else-if="compInfo!=null && compInfo.typeStr=='Widget'" v-model="(props.compInfo as any)" />
-    <view_Skeleton v-else-if="compInfo!=null && compInfo.typeStr=='Skeleton'" v-model="(props.compInfo as any)" />
-    <view_Canvas v-else-if="compInfo!=null && compInfo.typeStr=='Canvas'" v-model="(props.compInfo as any)" />
+    <view_UITransform v-if="compInfo!=null && compInfo.typeStr=='cc.UITransform'" v-model="(props.compInfo as any)" />
+    <view_Label v-else-if="compInfo!=null && compInfo.typeStr=='cc.Label'" v-model="(props.compInfo as any)" />
+    <view_Sprite v-else-if="compInfo!=null && compInfo.typeStr=='cc.Sprite'" v-model="(props.compInfo as any)" />
+    <view_EditBox v-else-if="compInfo!=null && compInfo.typeStr=='cc.EditBox'" v-model="(props.compInfo as any)" />
+    <view_Button v-else-if="compInfo!=null && compInfo.typeStr=='cc.Button'" v-model="(props.compInfo as any)" />
+    <view_Camera v-else-if="compInfo!=null && compInfo.typeStr=='cc.Camera'" v-model="(props.compInfo as any)" />
+    <view_Graphics v-else-if="compInfo!=null && compInfo.typeStr=='cc.Graphics'" v-model="(props.compInfo as any)" />
+    <view_Layout v-else-if="compInfo!=null && compInfo.typeStr=='cc.Layout'" v-model="(props.compInfo as any)" />
+    <view_Mask v-else-if="compInfo!=null && compInfo.typeStr=='cc.Mask'" v-model="(props.compInfo as any)" />
+    <view_PageView v-else-if="compInfo!=null && compInfo.typeStr=='cc.PageView'" v-model="(props.compInfo as any)" />
+    <view_ParticleSystem2D v-else-if="compInfo!=null && compInfo.typeStr=='cc.ParticleSystem2D'" v-model="(props.compInfo as any)" />
+    <view_RichText v-else-if="compInfo!=null && compInfo.typeStr=='cc.RichText'" v-model="(props.compInfo as any)" />
+    <view_ScrollView v-else-if="compInfo!=null && compInfo.typeStr=='cc.ScrollView'" v-model="(props.compInfo as any)" />
+    <view_UIOpacity v-else-if="compInfo!=null && compInfo.typeStr=='cc.UIOpacity'" v-model="(props.compInfo as any)" />
+    <view_Widget v-else-if="compInfo!=null && compInfo.typeStr=='cc.Widget'" v-model="(props.compInfo as any)" />
+    <view_Skeleton v-else-if="compInfo!=null && compInfo.typeStr=='sp.Skeleton'" v-model="(props.compInfo as any)" />
+    <view_Canvas v-else-if="compInfo!=null && compInfo.typeStr=='cc.Canvas'" v-model="(props.compInfo as any)" />
     <View_ElseComp v-else="compInfo!=null" v-model="(props.compInfo as any)" />
 </template>
 

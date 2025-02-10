@@ -29,11 +29,13 @@ interface ResTreeItem{
     children?:Array<ResTreeItem>;
 }
 
-type CompType = "Sprite" | "Label" | "UITransform" | "Button" | "Canvas" | "EditBox" | "Layout" | 
-    "Mask" | "ParticleSystem2D" | "ProgressBar" | "RichText" | "ScrollView" | "Slider" | "Spine" | 
-    "VideoPlayer" | "WebView" | "Widget" | "Animation" | "AudioSource" | "Camera" | "RenderTexture" | 
-    "TiledMap" | "Graphics" | "Script" | "PageView" | "TiledTile" | "UIOpacity" | "LabelShadow" | 
-    "LabelOutline" | "Skeleton" | "PageViewIndicator"
+// type CompType = "Sprite" | "Label" | "UITransform" | "Button" | "Canvas" | "EditBox" | "Layout" | 
+//     "Mask" | "ParticleSystem2D" | "ProgressBar" | "RichText" | "ScrollView" | "Slider" | "Spine" | 
+//     "VideoPlayer" | "WebView" | "Widget" | "Animation" | "AudioSource" | "Camera" | "RenderTexture" | 
+//     "TiledMap" | "Graphics" | "Script" | "PageView" | "TiledTile" | "UIOpacity" | "LabelShadow" | 
+//     "LabelOutline" | "Skeleton" | "PageViewIndicator"
+
+type CompType = string
 
 /**节点树信息 */
 interface NodeTreeItem{
