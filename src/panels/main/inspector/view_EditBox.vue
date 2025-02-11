@@ -65,7 +65,7 @@ const enumDesc_KeyboardReturnType = [
 //     tabIndex: 28,
 //     inputMode: InputMode.ANY,
 //     inputFlag: InputFlag.DEFAULT,
-//     keyboardReturnType: KeyboardReturnType.DEFAULT,
+//     returnType: KeyboardReturnType.DEFAULT,
 //     placeholder: "Enter text here",
 //     backgroundImage: "",
 //     textLabel: "",
@@ -109,8 +109,8 @@ function onSelectChange(event) {
         compModel.value.inputMode = value;
     } else if (eleId === "id_inputFlag") {
         compModel.value.inputFlag = value;
-    } else if (eleId === "id_keyboardReturnType") {
-        compModel.value.keyboardReturnType = value;
+    } else if (eleId === "id_returnType") {
+        compModel.value.returnType = value;
     }
 }
 function onAssetChange(event) {
@@ -146,11 +146,11 @@ function onNodeChange(event) {
         </div>
         <div class="property">
             <label>Text Label:</label>
-            <comp_component_selecter class="comp_component_selecter" compType="Label" v-model="compModel.textLabel"/>
+            <comp_component_selecter class="comp_component_selecter" compType="cc.Label" v-model="compModel.textLabel"/>
         </div>
         <div class="property">
             <label>Placeholder Label:</label>
-            <comp_component_selecter class="comp_component_selecter" compType="Label" v-model="compModel.placeholderLabel"/>
+            <comp_component_selecter class="comp_component_selecter" compType="cc.Label" v-model="compModel.placeholderLabel"/>
         </div>
         <div class="property">
             <label>Background Image:</label>
@@ -170,7 +170,7 @@ function onNodeChange(event) {
         </div>
         <div class="property">
             <label>Return Type:</label>
-            <ui-select id="id_keyboardReturnType" :value="compModel.keyboardReturnType" @change="onSelectChange">
+            <ui-select id="id_returnType" :value="compModel.returnType" @change="onSelectChange">
                 <option v-for="(type, index) in enumDesc_KeyboardReturnType" :key="index" :value="index">{{ type }}</option>
             </ui-select>
         </div>

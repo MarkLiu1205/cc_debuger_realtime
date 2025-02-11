@@ -28,7 +28,7 @@ function onNodeChange(event){
         </div>
         <div class="property">
             <label>Camera Component:</label>
-            <comp_component_selecter class="comp_component_selecter" compType="Camera" v-model="compModel.cameraComponent"/>
+            <comp_component_selecter class="comp_component_selecter" compType="cc.Camera" v-model="compModel.cameraComponent"/>
         </div>
         <div class="property">
             <label>Align Canvas With Screen:</label>

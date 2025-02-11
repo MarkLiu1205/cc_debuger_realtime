@@ -310,6 +310,7 @@ async function onSel_node(item:NodeTreeItem){
     
     let newVal = await _pluginSocket.getNodeInfo(item.uuid)
     // console.log(newVal)
+    _dataCtx.parseCompAttrInfos(newVal)
     cur_sel_node.value = newVal
     _dataCtx.setCurSelectNodeInfo(JSON.parse(JSON.stringify(newVal)))
 }

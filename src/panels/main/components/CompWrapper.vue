@@ -21,6 +21,7 @@ import view_Graphics from '../inspector/view_Graphics.vue';
 import view_Widget from '../inspector/view_Widget.vue';
 import view_Canvas from '../inspector/view_Canvas.vue';
 import View_ElseComp from '../inspector/view_ElseComp.vue';
+import { _dataCtx } from '../../../tools/_dataCtx';
 
 // const compInfo = defineModel<CompInfo_Base>()
 
@@ -34,6 +35,13 @@ const props = defineProps<{
 
 watch(props.compInfo,(newVal)=>{
     emit("update:info",newVal)
+})
+
+const compAttrs = computed(()=>{
+    if(props.compInfo==null){
+        return null
+    }
+    return _dataCtx.getCompAttrInfo(props.compInfo.typeStr)
 })
 
 </script>
@@ -56,7 +64,7 @@ watch(props.compInfo,(newVal)=>{
     <view_Widget v-else-if="compInfo!=null && compInfo.typeStr=='cc.Widget'" v-model="(props.compInfo as any)" />
     <view_Skeleton v-else-if="compInfo!=null && compInfo.typeStr=='sp.Skeleton'" v-model="(props.compInfo as any)" />
     <view_Canvas v-else-if="compInfo!=null && compInfo.typeStr=='cc.Canvas'" v-model="(props.compInfo as any)" />
-    <View_ElseComp v-else="compInfo!=null" v-model="(props.compInfo as any)" />
+    <View_ElseComp v-else="compInfo!=null" v-model="(props.compInfo as any)" :compAttrs="compAttrs" />
 </template>
 
 <style scoped>

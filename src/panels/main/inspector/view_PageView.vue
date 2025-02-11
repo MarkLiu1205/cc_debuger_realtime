@@ -158,7 +158,7 @@ function onSliderChange(event) {
 
         <div class="property">
             <label>Indicator:</label>
-            <comp_component_selecter class="comp_component_selecter" id="id_indicator" compType="PageViewIndicator" v-model="compModel.indicator" @change="onComponentChange"/>
+            <comp_component_selecter class="comp_component_selecter" id="id_indicator" compType="cc.PageViewIndicator" v-model="compModel.indicator" @change="onComponentChange"/>
         </div>
 
         <div class="property">

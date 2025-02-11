@@ -251,6 +251,9 @@ class _RuntimeData{
     /**记录当前所有组件实例的uuid映射 */
     public m_compUuidMap:Record<string,Component> = {}
 
+    /**记录已经发送过的组件属性（用于inspectorUI显示），避免重复发送 */
+    public m_hasSendCompAttrsMap:Record<string,boolean> = {}
+
     constructor(){
         director.on(Director.EVENT_AFTER_SCENE_LAUNCH,this._onSceneChange,this)
     }
@@ -412,6 +415,10 @@ class _RuntimeData{
     clear(){
         this.m_assetUuidRefCountMap = {}
         this.m_sceneTree = null
+        this.m_nodeUuidMap = {}
+        this.m_compUuidMap = {}
+        this.m_curSceneName = ""
+        this.m_hasSendCompAttrsMap = {}
     }
 
     private _onSceneChange(sceneNode:Scene){
@@ -684,7 +691,7 @@ class _RuntimeData{
     private _getComponentProperties(component: Component):CompInfo_Base {
         const clsPrototype = component["__proto__"]
         const clsName = clsPrototype.__classname__
-        let map = getAttrInfosOfComponent(clsPrototype)
+        let map = getAttrInfosOfComponentInst(component)
         let data = {}
         for(let k in map){
             if(map[k].ctor=="EventHandler"){
@@ -708,7 +715,49 @@ class _RuntimeData{
         }else if(clsName === "sp.Skeleton"){
             data["animationArr"] = component["_skeleton"].data.animations.map((item)=>item.name)
             data["skinArr"] = component["_skeleton"].data.skins.map((item)=>item.name)
+            data["_defaultSkinIndex"] = component["_defaultSkinIndex"]
+            data["animation"] = component["animation"]
         }
+
+        let xxx;
+        if(clsName === "cc.Sprite"){
+            xxx = _compUtil.getCompInfo_Sprite(component as Sprite)
+        }else if(clsName === "cc.Label"){
+            xxx = _compUtil.getCompInfo_Label(component as Label)
+        }else if(clsName === "cc.RichText"){
+            xxx = _compUtil.getCompInfo_RichText(component as RichText)
+        }else if(clsName === "cc.Button"){
+            xxx = _compUtil.getCompInfo_Button(component as Button)
+        }else if(clsName === "cc.Camera"){
+            xxx = _compUtil.getCompInfo_Camera(component as Camera)
+        }else if(clsName === "cc.EditBox"){
+            xxx = _compUtil.getCompInfo_Editbox(component as EditBox)
+        }else if(clsName === "cc.Graphics"){
+            xxx = _compUtil.getCompInfo_Graphics(component as Graphics)
+        }else if(clsName === "cc.Layout"){
+            xxx = _compUtil.getCompInfo_Layout(component as Layout)
+        }else if(clsName === "cc.Mask"){
+            xxx = _compUtil.getCompInfo_Mask(component as Mask)
+        }else if(clsName === "cc.UITransform"){
+            xxx = _compUtil.getCompInfo_UITransform(component as UITransform)
+        }else if(clsName === "cc.PageView"){
+            xxx = _compUtil.getCompInfo_PageView(component as PageView)
+        }else if(clsName === "cc.ParticleSystem2D"){
+            xxx = _compUtil.getCompInfo_ParticleSystem2D(component as ParticleSystem2D)
+        }else if(clsName === "cc.ScrollView"){
+            xxx = _compUtil.getCompInfo_ScrollView(component as ScrollView)
+        }else if(clsName === "sp.Skeleton"){
+            xxx = _compUtil.getCompInfo_Skeleton(component as sp.Skeleton)
+        }else if(clsName === "cc.UIOpacity"){
+            xxx = _compUtil.getCompInfo_UIOpacity(component as UIOpacity)
+        }else if(clsName === "cc.Widget"){
+            xxx = _compUtil.getCompInfo_Widget(component as Widget)
+        }else if(clsName === "cc.Canvas"){
+            xxx = _compUtil.getCompInfo_Canvas(component as Canvas)
+        }else{
+            xxx = _compUtil.getCompInfo_bass(component)
+        }
+        
         const ret = {
             enabled:component.enabled,
             typeStr:clsName,
@@ -716,48 +765,63 @@ class _RuntimeData{
 
             ...data
         } 
+
+        if(!this.m_hasSendCompAttrsMap[clsName]){
+            ret["__attrMap"] = map
+            this.m_hasSendCompAttrsMap[clsName] = true
+        }
         return ret 
 
-        // if(name === "Sprite"){
-        //     return _compUtil.getCompInfo_Sprite(component as Sprite)
-        // }else if(name === "Label"){
-        //     return _compUtil.getCompInfo_Label(component as Label)
-        // }else if(name === "RichText"){
-        //     return _compUtil.getCompInfo_RichText(component as RichText)
-        // }else if(name === "Button"){
-        //     return _compUtil.getCompInfo_Button(component as Button)
-        // }else if(name === "Camera"){
-        //     return _compUtil.getCompInfo_Camera(component as Camera)
-        // }else if(name === "EditBox"){
-        //     return _compUtil.getCompInfo_Editbox(component as EditBox)
-        // }else if(name === "Graphics"){
-        //     return _compUtil.getCompInfo_Graphics(component as Graphics)
-        // }else if(name === "Layout"){
-        //     return _compUtil.getCompInfo_Layout(component as Layout)
-        // }else if(name === "Mask"){
-        //     return _compUtil.getCompInfo_Mask(component as Mask)
-        // }else if(name === "UITransform"){
-        //     return _compUtil.getCompInfo_UITransform(component as UITransform)
-        // }else if(name === "PageView"){
-        //     return _compUtil.getCompInfo_PageView(component as PageView)
-        // }else if(name === "ParticleSystem2D"){
-        //     return _compUtil.getCompInfo_ParticleSystem2D(component as ParticleSystem2D)
-        // }else if(name === "ScrollView"){
-        //     return _compUtil.getCompInfo_ScrollView(component as ScrollView)
-        // }else if(name === "Skeleton"){
-        //     return _compUtil.getCompInfo_Skeleton(component as sp.Skeleton)
-        // }else if(name === "UIOpacity"){
-        //     return _compUtil.getCompInfo_UIOpacity(component as UIOpacity)
-        // }else if(name === "Widget"){
-        //     return _compUtil.getCompInfo_Widget(component as Widget)
-        // }else if(name === "Canvas"){
-        //     return _compUtil.getCompInfo_Canvas(component as Canvas)
-        // }else{
-        //     return _compUtil.getCompInfo_bass(component)
-        // }
-        
-    
     }
+}
+
+/**
+ * 对 _getAttrInfosOfComponentProrotype 的补充
+ */
+function getAttrInfosOfComponentInst(compInst:Component){
+    const clsPrototype = compInst["__proto__"]
+    let map = _getAttrInfosOfComponentProrotype(clsPrototype)
+    for(let k in map){
+        if(map[k].ctor=="EventHandler"){
+            continue
+        }let attrType = map[k].type
+        if(!attrType){
+            const _instVal = compInst[k]
+            const _instType = typeof _instVal
+            
+            if(_instType=="boolean"){
+                attrType = "boolean"
+            }else if(_instType=="string"){
+                attrType = "string"
+            }else if(_instType=="number"){
+                attrType = "number"
+            }else if(_instType=="object"){
+                if(_instVal instanceof Color){
+                    attrType = "Color"
+                }else if(_instVal instanceof Vec2){
+                    attrType = "Vec2"
+                }else if(_instVal instanceof Vec3){
+                    attrType = "Vec3"
+                }else if(_instVal instanceof Vec4){
+                    attrType = "Vec4"
+                }else if(_instVal instanceof Rect){
+                    attrType = "Rect"
+                }else if(_instVal instanceof Size){
+                    attrType = "Size"
+                }else if(_instVal instanceof Node){
+                    attrType = "Node"
+                }else if(_instVal instanceof Component){
+                    attrType = "Component"
+                }else if(_instVal instanceof Asset){
+                    attrType = "Asset"
+                }
+            }
+            map[k].type = attrType
+            
+        }
+    }
+
+    return map
 }
 
 let _compAttrsMap = {}
@@ -766,7 +830,7 @@ let _compAttrsMap = {}
  * @param clsPrototype 如Label.prototype
  * @returns 
  */
-function getAttrInfosOfComponent(clsPrototype){
+function _getAttrInfosOfComponentProrotype(clsPrototype){
     const clsName = clsPrototype.__classname__
     if(_compAttrsMap[clsName]){
         return _compAttrsMap[clsName]
@@ -777,22 +841,22 @@ function getAttrInfosOfComponent(clsPrototype){
 
     function _getAttr(attrs:Object,name:string,p:pTypes){
         let v = attrs[`${name}$_$${p}`]??null
-        if(v==null&&p!="visible"&&p!="hasGetter"){
-            if(_getAttr(attrs,name,"hasGetter")){
-                v = _getAttr(attrs,`_${name}`,p)
-                if(v==null){
-                    if(clsName=="cc.Camera"){//camera有bug,手动修复
-                        if(name=="clearColor"){
-                            v = _getAttr(attrs,`_color`,p)
-                        }else if(name=="clearDepth"){
-                            v = _getAttr(attrs,`_depth`,p)
-                        }else if(name=="clearStencil"){
-                            v = _getAttr(attrs,`_stencil`,p)
-                        }
-                    }
-                }
-            }
-        }
+        // if(v==null&&p!="visible"&&p!="hasGetter"){
+        //     if(_getAttr(attrs,name,"hasGetter")){
+        //         v = _getAttr(attrs,`_${name}`,p)
+        //         if(v==null){
+        //             if(clsName=="cc.Camera"){//camera有bug,手动修复
+        //                 if(name=="clearColor"){
+        //                     v = _getAttr(attrs,`_color`,p)
+        //                 }else if(name=="clearDepth"){
+        //                     v = _getAttr(attrs,`_depth`,p)
+        //                 }else if(name=="clearStencil"){
+        //                     v = _getAttr(attrs,`_stencil`,p)
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
         return v
     }
     
@@ -809,6 +873,10 @@ function getAttrInfosOfComponent(clsPrototype){
         if(visible===false){
             continue
         }
+        let editorOnly = _getAttr(attrs,k,"editorOnly")
+        if(editorOnly){
+            continue
+        }
         if(typeof visible=="function"){
             const funcStr:string = visible.toString()
             visible = funcStr.replace("this._","this.")
@@ -819,11 +887,12 @@ function getAttrInfosOfComponent(clsPrototype){
         "Enum"|"Object"|
         "Node"|"Component"|"Asset"|"Color"|"Vec2"|"Vec3"|"Vec4"|"Rect"|"Size"
         const pCtor = _getAttr(attrs,k,"ctor")
+        const pCtorClassname = pCtor?.prototype?.__classname__
         const param = {
             displayOrder : _getAttr(attrs,k,"displayOrder") as number,
             displayName : _getAttr(attrs,k,"displayName") as string,
             type : _getAttr(attrs,k,"type") as PType,
-            ctor : pCtor?.name??null,
+            ctor : pCtorClassname??null,
             default : _getAttr(attrs,k,"default"),
             tooltip : _getAttr(attrs,k,"tooltip") as string,
             multiline : _getAttr(attrs,k,"multiline") as boolean,
@@ -899,352 +968,352 @@ function getAttrInfosOfComponent(clsPrototype){
     return data
 }
 
-// namespace _compUtil{
-//     export function getCompInfo_bass(comp:Component):CompInfo_Base{
-//         return {
-//             enabled:comp.enabled,
-//             //@ts-ignore
-//             typeStr:comp.__proto__.constructor.name,
-//             uuid:comp?.uuid??"",
-//         }
-//     }
+namespace _compUtil{
+    export function getCompInfo_bass(comp:Component):CompInfo_Base{
+        return {
+            enabled:comp.enabled,
+            //@ts-ignore
+            typeStr:comp.__proto__.constructor.name,
+            uuid:comp?.uuid??"",
+        }
+    }
 
-//     export function getCompInfo_Camera(comp:Camera):CompInfo_Camera{
-//         return {
-//             ...getCompInfo_bass(comp),...{
-//                 priority: comp.priority,
-//                 visibility: comp.visibility,
-//                 clearFlags: comp.clearFlags,
-//                 clearColor: comp.clearColor.toHEX(),
-//                 projection: comp.projection,
-//                 fov: comp.fov,
-//                 orthoHeight: comp.orthoHeight,
-//                 targetTexture: comp.targetTexture?.uuid || "",
-//                 rect: comp.rect,
-//                 screenScale: comp.screenScale,
-//                 clearDepth: comp.clearDepth,
-//                 clearStencil: comp.clearStencil,
+    export function getCompInfo_Camera(comp:Camera):CompInfo_Camera{
+        return {
+            ...getCompInfo_bass(comp),...{
+                priority: comp.priority,
+                visibility: comp.visibility,
+                clearFlags: comp.clearFlags,
+                clearColor: comp.clearColor.toHEX(),
+                projection: comp.projection,
+                fov: comp.fov,
+                orthoHeight: comp.orthoHeight,
+                targetTexture: comp.targetTexture?.uuid || "",
+                rect: comp.rect,
+                screenScale: comp.screenScale,
+                clearDepth: comp.clearDepth,
+                clearStencil: comp.clearStencil,
 
-//                 fovAxis: comp.fovAxis,
-//                 near: comp.near,
-//                 far: comp.far,
-//                 aperture: comp.aperture,
-//                 shutter: comp.shutter,
-//                 iso: comp.iso,
-//             }
-//         }
+                fovAxis: comp.fovAxis,
+                near: comp.near,
+                far: comp.far,
+                aperture: comp.aperture,
+                shutter: comp.shutter,
+                iso: comp.iso,
+            }
+        }
         
-//     }
+    }
 
-//     export function getCompInfo_Editbox(comp:EditBox):CompInfo_EditBox{
-//         return {
-//             ...getCompInfo_bass(comp),...{
-//                 string: comp.string,
-//                 maxLength: comp.maxLength,
-//                 tabIndex: comp.tabIndex,
-//                 inputMode: comp.inputMode,
-//                 inputFlag: comp.inputFlag,
-//                 keyboardReturnType: comp.returnType,
-//                 placeholder: comp.placeholder,
-//                 backgroundImage: comp.backgroundImage?.uuid??"",
-//                 textLabel: comp.textLabel?.uuid??"",
-//                 placeholderLabel: comp.placeholderLabel?.uuid??"",
-//             }
-//         }
+    export function getCompInfo_Editbox(comp:EditBox):CompInfo_EditBox{
+        return {
+            ...getCompInfo_bass(comp),...{
+                string: comp.string,
+                maxLength: comp.maxLength,
+                tabIndex: comp.tabIndex,
+                inputMode: comp.inputMode,
+                inputFlag: comp.inputFlag,
+                returnType: comp.returnType,
+                placeholder: comp.placeholder,
+                backgroundImage: comp.backgroundImage?.uuid??"",
+                textLabel: comp.textLabel?.uuid??"",
+                placeholderLabel: comp.placeholderLabel?.uuid??"",
+            }
+        }
         
-//     }
+    }
 
-//     export function getCompInfo_Graphics(comp:Graphics):CompInfo_Graphics{
-//         return {
-//             ...getCompInfo_bass(comp),...{
-//                 lineWidth: comp.lineWidth,
-//                 strokeColor: comp.color.toHEX(),
-//                 fillColor: comp.fillColor.toHEX(),
-//                 miterLimit: comp.miterLimit,
-//                 lineJoin: comp.lineJoin,
-//                 lineCap: comp.lineCap,
-//             }
-//         }
+    export function getCompInfo_Graphics(comp:Graphics):CompInfo_Graphics{
+        return {
+            ...getCompInfo_bass(comp),...{
+                lineWidth: comp.lineWidth,
+                strokeColor: comp.color.toHEX(),
+                fillColor: comp.fillColor.toHEX(),
+                miterLimit: comp.miterLimit,
+                lineJoin: comp.lineJoin,
+                lineCap: comp.lineCap,
+            }
+        }
         
-//     }
+    }
 
-//     export function getCompInfo_Layout(comp:Layout):CompInfo_Layout{
-//         return {
-//             ...getCompInfo_bass(comp),...{
-//                 type: comp.type,
-//                 resizeMode: comp.resizeMode,
-//                 paddingLeft: comp.paddingLeft,
-//                 paddingRight: comp.paddingRight,
-//                 paddingTop: comp.paddingTop,
-//                 paddingBottom: comp.paddingBottom,
-//                 spacingX: comp.spacingX,
-//                 spacingY: comp.spacingY,
-//                 alignHorizontal: comp.alignHorizontal,
-//                 alignVertical: comp.alignVertical,
-//                 affectByScale: comp.affectedByScale,
-//                 verticalDirection: comp.verticalDirection,
-//                 horiazonDirection: comp.horizontalDirection,
-//                 startAxis:comp.startAxis,
-//                 constraint:comp.constraint,
-//             }
-//         }
+    export function getCompInfo_Layout(comp:Layout):CompInfo_Layout{
+        return {
+            ...getCompInfo_bass(comp),...{
+                type: comp.type,
+                resizeMode: comp.resizeMode,
+                paddingLeft: comp.paddingLeft,
+                paddingRight: comp.paddingRight,
+                paddingTop: comp.paddingTop,
+                paddingBottom: comp.paddingBottom,
+                spacingX: comp.spacingX,
+                spacingY: comp.spacingY,
+                alignHorizontal: comp.alignHorizontal,
+                alignVertical: comp.alignVertical,
+                affectByScale: comp.affectedByScale,
+                verticalDirection: comp.verticalDirection,
+                horiazonDirection: comp.horizontalDirection,
+                startAxis:comp.startAxis,
+                constraint:comp.constraint,
+            }
+        }
         
-//     }
+    }
 
-//     export function getCompInfo_Mask(comp:Mask):CompInfo_Mask{
-//         return {
-//             ...getCompInfo_bass(comp),...{
-//                 type: comp.type,
-//                 inverted: comp.inverted,
-//                 segments: comp.segments,
-//                 alphaThreshold: comp.alphaThreshold,
-//             }
-//         }
+    export function getCompInfo_Mask(comp:Mask):CompInfo_Mask{
+        return {
+            ...getCompInfo_bass(comp),...{
+                type: comp.type,
+                inverted: comp.inverted,
+                segments: comp.segments,
+                alphaThreshold: comp.alphaThreshold,
+            }
+        }
         
-//     }
+    }
 
-//     export function getCompInfo_UITransform(comp:UITransform):CompInfo_UITransform{
-//         return {
-//             ...getCompInfo_bass(comp),...{
-//                 anchorX:comp.anchorX,
-//                 anchorY:comp.anchorY,
-//                 width:comp.width,
-//                 height:comp.height,
-//             }
-//         }
+    export function getCompInfo_UITransform(comp:UITransform):CompInfo_UITransform{
+        return {
+            ...getCompInfo_bass(comp),...{
+                anchorX:comp.anchorX,
+                anchorY:comp.anchorY,
+                width:comp.width,
+                height:comp.height,
+            }
+        }
         
-//     }
+    }
 
-//     export function getCompInfo_PageView(comp:PageView):CompInfo_PageView{
-//         return {
-//             ...getCompInfo_bass(comp),...{
-//                 inertia: comp.inertia,
-//                 elastic: comp.elastic,
-//                 bounceDuration: comp.bounceDuration,
-//                 indicator: comp.indicator?.uuid??"",
-//                 pageTurningSpeed: comp.pageTurningSpeed,
-//                 autoPageTurningThreshold: comp.autoPageTurningThreshold,
-//                 scrollThreshold: comp.scrollThreshold,
-//                 pageTurningEventTiming: comp.pageTurningEventTiming,
-//                 brake:comp.brake,
+    export function getCompInfo_PageView(comp:PageView):CompInfo_PageView{
+        return {
+            ...getCompInfo_bass(comp),...{
+                inertia: comp.inertia,
+                elastic: comp.elastic,
+                bounceDuration: comp.bounceDuration,
+                indicator: comp.indicator?.uuid??"",
+                pageTurningSpeed: comp.pageTurningSpeed,
+                autoPageTurningThreshold: comp.autoPageTurningThreshold,
+                scrollThreshold: comp.scrollThreshold,
+                pageTurningEventTiming: comp.pageTurningEventTiming,
+                brake:comp.brake,
 
-//                 content:comp.content?.uuid??"",
-//                 sizeMode:comp.sizeMode,
-//                 direction:comp.direction,
-//             }
-//         }
+                content:comp.content?.uuid??"",
+                sizeMode:comp.sizeMode,
+                direction:comp.direction,
+            }
+        }
         
-//     }
+    }
 
-//     export function getCompInfo_ParticleSystem2D(comp:ParticleSystem2D):CompInfo_ParticleSystem2D{
-//         return {
-//             ...getCompInfo_bass(comp),...{
-//                 customMaterial: comp.customMaterial?.uuid??"",
-//                 preview: comp.preview,
-//                 playOnLoad: comp.playOnLoad,
-//                 autoRemoveOnFinish: comp.autoRemoveOnFinish,
-//                 file: comp.file?.uuid??"",
-//                 spriteFrame: comp.spriteFrame?.uuid??"",
-//                 totalParticles: comp.totalParticles,
-//                 duration: comp.duration,
-//                 emissionRate: comp.emissionRate,
-//                 life: comp.life,
-//                 lifeVar: comp.lifeVar,
-//                 startColor: comp.startColor.toHEX(),
-//                 startColorVar: comp.startColorVar.toHEX(),
-//                 endColor: comp.endColor.toHEX(),
-//                 endColorVar: comp.endColorVar.toHEX(),
-//                 angle: comp.angle,
-//                 angleVar: comp.angleVar,
-//                 startSize: comp.startSize,
-//                 startSizeVar: comp.startSizeVar,
-//                 endSize: comp.endSize,
-//                 endSizeVar: comp.endSizeVar,
-//                 startSpin: comp.startSpin,
-//                 startSpinVar: comp.startSpinVar,
-//                 endSpin: comp.endSpin,
-//                 endSpinVar: comp.endSpinVar,
-//                 posVar: comp.posVar,
-//                 positionType: comp.positionType,
-//                 emitterMode: comp.emitterMode,
-//                 gravity: comp.gravity,
-//                 speed: comp.speed,
-//                 speedVar: comp.speedVar,
-//                 tangentialAccel: comp.tangentialAccel,
-//                 tangentialAccelVar: comp.tangentialAccelVar,
-//                 radialAccel: comp.radialAccel,
-//                 radialAccelVar: comp.radialAccelVar,
-//                 rotationIsDir: comp.rotationIsDir,
-//             }
-//         }
+    export function getCompInfo_ParticleSystem2D(comp:ParticleSystem2D):CompInfo_ParticleSystem2D{
+        return {
+            ...getCompInfo_bass(comp),...{
+                customMaterial: comp.customMaterial?.uuid??"",
+                preview: comp.preview,
+                playOnLoad: comp.playOnLoad,
+                autoRemoveOnFinish: comp.autoRemoveOnFinish,
+                file: comp.file?.uuid??"",
+                spriteFrame: comp.spriteFrame?.uuid??"",
+                totalParticles: comp.totalParticles,
+                duration: comp.duration,
+                emissionRate: comp.emissionRate,
+                life: comp.life,
+                lifeVar: comp.lifeVar,
+                startColor: comp.startColor.toHEX(),
+                startColorVar: comp.startColorVar.toHEX(),
+                endColor: comp.endColor.toHEX(),
+                endColorVar: comp.endColorVar.toHEX(),
+                angle: comp.angle,
+                angleVar: comp.angleVar,
+                startSize: comp.startSize,
+                startSizeVar: comp.startSizeVar,
+                endSize: comp.endSize,
+                endSizeVar: comp.endSizeVar,
+                startSpin: comp.startSpin,
+                startSpinVar: comp.startSpinVar,
+                endSpin: comp.endSpin,
+                endSpinVar: comp.endSpinVar,
+                posVar: comp.posVar,
+                positionType: comp.positionType,
+                emitterMode: comp.emitterMode,
+                gravity: comp.gravity,
+                speed: comp.speed,
+                speedVar: comp.speedVar,
+                tangentialAccel: comp.tangentialAccel,
+                tangentialAccelVar: comp.tangentialAccelVar,
+                radialAccel: comp.radialAccel,
+                radialAccelVar: comp.radialAccelVar,
+                rotationIsDir: comp.rotationIsDir,
+            }
+        }
         
-//     }
+    }
     
-//     export function getCompInfo_Sprite(comp:Sprite):CompInfo_Sprite{
-//         return {
-//             ...getCompInfo_bass(comp),...{
-//                 customMaterial:comp.customMaterial?.uuid??"",
-//                 color:comp.color.toHEX(),
-//                 spriteAtlas:comp.spriteAtlas?.uuid || "",
-//                 spriteFrame:comp.spriteFrame?.uuid || "",
-//                 grayscale:comp.grayscale,
-//                 sizeMode:comp.sizeMode,
-//                 type:comp.type,
-//                 trim:comp.trim,
-//             }
-//         }
+    export function getCompInfo_Sprite(comp:Sprite):CompInfo_Sprite{
+        return {
+            ...getCompInfo_bass(comp),...{
+                customMaterial:comp.customMaterial?.uuid??"",
+                color:comp.color.toHEX(),
+                spriteAtlas:comp.spriteAtlas?.uuid || "",
+                spriteFrame:comp.spriteFrame?.uuid || "",
+                grayscale:comp.grayscale,
+                sizeMode:comp.sizeMode,
+                type:comp.type,
+                trim:comp.trim,
+            }
+        }
         
-//     }
+    }
     
-//     export function getCompInfo_Label(comp:Label):CompInfo_Label{
-//         return {
-//             ...getCompInfo_bass(comp),...{
-//                 customMaterial:comp.customMaterial?.uuid??"",
-//                 color:comp.color.toHEX(),
-//                 string:comp.string,
-//                 fontSize:comp.fontSize,
-//                 lineHeight:comp.lineHeight,
-//                 overflow:comp.overflow,
-//                 enableWrapText:comp.enableWrapText,
-//                 fontFamily:comp.fontFamily,
-//                 useSystemFont:comp.useSystemFont,
-//                 font:comp.font?.uuid || "",
-//                 spacingX:comp.spacingX,
-//                 isBold:comp.isBold,
-//                 isItalic:comp.isItalic,
-//                 isUnderline:comp.isUnderline,
-//                 horizontalAlign:comp.horizontalAlign,
-//                 verticalAlign:comp.verticalAlign,
-//                 underlineHeight:comp.underlineHeight,
-//                 cacheMode:comp.cacheMode,
-//             }
-//         }
-//     }
+    export function getCompInfo_Label(comp:Label):CompInfo_Label{
+        return {
+            ...getCompInfo_bass(comp),...{
+                customMaterial:comp.customMaterial?.uuid??"",
+                color:comp.color.toHEX(),
+                string:comp.string,
+                fontSize:comp.fontSize,
+                lineHeight:comp.lineHeight,
+                overflow:comp.overflow,
+                enableWrapText:comp.enableWrapText,
+                fontFamily:comp.fontFamily,
+                useSystemFont:comp.useSystemFont,
+                font:comp.font?.uuid || "",
+                spacingX:comp.spacingX,
+                isBold:comp.isBold,
+                isItalic:comp.isItalic,
+                isUnderline:comp.isUnderline,
+                horizontalAlign:comp.horizontalAlign,
+                verticalAlign:comp.verticalAlign,
+                underlineHeight:comp.underlineHeight,
+                cacheMode:comp.cacheMode,
+            }
+        }
+    }
     
     
-//     export function getCompInfo_RichText(comp:RichText):CompInfo_RichText{
-//         return {
-//             ...getCompInfo_bass(comp),...{
-//                 string:comp.string,
-//                 fontSize:comp.fontSize,
-//                 lineHeight:comp.lineHeight,
-//                 fontFamily:comp.fontFamily,
-//                 useSystemFont:comp.useSystemFont,
-//                 font:comp.font?.uuid || "",
-//                 horizontalAlign:comp.horizontalAlign,
-//                 verticalAlign:comp.verticalAlign,
-//                 cacheMode:comp.cacheMode,
-//                 maxWidth:comp.maxWidth,
-//                 imageAtlas:comp.imageAtlas?.uuid || "",
-//                 handleTouchEvent:comp.handleTouchEvent,
-//             }
-//         }
-//     }
+    export function getCompInfo_RichText(comp:RichText):CompInfo_RichText{
+        return {
+            ...getCompInfo_bass(comp),...{
+                string:comp.string,
+                fontSize:comp.fontSize,
+                lineHeight:comp.lineHeight,
+                fontFamily:comp.fontFamily,
+                useSystemFont:comp.useSystemFont,
+                font:comp.font?.uuid || "",
+                horizontalAlign:comp.horizontalAlign,
+                verticalAlign:comp.verticalAlign,
+                cacheMode:comp.cacheMode,
+                maxWidth:comp.maxWidth,
+                imageAtlas:comp.imageAtlas?.uuid || "",
+                handleTouchEvent:comp.handleTouchEvent,
+            }
+        }
+    }
 
-//     export function getCompInfo_Button(comp:Button):CompInfo_Button{
-//         return {
-//             ...getCompInfo_bass(comp),...{
-//                 interactable:comp.interactable,
-//                 transition:comp.transition,
-//                 duration:comp.duration,
-//                 zoomScale:comp.zoomScale,
-//                 target:comp.target?.uuid??"",
-//                 normalSprite:comp.normalSprite?.uuid || "",
-//                 pressedSprite:comp.pressedSprite?.uuid || "",
-//                 hoverSprite:comp.hoverSprite?.uuid || "",
-//                 disabledSprite:comp.disabledSprite?.uuid || "",
-//                 normalColor:comp.normalColor.toHEX(),
-//                 pressedColor:comp.pressedColor.toHEX(),
-//                 hoverColor:comp.hoverColor.toHEX(),
-//                 disabledColor:comp.disabledColor.toHEX(),
-//             }
-//         }
-//     }
+    export function getCompInfo_Button(comp:Button):CompInfo_Button{
+        return {
+            ...getCompInfo_bass(comp),...{
+                interactable:comp.interactable,
+                transition:comp.transition,
+                duration:comp.duration,
+                zoomScale:comp.zoomScale,
+                target:comp.target?.uuid??"",
+                normalSprite:comp.normalSprite?.uuid || "",
+                pressedSprite:comp.pressedSprite?.uuid || "",
+                hoverSprite:comp.hoverSprite?.uuid || "",
+                disabledSprite:comp.disabledSprite?.uuid || "",
+                normalColor:comp.normalColor.toHEX(),
+                pressedColor:comp.pressedColor.toHEX(),
+                hoverColor:comp.hoverColor.toHEX(),
+                disabledColor:comp.disabledColor.toHEX(),
+            }
+        }
+    }
 
-//     export function getCompInfo_ScrollView(comp:ScrollView):CompInfo_ScrollView{
-//         return {
-//             ...getCompInfo_bass(comp),...{
-//                 horizontal: comp.horizontal,
-//                 vertical: comp.vertical,
-//                 inertia: comp.inertia,
-//                 brake: comp.brake,
-//                 bounceDuration: comp.bounceDuration,
-//                 elastic: comp.elastic,
+    export function getCompInfo_ScrollView(comp:ScrollView):CompInfo_ScrollView{
+        return {
+            ...getCompInfo_bass(comp),...{
+                horizontal: comp.horizontal,
+                vertical: comp.vertical,
+                inertia: comp.inertia,
+                brake: comp.brake,
+                bounceDuration: comp.bounceDuration,
+                elastic: comp.elastic,
                     
-//                 cancelInnerEvents: comp.cancelInnerEvents,
-//                 content: comp.content?.uuid??"",
-//                 horizontalScrollBar: comp.horizontalScrollBar?.uuid??"",
-//                 verticalScrollBar: comp.verticalScrollBar?.uuid??"",
-//             }
-//         }
+                cancelInnerEvents: comp.cancelInnerEvents,
+                content: comp.content?.uuid??"",
+                horizontalScrollBar: comp.horizontalScrollBar?.uuid??"",
+                verticalScrollBar: comp.verticalScrollBar?.uuid??"",
+            }
+        }
         
-//     }
+    }
 
-//     export function getCompInfo_Skeleton(comp:sp.Skeleton):CompInfo_Skeleton{
-//         return {
-//             ...getCompInfo_bass(comp),...{
-//                 skeletonData: comp.skeletonData?.uuid??"",
-//                 _defaultSkinIndex: comp._defaultSkinIndex,
-//                 skinArr:["default"],
+    export function getCompInfo_Skeleton(comp:sp.Skeleton):CompInfo_Skeleton{
+        return {
+            ...getCompInfo_bass(comp),...{
+                skeletonData: comp.skeletonData?.uuid??"",
+                _defaultSkinIndex: comp._defaultSkinIndex,
+                skinArr:["default"],
                 
-//                 animationArr: ["animation"],
-//                 _animationIndex: comp._animationIndex,
+                animationArr: ["animation"],
+                animation: comp.animation,
 
-//                 loop: comp.loop,
-//                 timeScale: comp.timeScale,
-//                 premultipliedAlpha: comp.premultipliedAlpha,
-//                 useTint: comp.useTint,
-//                 debugSlots: comp.debugSlots,
-//                 debugBones: comp.debugBones,
-//                 debugMesh: comp.debugMesh,
-//                 enableBatch: comp.enableBatch,
+                loop: comp.loop,
+                timeScale: comp.timeScale,
+                premultipliedAlpha: comp.premultipliedAlpha,
+                useTint: comp.useTint,
+                debugSlots: comp.debugSlots,
+                debugBones: comp.debugBones,
+                debugMesh: comp.debugMesh,
+                enableBatch: comp.enableBatch,
 
-//                 animationCacheMode: comp.defaultCacheMode,
-//             }
-//         }
+                defaultCacheMode: comp.defaultCacheMode,
+            }
+        }
         
-//     }
+    }
        
-//     export function getCompInfo_UIOpacity(comp:UIOpacity):CompInfo_UIOpacity{
-//         return {
-//             ...getCompInfo_bass(comp),...{
-//                 opacity:comp.opacity
-//             }
-//         }
+    export function getCompInfo_UIOpacity(comp:UIOpacity):CompInfo_UIOpacity{
+        return {
+            ...getCompInfo_bass(comp),...{
+                opacity:comp.opacity
+            }
+        }
         
-//     }
+    }
 
-//     export function getCompInfo_Widget(comp:Widget):CompInfo_Widget{
-//         return {
-//             ...getCompInfo_bass(comp),...{
-//                 alignMode: comp.alignMode,
-//                 left: comp.left,
-//                 right: comp.right,
-//                 top: comp.top,
-//                 bottom: comp.bottom,
-//                 horizontalCenter: comp.horizontalCenter,
-//                 verticalCenter: comp.verticalCenter,
-//                 isAlignLeft: comp.isAlignLeft,
-//                 isAlignRight: comp.isAlignRight,
-//                 isAlignTop: comp.isAlignTop,
-//                 isAlignBottom: comp.isAlignBottom,
-//                 isAlignHorizontalCenter: comp.isAlignHorizontalCenter,
-//                 isAlignVerticalCenter: comp.isAlignVerticalCenter,
-//             }
-//         }
+    export function getCompInfo_Widget(comp:Widget):CompInfo_Widget{
+        return {
+            ...getCompInfo_bass(comp),...{
+                alignMode: comp.alignMode,
+                left: comp.left,
+                right: comp.right,
+                top: comp.top,
+                bottom: comp.bottom,
+                horizontalCenter: comp.horizontalCenter,
+                verticalCenter: comp.verticalCenter,
+                isAlignLeft: comp.isAlignLeft,
+                isAlignRight: comp.isAlignRight,
+                isAlignTop: comp.isAlignTop,
+                isAlignBottom: comp.isAlignBottom,
+                isAlignHorizontalCenter: comp.isAlignHorizontalCenter,
+                isAlignVerticalCenter: comp.isAlignVerticalCenter,
+            }
+        }
         
-//     }
+    }
 
-//     export function getCompInfo_Canvas(comp:Canvas):CompInfo_Canvas{
-//         return {
-//             ...getCompInfo_bass(comp),...{
-//                 cameraComponent:comp.cameraComponent?.uuid??"",
-//                 alignCanvasWithScreen:comp.alignCanvasWithScreen,
-//             }
-//         }
+    export function getCompInfo_Canvas(comp:Canvas):CompInfo_Canvas{
+        return {
+            ...getCompInfo_bass(comp),...{
+                cameraComponent:comp.cameraComponent?.uuid??"",
+                alignCanvasWithScreen:comp.alignCanvasWithScreen,
+            }
+        }
         
-//     }
-// }
+    }
+}
 
 function _getSelfModelName() {
     let model = "";

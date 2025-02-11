@@ -98,7 +98,7 @@ interface CompInfo_EditBox extends CompInfo_Base{
     tabIndex: number,
     inputMode: import("cc").EditBox.InputMode,
     inputFlag: import("cc").EditBox.InputFlag,
-    keyboardReturnType: import("cc").EditBox.KeyboardReturnType,
+    returnType: import("cc").EditBox.KeyboardReturnType,
     placeholder: string
     backgroundImage: string,
     textLabel: string,
@@ -295,7 +295,7 @@ interface CompInfo_Skeleton extends CompInfo_Base{
     skinArr:Array<string>,
     
     animationArr: Array<string>,
-    _animationIndex: number,
+    animation: string,
 
     loop: boolean,
     timeScale: number,
@@ -306,7 +306,7 @@ interface CompInfo_Skeleton extends CompInfo_Base{
     debugMesh: boolean,
     enableBatch: boolean,
 
-    animationCacheMode:import("cc").sp.Skeleton.AnimationCacheMode,
+    defaultCacheMode:import("cc").sp.Skeleton.AnimationCacheMode,
 }
 
 interface CompInfo_UIOpacity extends CompInfo_Base{

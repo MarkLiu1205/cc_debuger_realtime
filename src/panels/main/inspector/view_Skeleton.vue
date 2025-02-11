@@ -16,7 +16,7 @@ const enumDesc_AnimationCacheMode = ["REALTIME", "SHARED_CACHE", "PRIVATE_CACHE"
 //     skinArr:["default"],
     
 //     animationArr: ["animation"],
-//     _animationIndex: 0,
+//     animation: 0,
 
 //     loop: true,
 //     timeScale: 1.0,
@@ -27,7 +27,7 @@ const enumDesc_AnimationCacheMode = ["REALTIME", "SHARED_CACHE", "PRIVATE_CACHE"
 //     debugMesh: false,
 //     enableBatch: false,
 
-//     animationCacheMode:AnimationCacheMode.REALTIME,
+//     defaultCacheMode:AnimationCacheMode.REALTIME,
 
 // });
 
@@ -72,12 +72,12 @@ function onNumChange(event) {
 function onSelect(event) {
     const eleId = event.target.id;
     const sel = event.target.value;
-    if (eleId === "id_animationCacheMode") {
-        compModel.value.animationCacheMode = sel;
+    if (eleId === "id_defaultCacheMode") {
+        compModel.value.defaultCacheMode = parseInt(sel);
     } else if (eleId === "id_defaultSkin") {
         compModel.value._defaultSkinIndex = parseInt(sel);
     }  else if (eleId === "id_animation") {
-        compModel.value._animationIndex = parseInt(sel);
+        compModel.value.animation = sel
     } 
     console.log("eleId",eleId,"sel",sel)
 }
@@ -92,10 +92,10 @@ function onSelect(event) {
         </div>
         <div class="property">
             <label>Skeleton Data:</label>
-            <ui-asset id="id_skeletonData" type="cc.sp.SkeletonData" :value="compModel.skeletonData" @change="onInput"></ui-asset>
+            <ui-asset id="id_skeletonData" type="sp.SkeletonData" :value="compModel.skeletonData" @change="onInput"></ui-asset>
         </div>
         <div class="property">
-            <label>Animation:</label>
+            <label>Default Skin:</label>
             <ui-select id="id_defaultSkin" v-model="compModel._defaultSkinIndex" @change="onSelect">
                 <option v-for="(mode, index) in compModel.skinArr" :key="mode" :value="index">
                     {{ mode }}
@@ -104,15 +104,15 @@ function onSelect(event) {
         </div>
         <div class="property">
             <label>Animation:</label>
-            <ui-select id="id_animation" v-model="compModel._animationIndex" @change="onSelect">
-                <option v-for="(mode, index) in compModel.animationArr" :key="mode" :value="index">
+            <ui-select id="id_animation" v-model="compModel.animation" @change="onSelect">
+                <option v-for="(mode, index) in compModel.animationArr" :key="mode" :value="mode">
                     {{ mode }}
                 </option>
             </ui-select>
         </div>
         <div class="property">
             <label>Animation Cache Mode:</label>
-            <ui-select id="id_animationCacheMode" v-model="compModel.animationCacheMode" @change="onSelect">
+            <ui-select id="id_defaultCacheMode" v-model="compModel.defaultCacheMode" @change="onSelect">
                 <option v-for="(mode, index) in enumDesc_AnimationCacheMode" :key="index" :value="index">
                     {{ mode }}
                 </option>

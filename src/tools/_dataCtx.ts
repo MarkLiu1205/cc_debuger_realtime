@@ -43,6 +43,27 @@ class _DataContext{
         return this._nodeInspectorInfoMap[this._curSelectNodeUuid]??null
     }
 
+    private _compAttrMap = {}
+    /**
+     * 将从runtime穿过来的节点信息中的组件的inspector属性列表单独取出来
+     * @param info 
+     */
+    public parseCompAttrInfos(info:InspectorInfo_Node){
+        for(let obj of info.components){
+            if(obj["__attrMap"]){
+                this._compAttrMap[obj.typeStr] = obj["__attrMap"]
+                delete obj["__attrMap"]
+            }
+            if(this._compAttrMap[obj.typeStr]==null){
+                console.log("error,没有传递inspector属性",obj.typeStr)
+            }
+        }
+    }
+
+    public getCompAttrInfo(classname:string){
+        return this._compAttrMap[classname]
+    }
+
     /**bundle列表 */
     public m_bundleNames:Array<string> = []
     /**

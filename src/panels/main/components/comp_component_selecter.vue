@@ -84,11 +84,11 @@ function handleClick() {
         @mouseover="isHover = true" 
         @mouseleave="isHover = false"
     >
-        <div class="header">cc.{{ props.compType }}</div>
+        <div class="header">{{ props.compType }}</div>
 
         <div class="content">
             <div class="name-box" :class="{empty: !curSelectUuid}">
-                <span class="name" :class="{empty:true}" v-if="!curSelectUuid">cc.{{ props.compType }}</span>
+                <span class="name" :class="{empty:true}" v-if="!curSelectUuid">{{ props.compType }}</span>
                 <span class="name" @click="handleClick" v-else>@{{ curSelectName }}</span>
                 <ui-icon 
                     v-if="isHover && curSelectUuid" 
