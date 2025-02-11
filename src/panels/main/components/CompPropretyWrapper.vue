@@ -105,14 +105,14 @@ function onAssetChange(event){
         <ui-checkbox :value="pModel[propretyName]" @change="onToggle" v-else-if="attrs.type=='boolean'" />
         
     </div>
-    <div class="property" v-if="attrs.type=='Vec3'||attrs.type=='Vec4'">
+    <div class="property" style="margin-top: 5px;" v-if="attrs.type=='Vec3'||attrs.type=='Vec4'">
         <label></label>
         <div class="vectorInput">
             <ui-num-input class="shortInput" @change="onNumChange($event,'z')" :value="pModel[propretyName].x"  step="0.01" unit="z"></ui-num-input>
             <ui-num-input class="shortInput" @change="onNumChange($event,'w')" :value="pModel[propretyName].y"  step="0.01" unit="w" v-if="attrs.type=='Vec4'"></ui-num-input>
         </div>
     </div>
-    <div class="property" v-if="attrs.type=='Rect'">
+    <div class="property" style="margin-top: 5px;" v-if="attrs.type=='Rect'">
         <label></label>
         <div class="vectorInput">
             <ui-num-input class="shortInput" @change="onNumChange($event,'width')" :value="pModel[propretyName].width"  step="0.01" unit="width"></ui-num-input>

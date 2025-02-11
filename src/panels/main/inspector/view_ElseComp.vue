@@ -30,10 +30,8 @@ onMounted(()=>{
             <ui-checkbox id="id_enabled" @change="onToggle" :value="compModel.enabled"></ui-checkbox>
             <h3>{{ compModel.typeStr }}</h3>
         </div>
-        <div v-if="compAttrs!=null">
-            <div v-for="(attrs, propretyName) in compAttrs" :key="propretyName" class="component-properties">
-                <CompPropretyWrapper v-model="compModel" :attrs="attrs" :propretyName="propretyName"></CompPropretyWrapper>
-            </div>
+        <div v-if="compAttrs!=null" v-for="(attrs, propretyName) in compAttrs" :key="propretyName" >
+            <CompPropretyWrapper v-model="compModel" :attrs="attrs" :propretyName="propretyName"></CompPropretyWrapper>
         </div>
     </div>
 </template>

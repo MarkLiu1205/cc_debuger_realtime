@@ -13,6 +13,7 @@ import { Vec2 } from 'cc';
 import { color } from 'cc';
 import { Rect } from 'cc';
 import { Size } from 'cc';
+import { EventHandler } from 'cc';
 import { CCClass } from 'cc';
 import { Vec4 } from 'cc';
 import { Quat } from 'cc';
@@ -694,14 +695,14 @@ class _RuntimeData{
         let map = getAttrInfosOfComponentInst(component)
         let data = {}
         for(let k in map){
-            if(map[k].ctor=="EventHandler"){
-                continue
-            }
+            
             data[k] = component[k]
             if(map[k].type=="Node"||map[k].type=="Component"||map[k].type=="Asset"){
                 data[k] = data[k]?.uuid??""
             }else if(map[k].type=="Color"){
                 data[k] = data[k].toHEX()
+            }else if(map[k].ctor=="cc.ClickEvent"){
+                data[k] = component[k].map((item:EventHandler)=>JSON.stringify({node:item?.target?.uuid,comp:item?._componentId,handler:item?.handler}))
             }
         }
         if(clsName === "cc.UITransform"){//因为UITransform比较特殊，contentSize和anchorPoint都是readonly的，实际是通过width、height/anchorX、anchorY修改的
@@ -782,10 +783,8 @@ function getAttrInfosOfComponentInst(compInst:Component){
     const clsPrototype = compInst["__proto__"]
     let map = _getAttrInfosOfComponentProrotype(clsPrototype)
     for(let k in map){
-        if(map[k].ctor=="EventHandler"){
-            continue
-        }let attrType = map[k].type
-        if(!attrType){
+        let attrType = map[k].type
+        if(!attrType||attrType=="Object"){
             const _instVal = compInst[k]
             const _instType = typeof _instVal
             
@@ -952,8 +951,8 @@ function _getAttrInfosOfComponentProrotype(clsPrototype){
                 param.type = "Component"
             }else if(isAsset){
                 param.type = "Asset"
-            }else if(param.ctor=="EventHandler"){
-                let g = 0
+            }else if(param.ctor=="cc.ClickEvent"){
+                let g = 0 
             }
         }
         for(let k of Object.keys(param)){
