@@ -340,6 +340,10 @@ async function testXX(){
     Editor.Message.request(_funcs.getPluginName(), 'testMsg',"return 'aa12'",123, false);
 }
 
+function testLogPanel(){
+    Editor.Panel.open(_funcs.getPluginName()+".log_panel")
+}
+
 </script>
 
 <template>
@@ -372,8 +376,11 @@ async function testXX(){
                 <div class="right-panel">
 
                     <h2 id="text-1" style="text-align: center;">哈哈哈哈哈哈2</h2>
-                    <ui-button style="width: 100px;" @click="openEvalPanel">在runtime执行JS</ui-button>
-                    <ui-button style="width: 100px;" @click="testXX">测试</ui-button>
+                    <div style="display: flex; gap: 20px;">
+                        <ui-button style="width: 100px;text-align: center;" @click="openEvalPanel">在runtime执行JS</ui-button>
+                        <ui-button style="width: 100px;text-align: center" @click="testXX">测试</ui-button>
+                        <ui-button style="width: 100px;text-align: center" @click="testLogPanel">打开日志</ui-button>
+                    </div>
                 </div>
             </div>
             <ScriptExecutor ref="scriptExecutorRef" />

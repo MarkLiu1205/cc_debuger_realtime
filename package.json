@@ -78,6 +78,15 @@
                 "width": 800,
                 "height": 600
             }
+        },
+        "log_panel": {
+            "main": "./dist/log_panel.cjs",
+            "size": {
+                "min-width": 400,
+                "min-height": 300,
+                "width": 800,
+                "height": 600
+            }
         }
     }
 }

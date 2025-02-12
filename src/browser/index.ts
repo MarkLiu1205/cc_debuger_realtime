@@ -17,10 +17,29 @@ export const methods = {
         console.log("收到消息restart_self_ui")
         Editor.Panel.close(packageJSON.name);
 
-        setTimeout(()=>{
+        const otherPanels = {
+            [packageJSON.name+".eval_panel"] : false,
+            [packageJSON.name+".log_panel"] : false,
+        }
+        for(let k in otherPanels){
+            otherPanels[k] = await Editor.Panel.has(k)
+            if(otherPanels[k]){
+                Editor.Panel.close(k)
+            }
+        }
+        
+        setTimeout(async ()=>{
             console.log("时间到重启")
-            Editor.Panel.open(packageJSON.name);
+            await Editor.Panel.open(packageJSON.name);
 
+            for(let k in otherPanels){
+                if(otherPanels[k]){
+                    await new Promise((resolve)=>{setTimeout(() => {
+                        resolve(null)
+                    }, 2000);})
+                    await Editor.Panel.open(k);
+                }
+            }
         },2000)
     },
     

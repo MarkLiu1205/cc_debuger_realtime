@@ -41,7 +41,7 @@ export default Editor.Panel.define({
 
         startServer()
 
-        registerF5()
+        _funcs.registerF5()
     },
     close() {
         const app = weakMap.get(this);
@@ -66,13 +66,3 @@ async function startServer() {
     }, 1000);
 }
 
-function registerF5(){
-    window.addEventListener('keyup', (event) => {
-        // console.log('Global keydown event:', event.key);
-        
-        if(event.key=="F5"){
-            console.log("按了F5")
-            Editor.Message.send(_funcs.getPluginName(),"restart-self")
-        }
-      });
-}
