@@ -37,12 +37,12 @@ onUnmounted(() => {
 });
 
 // 模拟日志追加
-function addLog(message: string, level: "info" | "warn" | "error" = "info") {
+function addLog(message: string, level: "info" | "warn" | "error" = "info",timestamp) {
     logs.value.push({
         id: logs.value.length,
         message,
         level,
-        timestamp: new Date().toLocaleTimeString(),
+        timestamp: timestamp??new Date().toLocaleTimeString(),
     });
 
     if (autoScroll.value) {
@@ -78,7 +78,7 @@ function simulateLogs() {
     }, 2000);
 }
 
-simulateLogs(); // 开启模拟日志
+// simulateLogs(); // 开启模拟日志
 
 defineExpose({
     addLog,

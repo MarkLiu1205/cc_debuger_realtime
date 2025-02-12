@@ -14,14 +14,20 @@ export default Editor.Panel.define({
     template: '<div id="app" class="dark"></div>', // 只留一个 div 用于 vue 的挂载
     $: {
         root: '#app',
+        logAppInstance: null as any, // 用于存储 LogApp 实例
     },
     methods: {
-        sendRuntimeLog(logStr:string){
-            console.log("收到日志",logStr)
-            try{
-                const obj:LogEntry = JSON.parse(logStr)
-            }catch(e){
-                
+        sendRuntimeLog(obj:LogEntry){
+            if(typeof obj=="string"){
+                try{
+                    obj = JSON.parse(obj)
+                }catch(e){
+
+                }
+            }
+            console.log("收到日志",obj)
+            if(this.$.logAppInstance?.addLog){
+                this.$.logAppInstance.addLog(obj.message,obj.level,obj.timestamp)
             }
         }
     },
@@ -38,7 +44,8 @@ export default Editor.Panel.define({
             options.appendTo = options.appendTo || this.$.root;
             return ElMessage(options);
         });
-        app.mount(this.$.root);
+        const logAppInstance = app.mount(this.$.root);
+        this.$.logAppInstance = logAppInstance;
 
         weakMap.set(this, app);
 

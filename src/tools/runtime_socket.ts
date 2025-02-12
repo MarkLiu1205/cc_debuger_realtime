@@ -239,7 +239,7 @@ class RunTimeSocket {
     }
 
     sendPush_runtimeLog(obj){
-        this._send({ type: 'push', action: 'onRuntimeLog', data: obj });
+        this._send({ type: 'push', action: 'onRuntimeLog', data: JSON.stringify(obj) });
     }
 }
 
