@@ -342,3 +342,11 @@ interface ChangedNodeInfo{
     /**节点的组件信息的改变，key为组件的uuid，val为组件信息健值对 */
     compChanges?:Record<string,Record<string,any>>
 }
+
+type LogLevel = "log" | "warn" | "error";
+
+interface LogEntry {
+    message: string;
+    level: LogLevel;
+    timestamp: string;
+}

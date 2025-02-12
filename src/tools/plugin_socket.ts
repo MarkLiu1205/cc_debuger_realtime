@@ -171,6 +171,13 @@ class PluginSocket {
         this.listenForPushData<any>(PushAction.sceneLaunched,callback,null)
     }
 
+    /**
+     * 监听运行时日志
+     */
+    listenRuntimeLog(callback:(data:any)=>void){
+        this.listenForPushData<any>(PushAction.onRuntimeLog,callback,null)
+    }
+
     private _onWaitRuntimeOnlineResolves:Array<(data:any)=>void> = []
     /**等待runtime上线连接上plugin */
     async waitForRuntimeIsInline(){
@@ -328,6 +335,8 @@ enum PushAction{
     updateSceneTree = "updateSceneTree",
     /**场景切换 */
     sceneLaunched = "sceneLaunched",
+    /**收到运行日志 */
+    onRuntimeLog = "onRuntimeLog",
 
 }
 

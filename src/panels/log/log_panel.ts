@@ -16,7 +16,14 @@ export default Editor.Panel.define({
         root: '#app',
     },
     methods: {
-        
+        sendRuntimeLog(logStr:string){
+            console.log("收到日志",logStr)
+            try{
+                const obj:LogEntry = JSON.parse(logStr)
+            }catch(e){
+                
+            }
+        }
     },
     ready() {
         console.log("eval——panel ready")

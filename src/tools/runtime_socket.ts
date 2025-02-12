@@ -237,6 +237,10 @@ class RunTimeSocket {
         }
         this._send({ type: 'push', action: 'sceneLaunched', data: "" });
     }
+
+    sendPush_runtimeLog(obj){
+        this._send({ type: 'push', action: 'onRuntimeLog', data: obj });
+    }
 }
 
 class _RuntimeData{
@@ -1390,6 +1394,40 @@ function _getSelfModelName() {
     return model;
 }
 
+function interceptLog(){
+    function _handleLog(level: LogLevel, args: any[]) {
+        const message = args.map(a => (typeof a === "object" ? JSON.stringify(a) : String(a))).join(" ");
+        const logEntry: LogEntry = {
+            message,
+            level,
+            timestamp: new Date().toLocaleTimeString(),
+        };
+
+        _runtimeSocket.sendPush_runtimeLog(logEntry)
+    }
+
+    ["log", "warn", "error"].forEach(level => {
+        const originalMethod = console[level];
+
+        console[level] = (...args: any[]) => {
+            _handleLog(level as LogLevel, args);
+            originalMethod.apply(console, args);
+        };
+    });
+
+    const _cc = cc as any
+    if (typeof _cc !== "undefined") {
+        ["log", "warn", "error"].forEach(level => {
+            const originalMethod = _cc[level];
+
+            _cc[level] = (...args: any[]) => {
+                _handleLog(level as LogLevel, args);
+                originalMethod.apply(_cc, args);
+            };
+        });
+    }
+}
+
 let _runtimeSocket:RunTimeSocket = null
 function _initOnce() {
     _data = new _RuntimeData();
@@ -1421,6 +1459,8 @@ function _initOnce() {
         _runtimeSocket.sendPush_sceneLaunched()
         _runtimeSocket.sendPush_updateSceneTree()
     })
+
+    interceptLog()
 }
 
 if (!EDITOR) {

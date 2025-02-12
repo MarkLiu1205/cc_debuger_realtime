@@ -63,6 +63,13 @@ async function startServer() {
    
     setTimeout(() => {
         _pluginSocket.connectToServer(`ws://localhost:${debugPort}`)
+
+        listenForLog()
     }, 1000);
 }
 
+function listenForLog(){
+    _pluginSocket.listenRuntimeLog((obj:LogEntry)=>{
+        Editor.Message.send(_funcs.getPluginName(),"sendRuntimeLog",JSON.stringify(obj))
+    })
+}

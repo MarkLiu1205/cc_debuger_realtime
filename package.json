@@ -57,6 +57,11 @@
                 "methods": [
                     "default.doWaitForRuntimeIsInline"
                 ]
+            },
+            "sendRuntimeLog": {
+                "methods": [
+                    "log_panel.sendRuntimeLog"
+                ]
             }
         }
     },
