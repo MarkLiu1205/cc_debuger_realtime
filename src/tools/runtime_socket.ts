@@ -14,6 +14,7 @@ import { color } from 'cc';
 import { Rect } from 'cc';
 import { Size } from 'cc';
 import { EventHandler } from 'cc';
+import { log } from 'cc';
 import { CCClass } from 'cc';
 import { Vec4 } from 'cc';
 import { Quat } from 'cc';
@@ -39,7 +40,7 @@ import {
 } from 'cc';
 
 // @ts-ignore
-import { EDITOR } from 'cc/env';
+import { EDITOR, PREVIEW } from 'cc/env';
 
 let _data:_RuntimeData = null;
 
@@ -116,7 +117,7 @@ class RunTimeSocket {
     }
     private _spiltMsg:Record<number,Array<SplitMsg>> = {}
     private _onMessage(msg: OneMsg) {
-        console.log("onMesage",JSON.stringify(msg))
+        log("cc_onMesage",JSON.stringify(msg))
         if(msg["isSplit"]){
             const obj = msg as any as SplitMsg
             this._spiltMsg[obj.uniqueId] = this._spiltMsg[obj.uniqueId] || []
@@ -239,7 +240,7 @@ class RunTimeSocket {
     }
 
     sendPush_runtimeLog(obj){
-        this._send({ type: 'push', action: 'onRuntimeLog', data: JSON.stringify(obj) });
+        this._send({ type: 'push', action: 'onRuntimeLog', data: obj });
     }
 }
 
@@ -1395,37 +1396,36 @@ function _getSelfModelName() {
 }
 
 function interceptLog(){
-    function _handleLog(level: LogLevel, args: any[]) {
-        const message = args.map(a => (typeof a === "object" ? JSON.stringify(a) : String(a))).join(" ");
-        const logEntry: LogEntry = {
-            message,
-            level,
-            timestamp: new Date().toLocaleTimeString(),
-        };
-
-        _runtimeSocket.sendPush_runtimeLog(logEntry)
+    let _handleLog = window["cc_debuger_handleLog"]
+    if(!_handleLog){
+        window["cc_debuger_handleLog"] = _handleLog = function (level: LogLevel, args: any[]) {
+            const message = args.map(a => (typeof a === "object" ? JSON.stringify(a) : String(a))).join(" ");
+            let time = new Date();
+            let timeStr = `${time.getHours()}:${time.getMinutes()}:${time.getSeconds()}.${time.getMilliseconds()}`;
+            const logEntry: LogEntry = {
+                message,
+                level,
+                timestamp: timeStr,
+            }; 
+    
+            _runtimeSocket.sendPush_runtimeLog(logEntry)
+        }
     }
-
-    ["log", "warn", "error"].forEach(level => {
-        const originalMethod = console[level];
-
-        console[level] = (...args: any[]) => {
-            _handleLog(level as LogLevel, args);
-            originalMethod.apply(console, args);
-        };
-    });
-
-    const _cc = cc as any
-    if (typeof _cc !== "undefined") {
+    
+    if(!window["cc_debuger_log_intercepted"]){
+        window["cc_debuger_log_intercepted"] = true;
         ["log", "warn", "error"].forEach(level => {
-            const originalMethod = _cc[level];
-
-            _cc[level] = (...args: any[]) => {
-                _handleLog(level as LogLevel, args);
-                originalMethod.apply(_cc, args);
+            const originalMethod = console[level];
+    
+            console[level] = (...args) => {
+                if(window["cc_debuger_handleLog"]){
+                    window["cc_debuger_handleLog"](level, args);
+                    originalMethod.apply(console, args);
+                }
             };
         });
     }
+    
 }
 
 let _runtimeSocket:RunTimeSocket = null
