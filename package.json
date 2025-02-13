@@ -30,6 +30,7 @@
         "vue-tsc": "^2.1.10"
     },
     "contributions": {
+        "builder": "./builder/builder.js",
         "menu": [
             {
                 "path": "i18n:menu.extension",

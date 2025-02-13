@@ -37,7 +37,7 @@ onUnmounted(() => {
 });
 
 // 模拟日志追加
-function addLog(message: string, level: "info" | "warn" | "error" = "info",timestamp) {
+function addLog(message: string, level: "info" | "warn" | "error" = "info",timestamp=null) {
     logs.value.push({
         id: logs.value.length,
         message,

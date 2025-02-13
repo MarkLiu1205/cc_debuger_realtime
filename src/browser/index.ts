@@ -41,14 +41,6 @@ export const methods = {
                 }
             }
         },2000)
-    },
-    
-    async do_eval_js(str:string){
-        console.log("zzzzz 1")
-        const result = await _pluginSocket.evalJsInRuntime(str)
-        console.log("zzzzz 2")
-        console.log(result)
-        return result
     }
 };
 

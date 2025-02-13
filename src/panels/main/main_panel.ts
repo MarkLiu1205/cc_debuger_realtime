@@ -42,6 +42,7 @@ export default Editor.Panel.define({
         startServer()
 
         _funcs.registerF5()
+
     },
     close() {
         const app = weakMap.get(this);
