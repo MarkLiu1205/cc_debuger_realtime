@@ -68,6 +68,11 @@
                 "methods": [
                     "default.callMainPanelFunc"
                 ]
+            },
+            "onRuntimeOnlineState": {
+                "methods": [
+                    "log_panel.onRuntimeOnlineState"
+                ]
             }
         }
     },

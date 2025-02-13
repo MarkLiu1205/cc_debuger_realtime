@@ -29,6 +29,12 @@ export default Editor.Panel.define({
             if(this.$.logAppInstance?.addLog){
                 this.$.logAppInstance.addLog(obj.message,obj.level,obj.timestamp)
             }
+        },
+        onRuntimeOnlineState(bIsOnline:boolean){
+            console.log("在线信息",bIsOnline)
+            if(this.$.logAppInstance?.checkOnlineInfo!=null){
+                this.$.logAppInstance.checkOnlineInfo(bIsOnline)
+            }
         }
     },
     ready() {

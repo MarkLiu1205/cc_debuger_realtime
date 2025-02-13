@@ -327,16 +327,11 @@ class PluginSocket {
     
     private _gameEnvObj = null
     async getGameEnv(){
-        console.log("kkkkkkkkkk 1")
         if(this._gameEnvObj){
             return this._gameEnvObj
         }
-        console.log("kkkkkkkkkk 2")
         await this.waitForRuntimeIsInline()
-        console.log("kkkkkkkkkk 3")
         this._gameEnvObj = await this._sendRequest("getGameEnv","")
-        console.log("kkkkkkkkkk 4")
-        console.log("this._gameEnvObj",this._gameEnvObj)
         return this._gameEnvObj
     }
 

@@ -46,19 +46,23 @@ const onAfterBuild = function (options, result) {
     });
 };
 exports.onAfterBuild = onAfterBuild;
-const log_intercept_str = `if(!window["cc_debuger_log_intercepted"]){
+const log_intercept_str = `window["cc_debuger_intercept_log"] = function(){
+  if(!window["cc_debuger_log_intercepted"]){
     window["cc_debuger_log_intercepted"] = true;
     ["log", "warn", "error"].forEach(level => {
-        const originalMethod = console[level];
-  
-        console[level] = (...args) => {
-            if(window["cc_debuger_handleLog"]){
-                window["cc_debuger_handleLog"](level, args);
-            }
-            return originalMethod.apply(console, args);
-        };
+      const originalMethod = console[level];
+
+      console[level] = (...args) => {
+        if(window["cc_debuger_handleLog"]){
+            window["cc_debuger_handleLog"](level, args);
+        }
+        return originalMethod.apply(console, args);
+      };
     });
-  }`;
+  }
+}
+window["cc_debuger_intercept_log"]()
+`;
 const unload = function () {
     return __awaiter(this, void 0, void 0, function* () {
         // console.warn(`[${PACKAGE_NAME}] Unload cocos plugin example in builder.`);

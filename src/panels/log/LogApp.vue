@@ -20,10 +20,25 @@ const ref_container = ref<HTMLElement | null>(null);
 const ref_scrollbar = ref<InstanceType<typeof ElScrollbar> | null>(null);
 
 const gameEnvObj = ref<GameEnvParam>(null)
+
+/**客户端是否在线 */
+const isRuntimeOffline = ref(true)
+
+async function checkOnlineInfo(bool?:boolean){
+    // console.log("checkOnlineInfo",bool)
+    let bIsOnline = bool ?? await Editor.Message.request(_funcs.getPluginName(),"doWaitForRuntimeIsInline")
+    isRuntimeOffline.value = !bIsOnline
+
+    if(bIsOnline){
+        let obj = await Editor.Message.request(_funcs.getPluginName(),"callMainPanelFunc","_pluginSocket","getGameEnv")
+        console.log("结果",obj)
+        gameEnvObj.value = obj
+    }
+}
+
 onMounted(async ()=>{
-    let aa = await Editor.Message.request(_funcs.getPluginName(),"callMainPanelFunc","_pluginSocket","getGameEnv")
-    console.log("结果",aa)
-    gameEnvObj.value = aa
+    checkOnlineInfo()
+    
     updateLogHeight()
 })
 
@@ -94,12 +109,16 @@ function simulateLogs() {
 
 defineExpose({
     addLog,
+    checkOnlineInfo,
 });
 </script>
 
 <template>
     <div style="width: 100vw; height: 100vh;" ref="ref_container">
-        <div class="log-viewer">
+        <div class="center-align" style="flex-direction: column;" v-if="isRuntimeOffline">
+            <h2>没有检测到可用运行时</h2>
+        </div>
+        <div class="log-viewer" v-else>
             <!-- 控制面板 -->
             <div class="controls">
                 <ElInput v-model="searchQuery" placeholder="搜索日志..." clearable />
@@ -134,6 +153,13 @@ defineExpose({
 </template>
 
 <style scoped>
+.center-align {
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
 .log-viewer {
     display: flex;
     flex-direction: column;

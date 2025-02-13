@@ -63,6 +63,7 @@ _pluginSocket.listenRuntimeOnlineInfo((bIsOnline)=>{
         _pluginSocket.clear()
         _dataCtx.clear()
     }
+    Editor.Message.request(_funcs.getPluginName(),"onRuntimeOnlineState",bIsOnline)
 })
 
 _pluginSocket.listenRuntimeList((nameArr)=>{
