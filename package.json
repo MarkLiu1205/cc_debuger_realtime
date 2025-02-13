@@ -63,6 +63,11 @@
                 "methods": [
                     "log_panel.sendRuntimeLog"
                 ]
+            },
+            "callMainPanelFunc": {
+                "methods": [
+                    "default.callMainPanelFunc"
+                ]
             }
         }
     },

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, nextTick, onMounted, onUnmounted } from "vue";
 import { ElInput, ElButton, ElCheckbox, ElScrollbar, ElTable, ElTableColumn } from "element-plus";
+import { _funcs } from "../../tools/_funcs";
 
 interface LogEntry {
     id: number;
@@ -18,10 +19,21 @@ const logHeight = ref("300px");
 const ref_container = ref<HTMLElement | null>(null);
 const ref_scrollbar = ref<InstanceType<typeof ElScrollbar> | null>(null);
 
+const gameEnvObj = ref<GameEnvParam>(null)
+onMounted(async ()=>{
+    let aa = await Editor.Message.request(_funcs.getPluginName(),"callMainPanelFunc","_pluginSocket","getGameEnv")
+    console.log("结果",aa)
+    gameEnvObj.value = aa
+    updateLogHeight()
+})
+
 // 计算日志区域的高度
 function updateLogHeight() {
     if (ref_container.value) {
-        const height = ref_container.value.clientHeight - 80;
+        let height = ref_container.value.clientHeight - 80 ;
+        if(gameEnvObj.value?.CC_PREVIEW||!gameEnvObj.value?.CC_DEBUG){
+            height-=30
+        }
         logHeight.value = `${height}px`;
     }
 }
@@ -87,31 +99,35 @@ defineExpose({
 
 <template>
     <div style="width: 100vw; height: 100vh;" ref="ref_container">
-        <div style="border: 2px solid red; width: calc(100% - 10px); height: calc(100% - 35px);">
-            <div class="log-viewer">
-                <!-- 控制面板 -->
-                <div class="controls">
-                    <ElInput v-model="searchQuery" placeholder="搜索日志..." clearable />
-                    <ElButton @click="clearLogs" type="danger">清空日志</ElButton>
-                    <ElCheckbox v-model="autoScroll">自动滚动</ElCheckbox>
-                    <ElButton @click="() => (filterLevel = 'all')">全部</ElButton>
-                    <ElButton @click="() => (filterLevel = 'info')">Info</ElButton>
-                    <ElButton @click="() => (filterLevel = 'warn')">Warn</ElButton>
-                    <ElButton @click="() => (filterLevel = 'error')">Error</ElButton>
-                </div>
+        <div class="log-viewer">
+            <!-- 控制面板 -->
+            <div class="controls">
+                <ElInput v-model="searchQuery" placeholder="搜索日志..." clearable />
+                <ElButton @click="clearLogs" type="danger">清空日志</ElButton>
+                <ElCheckbox v-model="autoScroll">自动滚动</ElCheckbox>
+                <ElButton @click="() => (filterLevel = 'all')">全部</ElButton>
+                <ElButton @click="() => (filterLevel = 'info')">Info</ElButton>
+                <ElButton @click="() => (filterLevel = 'warn')">Warn</ElButton>
+                <ElButton @click="() => (filterLevel = 'error')">Error</ElButton>
+            </div>
 
-                <!-- 日志列表 -->
-                <ElScrollbar :height="logHeight" ref="ref_scrollbar">
-                    <ElTable :data="filteredLogs" style="width: 100%" size="small" border>
-                        <ElTableColumn prop="timestamp" label="时间" width="100" />
-                        <ElTableColumn prop="level" label="级别" width="80">
-                            <template #default="{ row }">
-                                <span :class="row.level">{{ row.level.toUpperCase() }}</span>
-                            </template>
-                        </ElTableColumn>
-                        <ElTableColumn prop="message" label="内容" />
-                    </ElTable>
-                </ElScrollbar>
+            <!-- 日志列表 -->
+            <ElScrollbar :height="logHeight" ref="ref_scrollbar">
+                <ElTable :data="filteredLogs" style="width: 100%" size="small" border>
+                    <ElTableColumn prop="timestamp" label="时间" width="100" />
+                    <ElTableColumn prop="level" label="级别" width="80">
+                        <template #default="{ row }">
+                            <span :class="row.level">{{ row.level.toUpperCase() }}</span>
+                        </template>
+                    </ElTableColumn>
+                    <ElTableColumn prop="message" label="内容" />
+                </ElTable>
+            </ElScrollbar>
+            <div class="bottomTip" v-if="gameEnvObj?.CC_PREVIEW">
+                注意：当前是preview模式，不支持cc.log/warn/error，只支持console.log/warn/error
+            </div>
+            <div class="bottomTip" v-else-if="!gameEnvObj?.CC_DEBUG">
+                注意：当前是不是debug模式，不支持cc.log/warn/error，只支持console.log/warn/error
             </div>
         </div>
     </div>
@@ -144,5 +160,12 @@ defineExpose({
 
 .error {
     color: red;
+}
+
+.bottomTip {
+    height: 30px;
+    color: orange;
+    text-align: center;
+
 }
 </style>

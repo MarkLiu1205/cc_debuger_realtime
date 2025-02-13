@@ -350,3 +350,14 @@ interface LogEntry {
     level: LogLevel;
     timestamp: string;
 }
+
+interface GameEnvParam{
+    isNative:boolean,
+    isBrowser:boolean,
+    isMobile:boolean,
+    CC_DEV: boolean,
+    CC_DEBUG: boolean,
+    CC_PREVIEW: boolean,
+    CC_JSB: boolean,
+    CC_SUPPORT_JIT: boolean,
+}

@@ -40,7 +40,7 @@ import {
 } from 'cc';
 
 // @ts-ignore
-import { EDITOR, PREVIEW } from 'cc/env';
+import { DEBUG, DEV, EDITOR, JSB, PREVIEW, SUPPORT_JIT } from 'cc/env';
 
 let _data:_RuntimeData = null;
 
@@ -171,6 +171,8 @@ class RunTimeSocket {
             } else if (msg.action === 'getNodeOfComp') {
                 const uuid = msg.data.uuid;
                 data = _data.getNodeOfComp(uuid)
+            } else if (msg.action === 'getGameEnv') {
+                data = _data.getGameEnv()
             }
     
             responseData.data = data
@@ -416,6 +418,20 @@ class _RuntimeData{
             return {name:comp.node.name,uuid:comp.node.uuid}
         }
         return {name:"",uuid:""}
+    }
+
+    getGameEnv(){
+        let obj:GameEnvParam = {
+            isNative:sys.isNative,
+            isBrowser:sys.isBrowser,
+            isMobile:sys.isMobile,
+            CC_DEV: DEV,
+            CC_DEBUG: DEBUG,
+            CC_PREVIEW: PREVIEW,
+            CC_JSB: JSB,
+            CC_SUPPORT_JIT: SUPPORT_JIT,
+        }
+        return obj
     }
 
     clear(){
@@ -1338,54 +1354,70 @@ function _getSelfModelName() {
         } else {
             model = "native_unknown";
         }
-    } else if (sys.platform === sys.Platform.ALIPAY_MINI_GAME) {
-        model = "alipay_mini_game";
-    } else if (sys.platform === sys.Platform.WECHAT_GAME) {
-        model = "wechat_game";
-    } else if (sys.platform === sys.Platform.QTT_MINI_GAME) {
-        model = "qq_play";
-    } else if (sys.platform === sys.Platform.BYTEDANCE_MINI_GAME) {
-        model = "bytedance_mini_game";
-    } else if (sys.platform === sys.Platform.BAIDU_MINI_GAME) {
-        model = "baidu_mini_game";
-    } else if (sys.platform === sys.Platform.XIAOMI_QUICK_GAME) {
-        model = "xiaomi_quick_game";
-    } else if (sys.platform === sys.Platform.OPPO_MINI_GAME) {
-        model = "oppo_mini_game";
-    } else if (sys.platform === sys.Platform.VIVO_MINI_GAME) {
-        model = "vivo_mini_game";
-    } else if (sys.platform === sys.Platform.TAOBAO_CREATIVE_APP) {
-        model = "taobao_creative_app";
-    } else if (sys.platform === sys.Platform.TAOBAO_MINI_GAME) {
-        model = "taobao_mini_game";
-    } else if (sys.platform === sys.Platform.COCOSPLAY) {
-        model = "cocosplay";
-    } else if (sys.platform === sys.Platform.LINKSURE_MINI_GAME) {
-        model = "linksure_mini_game";
-    } else if (sys.platform === sys.Platform.HUAWEI_QUICK_GAME) {
-        model = "huawei_quick_game";
-    } else if (sys.browserType === sys.BrowserType.CHROME) {
-        model = "browser_chrome";
-    } else if (sys.browserType === sys.BrowserType.FIREFOX) {
-        model = "browser_firefox";
-    } else if (sys.browserType === sys.BrowserType.SAFARI) {
-        model = "browser_safari";
-    } else if (sys.browserType === sys.BrowserType.EDGE) {
-        model = "browser_edge";
-    } else if (sys.browserType === sys.BrowserType.IE) {
-        model = "browser_ie";
-    } else if (sys.browserType === sys.BrowserType.OPERA) {
-        model = "browser_opera";
-    } else if (sys.browserType === sys.BrowserType.MIUI) {
-        model = "browser_miui";
-    } else if (sys.browserType === sys.BrowserType.UC) {
-        model = "browser_uc";
-    } else if (sys.browserType === sys.BrowserType.QQ) {
-        model = "browser_qq";
-    } else if (sys.browserType === sys.BrowserType.BAIDU) {
-        model = "browser_baidu";
     } else {
-        model = "unknown";
+        if (sys.platform === sys.Platform.ALIPAY_MINI_GAME) {
+            model = "alipay_mini_game";
+        } else if (sys.platform === sys.Platform.WECHAT_GAME) {
+            model = "wechat_game";
+        } else if (sys.platform === sys.Platform.QTT_MINI_GAME) {
+            model = "qq_play";
+        } else if (sys.platform === sys.Platform.BYTEDANCE_MINI_GAME) {
+            model = "bytedance_mini_game";
+        } else if (sys.platform === sys.Platform.BAIDU_MINI_GAME) {
+            model = "baidu_mini_game";
+        } else if (sys.platform === sys.Platform.XIAOMI_QUICK_GAME) {
+            model = "xiaomi_quick_game";
+        } else if (sys.platform === sys.Platform.OPPO_MINI_GAME) {
+            model = "oppo_mini_game";
+        } else if (sys.platform === sys.Platform.VIVO_MINI_GAME) {
+            model = "vivo_mini_game";
+        } else if (sys.platform === sys.Platform.TAOBAO_CREATIVE_APP) {
+            model = "taobao_creative_app";
+        } else if (sys.platform === sys.Platform.TAOBAO_MINI_GAME) {
+            model = "taobao_mini_game";
+        } else if (sys.platform === sys.Platform.COCOSPLAY) {
+            model = "cocosplay";
+        } else if (sys.platform === sys.Platform.LINKSURE_MINI_GAME) {
+            model = "linksure_mini_game";
+        } else if (sys.platform === sys.Platform.HUAWEI_QUICK_GAME) {
+            model = "huawei_quick_game";
+        } else if (sys.browserType === sys.BrowserType.CHROME) {
+            model = "browser_chrome";
+        } else if (sys.browserType === sys.BrowserType.FIREFOX) {
+            model = "browser_firefox";
+        } else if (sys.browserType === sys.BrowserType.SAFARI) {
+            model = "browser_safari";
+        } else if (sys.browserType === sys.BrowserType.EDGE) {
+            model = "browser_edge";
+        } else if (sys.browserType === sys.BrowserType.IE) {
+            model = "browser_ie";
+        } else if (sys.browserType === sys.BrowserType.OPERA) {
+            model = "browser_opera";
+        } else if (sys.browserType === sys.BrowserType.MIUI) {
+            model = "browser_miui";
+        } else if (sys.browserType === sys.BrowserType.UC) {
+            model = "browser_uc";
+        } else if (sys.browserType === sys.BrowserType.QQ) {
+            model = "browser_qq";
+        } else if (sys.browserType === sys.BrowserType.BAIDU) {
+            model = "browser_baidu";
+        } else {
+            model = "unknown";
+        }
+
+        if (sys.os === sys.OS.ANDROID) {
+            model = "android" + "_" +model;
+        } else if (sys.os === sys.OS.IOS) {
+            model = "ios" + "_" +model;
+        } else if (sys.os === sys.OS.WINDOWS) {
+            model = "windows" + "_" +model;
+        } else if (sys.os === sys.OS.OSX) {
+            model = "osx" + "_" +model;
+        } else if (sys.os === sys.OS.OHOS) {
+            model = "ohos" + "_" +model;
+        } else if (sys.os === sys.OS.LINUX) {
+            model = "linux" + "_" +model;
+        }
     }
 
     if(sys.isXR){

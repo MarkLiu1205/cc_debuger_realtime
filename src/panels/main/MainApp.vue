@@ -60,6 +60,8 @@ _pluginSocket.listenRuntimeOnlineInfo((bIsOnline)=>{
     isRuntimeOffline.value = !bIsOnline
     if(!bIsOnline){
         cur_sel_node.value = null
+        _pluginSocket.clear()
+        _dataCtx.clear()
     }
 })
 

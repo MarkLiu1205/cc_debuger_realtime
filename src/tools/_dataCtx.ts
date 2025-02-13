@@ -236,6 +236,16 @@ class _DataContext{
         }
         return null
     }
+
+    /**Runtime掉线的时候调用 */
+    clear(){
+        this.m_using_uuids = {}
+        this._allAssetArr = []
+        this.curNodeTreeInfo = null;
+        this._curSelectNodeUuid = null;
+        this._compAttrMap = {}
+        this.m_bundleNames = []
+    }
 }
 
 export const _dataCtx = new _DataContext();
