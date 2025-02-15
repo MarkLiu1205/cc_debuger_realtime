@@ -479,13 +479,18 @@ class _RuntimeData{
         this.m_waitForPushResArr = []
 
         assetManager.assets.forEach((asset,key)=>{
-            this.m_waitForPushResArr.push({
+            let obj:ResMemInfo = {
                 uuid:key,
                 refCount:asset.refCount,
                 //@ts-ignore
                 classname:asset.__proto__.__classname__,
                 memory:_getResMemory(asset),
-            })
+            }
+            if(asset instanceof ImageAsset){
+                obj.width = asset.width
+                obj.height = asset.height
+            }
+            this.m_waitForPushResArr.push(obj)
         })
     }
 
@@ -522,6 +527,10 @@ class _RuntimeData{
                 refCount:asset.refCount,
                 classname:cls.__classname__,
                 memory:_getResMemory(asset),
+            }
+            if(asset instanceof ImageAsset){
+                obj.width = asset.width
+                obj.height = asset.height
             }
             this.m_waitForPushResArr.push(obj)
         }
@@ -1039,8 +1048,42 @@ function _getAttrInfosOfComponentProrotype(clsPrototype){
 }
 
 function _getResMemory(asset:Asset){
+    if(asset instanceof ImageAsset){
+        return _memoryCaculator.getImageAssetMemorySize(asset)
+    }
     return 0
 }
+
+namespace _memoryCaculator{
+    export function getImageAssetMemorySize(imageAsset: ImageAsset): number {
+        const width = imageAsset.width;
+        const height = imageAsset.height;
+        const format = imageAsset.format; // 像素格式
+    
+        let bytesPerPixel = 4; // 默认 RGBA8888 格式，每个像素 4 字节
+    
+        switch (format) {
+            case Texture2D.PixelFormat.RGBA8888:
+                bytesPerPixel = 4;
+                break;
+            case Texture2D.PixelFormat.RGB888:
+                bytesPerPixel = 3;
+                break;
+            case Texture2D.PixelFormat.RGBA4444:
+            case Texture2D.PixelFormat.RGB565:
+                bytesPerPixel = 2;
+                break;
+            case Texture2D.PixelFormat.A8:
+                bytesPerPixel = 1;
+                break;
+            // 其他格式根据需要添加
+        }
+    
+        return width * height * bytesPerPixel;
+    }
+}
+
+
 
 function _getSelfModelName() {
     let model = "";

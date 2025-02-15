@@ -132,6 +132,7 @@ function shakeTreeItem(nodeKey: string) {
             <template #default="{ node }">
                 <ui-icon color="red" :value="node.data.icon"></ui-icon>
                 <span>{{ node.label }}</span>
+                <span style="margin-left: 5px;color: aquamarine;" v-if="node.data.assetType=='cc.ImageAsset'">  ({{ node.data.width }}x{{ node.data.height }})</span>
             </template>
         </el-tree-v2>
     </div>

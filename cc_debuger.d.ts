@@ -37,6 +37,10 @@ interface ResTreeItem{
      */
     isUrlAsset?:boolean,
 
+    /**目前只有ImageAsset统计了memory、width、height */
+    memory?:number,
+    width?:number,
+    height?:number,
 }
 
 // type CompType = "Sprite" | "Label" | "UITransform" | "Button" | "Canvas" | "EditBox" | "Layout" | 
@@ -122,4 +126,7 @@ interface ResMemInfo{
     refCount:number,
     /**资源类名，如cc.SpriteFrame */
     classname:string,
+
+    width?:number,
+    height?:number,
 }

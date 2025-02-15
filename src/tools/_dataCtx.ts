@@ -3,25 +3,17 @@ import { eventBus } from "./_enentBus";
 import { _funcs } from "./_funcs";
 
 class _DataContext{
-    /**添加进 assetManager.assets 的资源及其__classname__的映射 */
-    private m_asset_classname_map:Record<string,string> = {};
+    
     /**从资源缓存里删除了，暂时还没使用的资源 */
     private m_unusing_uuids:Array<string> = [];
 
     /**资源列表数据，主要分为assets和internal */
-    private _allAssetArr:Array<ResTreeItem> = [];
+    private _assetTreeInfo:Array<ResTreeItem> = [];
+    /**平铺的资源信息(不包括文件夹了) */
+    private m_asset_map:Record<string,ResTreeItem> = {};
 
     public getResTree_datas(){
-        this._allAssetArr.sort((a,b)=> {
-            if(a.name=="assets"){
-                return -1
-            }else if(b.name=="assets"){
-                return 1
-            }else{
-                return this._allAssetArr.indexOf(a)-this._allAssetArr.indexOf(b)
-            }
-        })
-        return this._allAssetArr
+        return this._assetTreeInfo
     }
 
     /**节点树 */
@@ -80,7 +72,6 @@ class _DataContext{
                 let hasRecord = this.getResNodeInfoWithUuid(uuid)
                 
                 if(hasRecord){
-                    console.log("已经搞过了")
                     continue
                 }
 
@@ -119,7 +110,7 @@ class _DataContext{
                     if(!obj){
                         obj = await this._createNewItemToTreeDataFromPath(_path,isDatabase,info,isFloder);
                         if(isDatabase){
-                            this._allAssetArr.push(obj);
+                            this._assetTreeInfo.push(obj);
                         }else{
                             
                             _parentInfo.children.push(obj);
@@ -131,6 +122,18 @@ class _DataContext{
                             }
                         }
                     }
+                    if(i==_resPaths.length-1){
+                        if(resObj?.memory>0){
+                            obj.memory = resObj.memory
+                        }
+                        if(resObj?.width>0){
+                            obj.width = resObj.width
+                        }
+                        if(resObj?.height>0){
+                            obj.height = resObj.height
+                        }
+                        this.m_asset_map[uuid] = obj
+                    }
                     _parentInfo = obj;
                     if(bundleName){
                         obj.bundleName = bundleName
@@ -138,16 +141,16 @@ class _DataContext{
                     }
                 }
             }
-            this._allAssetArr.sort((a,b)=>{
+            this._assetTreeInfo.sort((a,b)=>{
                 if(a.name=="assets"){
                     return -1
                 }else if(b.name=="assets"){
                     return 1
                 }else{
-                    return this._allAssetArr.indexOf(a)-this._allAssetArr.indexOf(b)
+                    return this._assetTreeInfo.indexOf(a)-this._assetTreeInfo.indexOf(b)
                 }
             })
-            // console.log("打印树结构",JSON.stringify(this._allAssetArr))
+            // console.log("打印树结构",JSON.stringify(this._assetTreeInfo))
             resolve(null)
         })
     }
@@ -155,7 +158,7 @@ class _DataContext{
     private _assetTasks: Array<Array<ResMemInfo>> = [];
     private isProcessing = false;
 
-    async _processAssetTask() {
+    private async _processAssetTask() {
         if (this.isProcessing) return;
         this.isProcessing = true;
         while (this._assetTasks.length > 0) {
@@ -241,7 +244,7 @@ class _DataContext{
         if(start){
             return searchInTreeItemInfo(start);
         }
-        for(let treeData of this._allAssetArr){
+        for(let treeData of this._assetTreeInfo){
             let result = searchInTreeItemInfo(treeData);
             if(result){
                 return result;
@@ -291,7 +294,10 @@ class _DataContext{
      * @returns 
      */
     getResNodeInfoWithUuid(uuid:string){
-        for(let obj of this._allAssetArr){
+        if(this.m_asset_map[uuid]){
+            return this.m_asset_map[uuid]
+        }
+        for(let obj of this._assetTreeInfo){
             function traverse(node: ResTreeItem) {
                 if(node.uuid == uuid){
                     return node
@@ -316,8 +322,8 @@ class _DataContext{
 
     /**Runtime掉线的时候调用 */
     clear(){
-        this.m_asset_classname_map = {}
-        this._allAssetArr = []
+        this.m_asset_map = {}
+        this._assetTreeInfo = []
         this.curNodeTreeInfo = null;
         this._curSelectNodeUuid = null;
         this._compAttrMap = {}

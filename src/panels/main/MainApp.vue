@@ -268,7 +268,7 @@ onUnmounted(() => {
 })  
 
 function onSel_asset(item:ResTreeItem) {
-    if(item&&item.isDirectory){
+    if(item&&!item.isDirectory){
         console.log('选中资源:', item);
     }
 }
