@@ -71,15 +71,19 @@ class _DataContext{
      * 标记正在被使用的资源
      * @param uuids 是资源列表，如SpriteFrame、Texture2D、AnimationClip等，不包含文件夹
      */
-    private async _recordAssetUuid(uuidMap:Record<string,string>){
+    private async _recordAssetUuid(arr:Array<ResMemInfo>){
         return new Promise(async (resolve)=>{
-            const arr = []
-            for(let uuid in uuidMap){
-                this.m_asset_classname_map[uuid] = uuidMap[uuid]
-                arr.push(uuid)
-            }
+            // console.log("arr",JSON.stringify(arr))
             for(let i=0;i<arr.length;i++){
-                let uuid = arr[i]
+                const resObj = arr[i]
+                let uuid = resObj.uuid
+                let hasRecord = this.getResNodeInfoWithUuid(uuid)
+                
+                if(hasRecord){
+                    console.log("已经搞过了")
+                    continue
+                }
+
                 if(i>1000 && i%1000=== 0){
                     await _funcs.waitForSeconds(0.01)
                     // _funcs.log_1("正在加载资源",i,arr.length,Date.now()/1000)
@@ -90,30 +94,34 @@ class _DataContext{
                     if(_funcs.isValidURL(uuid)){
                         info = {
                             url:uuid,
-                            type:uuidMap[uuid],
+                            type:resObj.classname,
                             uuid:uuid,
                             path:uuid,
+                            isDirectory:false
                         }
                     }else{
-                        console.error("uuid找不到资源",uuid,uuidMap[uuid])
+                        console.error("uuid找不到资源",uuid,resObj.classname)
                         continue
                     }
                 }
-                // console.log(info)
+                // console.log("info",info)
                 let _resPaths = _funcs.getAllSubpathsFromUrl(info.url);//根据资源的url解析出来的各级路径
                 let _parentInfo:ResTreeItem = null
                 let bundleName:string = null
                 // console.log("打印路径",info.url)
+            
                 for(let i=0;i<_resPaths.length;i++){
                     let _path = _resPaths[i];
-                    let isAsset = i==_resPaths.length-1;
+                    let isFloder = i<_resPaths.length-1;
                     let isDatabase = i==0
                     let obj = this._getTreeItemInfoFromPath(_path);
+                    
                     if(!obj){
-                        obj = await this._createNewItemToTreeDataFromPath(_path,isAsset,isDatabase,info);
+                        obj = await this._createNewItemToTreeDataFromPath(_path,isDatabase,info,isFloder);
                         if(isDatabase){
                             this._allAssetArr.push(obj);
                         }else{
+                            
                             _parentInfo.children.push(obj);
                             if(obj.isBundleFloder){
                                 bundleName = obj.bundleName
@@ -126,9 +134,7 @@ class _DataContext{
                     _parentInfo = obj;
                     if(bundleName){
                         obj.bundleName = bundleName
-                        if(obj.isAsset){
-                            // console.log("bundleName",bundleName,_path)
-                        }
+                        
                     }
                 }
             }
@@ -146,7 +152,7 @@ class _DataContext{
         })
     }
 
-    private _assetTasks: Array<Record<string,string>> = [];
+    private _assetTasks: Array<Array<ResMemInfo>> = [];
     private isProcessing = false;
 
     async _processAssetTask() {
@@ -165,46 +171,49 @@ class _DataContext{
         this._onProcessCallback = []
     }
     private _onProcessCallback:Array<()=>void> = []
-    mark_using_uuids(uuidMap:Record<string,string>,callback:()=>void){
+    mark_using_uuids(arr:Array<ResMemInfo>,callback:()=>void){
         this._onProcessCallback.push(callback)
-        this._assetTasks.push(uuidMap);
+        this._assetTasks.push(arr);
         this._processAssetTask();
     }
 
-    private async _createNewItemToTreeDataFromPath(_path:string,isAsset:boolean,isDatabase:boolean,info: EditorAssetInfo){
+    private async _createNewItemToTreeDataFromPath(_path:string,isDatabase:boolean,info: EditorAssetInfo,isDirectory:boolean){
+        let _url = "db://"+_path
         let name = path.basename(_path);
         let obj:ResTreeItem = {
             name: name,
             path: _path,
-            isAsset: isAsset,
+            isDirectory: isDirectory
+        }
+        if(isDirectory  && (info.type=="cc.Texture2D"||info.type=="cc.SpriteFrame")){
+            let _data = await _funcs.getAssetInfoByUuid(_url)
+            if(_data?.type=="cc.ImageAsset"){
+                obj.isDirectory = isDirectory = false
+                info = _data
+            }
         }
         if(isDatabase){
             obj.icon = "database";
             obj.children = [];
-        }else if(isAsset){
+        }else if(!isDirectory){
             obj.assetType = info.type;
             obj.uuid = info.uuid;
             obj.icon = _funcs.getIconOfResType(info.type);
+            obj.url = info.url
             if(obj.assetType === "cc.ImageAsset"){
                 obj.children = [];
-            }
+            }            
         }else {
             obj.icon = "directory";
             obj.children = [];
-            let url = "db://"+_path
-            let floderInfo = await _funcs.getAssetMetaByUuid(url)
+            let floderInfo = await _funcs.getAssetMetaByUuid(_url)
             
             const userData: {isBundle?: boolean,bundleName?: string } = floderInfo?.userData;
             if(userData?.isBundle){
                 obj.isBundleFloder = true
                 obj.bundleName = userData?.bundleName ?? obj.name
             }
-            obj.uuid = await _funcs.getUuidByUrl(url)
-
-            // if(_path.indexOf("assets")>=0){
-            //     console.log("是bundle?",userData.isBundle,obj.uuid)
-            //     console.log("floderInfox",typeof floderInfo,floderInfo)
-            // }
+            obj.uuid = await _funcs.getUuidByUrl(_url)
         }
 
         return obj
@@ -255,6 +264,35 @@ class _DataContext{
             function traverse(node: NodeTreeItem) {
                 // console.log(node.uuid,node.uuid == uuid)
                 // console.log("path",node.path)
+                if(node.uuid == uuid){
+                    return node
+                }
+                if (node.children) {
+                    for(let child of node.children){
+                        let ret = traverse(child)
+                        if(ret){
+                            return ret
+                        }
+                    }
+                }
+            }
+
+            let ret = traverse(obj)
+            if(ret){
+                return ret
+            }
+        }
+        return null
+    }
+
+    /**
+     * 根据uuid获取资源树中的项信息
+     * @param uuid 
+     * @returns 
+     */
+    getResNodeInfoWithUuid(uuid:string){
+        for(let obj of this._allAssetArr){
+            function traverse(node: ResTreeItem) {
                 if(node.uuid == uuid){
                     return node
                 }

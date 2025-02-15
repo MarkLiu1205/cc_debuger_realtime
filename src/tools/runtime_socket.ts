@@ -269,14 +269,14 @@ class RunTimeSocket {
     }
 }
 
+
+
 class _RuntimeData{
     
     /**已经销毁的资源 */
     public m_hasDestroyedResArr:Array<string> = []
-    /**距离上次同步以来，新增的资源uuid */
-    public m_waitForPushResUuids_1:Array<string> = []
-    /**距离上次同步以来，引用计数改变的资源uuid */
-    public m_waitForPushResUuids_2:Array<string> = []
+    /**距离上次同步以来，有变化的资源 */
+    public m_waitForPushResArr:Array<ResMemInfo> = []
 
     /**当前节点数 */
     public m_sceneTree: NodeTreeItem = null;
@@ -465,19 +465,28 @@ class _RuntimeData{
 
     clear(){
         this.m_hasDestroyedResArr = []
-        this.m_waitForPushResUuids_1 = []
-        this.m_waitForPushResUuids_2 = []
-
-        assetManager.assets.forEach((asset,key)=>{
-            this.m_waitForPushResUuids_1.push(key)
-            this.m_waitForPushResUuids_2.push(key)
-        })
+        this.initAssetForPush()
 
         this.m_sceneTree = null
         this.m_nodeUuidMap = {}
         this.m_compUuidMap = {}
         this.m_curSceneName = ""
         this.m_hasSendCompAttrsMap = {}
+    }
+
+    /**从assetManager.assets初始化需要同步的资源 */
+    public initAssetForPush(){
+        this.m_waitForPushResArr = []
+
+        assetManager.assets.forEach((asset,key)=>{
+            this.m_waitForPushResArr.push({
+                uuid:key,
+                refCount:asset.refCount,
+                //@ts-ignore
+                classname:asset.__proto__.__classname__,
+                memory:_getResMemory(asset),
+            })
+        })
     }
 
     private _onSceneChange(sceneNode:Scene){
@@ -497,16 +506,34 @@ class _RuntimeData{
         return -1
     }
 
+    private _checkRecordResMemInfo(uuid:string,asset?:Asset){
+        asset = asset??assetManager.assets.get(uuid);
+        if(asset==null){
+            return
+        }
+        //@ts-ignore
+        const cls = asset.__proto__
+        let obj = this.m_waitForPushResArr.find((item)=>{
+            return item.uuid==uuid
+        })
+        if(!obj){
+            obj = {
+                uuid:uuid,
+                refCount:asset.refCount,
+                classname:cls.__classname__,
+                memory:_getResMemory(asset),
+            }
+            this.m_waitForPushResArr.push(obj)
+        }
+        obj.refCount = asset.refCount
+
+    }
+
     /**
      * 资源被添加进 assetManager.assets
      */
     onAsset_added(key:string,asset:Asset){
-        //@ts-ignore
-        const cls = asset.__proto__
-        // this.m_assetUuidTypeMap[key] = cls.__classname__ 
-        if(this.m_waitForPushResUuids_1.indexOf(key)<0){
-            this.m_waitForPushResUuids_1.push(key)
-        }
+        this._checkRecordResMemInfo(key,asset)
 
         this.checkPushAssetInfo()
     }
@@ -522,59 +549,21 @@ class _RuntimeData{
         if(!_runtimeSocket.isReadyForPush()){
             return
         }
-        if(this.m_waitForPushResUuids_2?.length>0){
-            const obj:Record<string,number>= {}
-            const errArr = []
-            for(let uuid of this.m_waitForPushResUuids_2){
-                let asset = assetManager.assets.get(uuid)
-                if(asset==null){
-                    errArr.push(uuid)
-                    continue
-                }
-                obj[uuid] = asset.refCount
-            }
-            if(Object.keys(obj).length>0){
-                if(_runtimeSocket.sendPush_resRefCountChange(obj)){
-                    this.m_waitForPushResUuids_2 = errArr
-                }
+        if(this.m_waitForPushResArr?.length>0){
+            if(_runtimeSocket.sendPush_resAdded(this.m_waitForPushResArr)){
+                this.m_waitForPushResArr = []
             }
         }
-        
-        if(this.m_waitForPushResUuids_1?.length>0){
-            const obj:Record<string,string>= {}
-            const errArr = []
-            for(let uuid of this.m_waitForPushResUuids_1){
-                let asset = assetManager.assets.get(uuid)
-                if(asset==null){
-                    errArr.push(uuid)
-                    continue
-                }
-                //@ts-ignore
-                const cls = asset.__proto__ 
-                obj[uuid] = cls.__classname__ 
-            }
-            if(Object.keys(obj).length>0){
-                if(_runtimeSocket.sendPush_resAdded(obj)){
-                    this.m_waitForPushResUuids_1 = errArr
-                    
-                }
-            }
-        }
-        
     }
 
     onRes_addRef(asset:Asset){
-        if(this.m_waitForPushResUuids_2.indexOf(asset.uuid)<0){
-            this.m_waitForPushResUuids_2.push(asset.uuid)
-        }
+        this._checkRecordResMemInfo(asset.uuid,asset)
 
         this.checkPushAssetInfo()
     }
 
     onRes_decRef(asset:Asset){
-        if(this.m_waitForPushResUuids_2.indexOf(asset.uuid)<0){
-            this.m_waitForPushResUuids_2.push(asset.uuid)
-        }
+        this._checkRecordResMemInfo(asset.uuid,asset)
 
         this.checkPushAssetInfo()
     }
@@ -1049,6 +1038,10 @@ function _getAttrInfosOfComponentProrotype(clsPrototype){
     return data
 }
 
+function _getResMemory(asset:Asset){
+    return 0
+}
+
 function _getSelfModelName() {
     let model = "";
 
@@ -1180,10 +1173,7 @@ function _initOnce() {
     _runtimeSocket = new RunTimeSocket();
     _runtimeSocket.initSocket(`ws://localhost:${plugin_server_port}`);
 
-    assetManager.assets.forEach((asset,key)=>{
-        _data.m_waitForPushResUuids_1.push(key)
-        _data.m_waitForPushResUuids_2.push(key)
-    })
+    _data.initAssetForPush()
     
     const _addRef = Asset.prototype.addRef
     const _decRef = Asset.prototype.decRef

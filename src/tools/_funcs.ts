@@ -14,11 +14,11 @@ export function getPluginName(){
 
 /**
  * 获取资源信息
- * @param {string} uuid 
+ * @param {string} uuiduuidOrurl
  * @returns {Promise<any>} 
  */
-export async function getAssetInfoByUuid(uuid):Promise<EditorAssetInfo> {
-    return Editor.Message.request('asset-db', 'query-asset-info', uuid);
+export async function getAssetInfoByUuid(uuidOrurl):Promise<EditorAssetInfo> {
+    return Editor.Message.request('asset-db', 'query-asset-info', uuidOrurl);
 }
 
 /**

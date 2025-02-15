@@ -31,12 +31,12 @@ provide('nodeTreeDatas', nodeTree_datas);
 /**资源树数据 */
 const resTree_datas = ref<ResTreeItem[]>([])
 
-_pluginSocket.listenAssetAdded((uuidMap:Record<string,string>)=>{
-    if(uuidMap==null){
+_pluginSocket.listenAssetAdded((arr:Array<ResMemInfo>)=>{
+    if(arr==null){
         return
     }
-    // console.log("获取到新增资源",uuidMap)
-    _dataCtx.mark_using_uuids(uuidMap,() => {
+    // console.log("获取到新增资源",JSON.stringify(arr))
+    _dataCtx.mark_using_uuids(arr,() => {
         resTree_datas.value = [..._dataCtx.getResTree_datas()]
     })
 })
@@ -268,7 +268,7 @@ onUnmounted(() => {
 })  
 
 function onSel_asset(item:ResTreeItem) {
-    if(item?.isAsset){
+    if(item&&item.isDirectory){
         console.log('选中资源:', item);
     }
 }
