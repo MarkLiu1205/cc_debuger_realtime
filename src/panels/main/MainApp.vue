@@ -67,7 +67,7 @@ function _updateNodeTreeKeys(node:NodeTreeItem){
 }
 
 _pluginSocket.listenSceneNodeTree((data)=>{
-    _funcs.log_1("节点树变化：",JSON.stringify(data,null,2))
+    // _funcs.log_1("节点树变化：",JSON.stringify(data,null,2))
     if(data){
         _updateNodeTreeKeys(data)
         _dataCtx.curNodeTreeInfo = data
