@@ -80,7 +80,7 @@ _pluginSocket.listenSceneLaunched((name)=>{
     cur_sel_node.value = null
 })
 
-const width_left_panel = ref(_funcs.clamp(200,500,window.innerWidth * 0.3)); // 默认左面板宽度占窗口宽度的30%
+const width_left_panel = ref(window.innerWidth * 0.5); // 默认左面板宽度占窗口宽度的30%
 const resizer_ele_1 = ref(null); //拉伸左右边界的线
 
 
@@ -219,7 +219,7 @@ function applyChange(oldoObj,changeMap:Record<string,any>){
 
 const onMouseDown = (e:MouseEvent) => {
     const width_ref = width_left_panel
-    const minWidth = 200
+    const minWidth = 300
     
     const startX = e.clientX
     const startWidth = width_ref.value
@@ -227,7 +227,8 @@ const onMouseDown = (e:MouseEvent) => {
     const onMouseMove = (moveEvent) => {
         const newWidth = startWidth + (moveEvent.clientX - startX)
         // 限制最小和最大宽度
-        width_ref.value = _funcs.clamp(minWidth,500,newWidth)
+        
+        width_ref.value = _funcs.clamp(minWidth,window.innerWidth - 360,newWidth)
     }
 
     const onMouseUp = () => {
@@ -364,7 +365,6 @@ function testLogPanel(){
     display: flex;
     flex-direction: column; 
     border: 1px solid black;
-    min-width: 200px;
 }
 
 .resizer-line-1 {
@@ -380,6 +380,7 @@ function testLogPanel(){
     flex-direction: column;
     border-left: 1px solid black; /* 添加左边框以分隔面板 */
     box-sizing: border-box; /* 包含内边距和边框在宽度内 */
+    min-width: 360px;
 }
 
 .button-grid {

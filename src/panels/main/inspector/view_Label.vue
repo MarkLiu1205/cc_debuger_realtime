@@ -185,15 +185,11 @@ function toggleUnderline() {
         </div>
         <div class="property">
             <label>FontSize:</label>
-            <div class="vector-input">
-                <ui-num-input id="id_fontSize" @change="onNumChange" :value="compModel.fontSize"  step="0.1"></ui-num-input>
-            </div>
+            <ui-num-input id="id_fontSize" @change="onNumChange" :value="compModel.fontSize"  step="0.1"></ui-num-input>
         </div>
         <div class="property">
             <label>LineHeight:</label>
-            <div class="vector-input">
-                <ui-num-input id="id_lineHeight" @change="onNumChange" :value="compModel.lineHeight"  step="0.1"></ui-num-input>
-            </div>
+            <ui-num-input id="id_lineHeight" @change="onNumChange" :value="compModel.lineHeight"  step="0.1"></ui-num-input>
         </div>
         <div class="property">
             <label>OverFlow:</label>

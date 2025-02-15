@@ -134,21 +134,8 @@ function onSelect(event){
 <style scoped>
 @import "./inspector.css";
 
-label {
-    display: flex;
-    align-items: center;
-    width: 60px;
-}
-
 ui-num-input {
-    width: 68px;
+    width: calc((100% - 15px*2) / 3);
 }
 
-select {
-    padding: 2px;
-}
-
-ui-select {
-    width: 200px;
-}
 </style>

@@ -217,15 +217,5 @@ function onNumChange(event) {
 <style scoped>
 @import "./inspector.css";
 
-/* label.small {
-    width: 50px;
-    text-align: right;
-}
-
-.vector-input {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-} */
 
 </style>

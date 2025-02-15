@@ -259,9 +259,9 @@ label.long {
 }
 
 ui-num-input.vertor2 {
-    width: 85px;
+    width: calc((100% - 15px) / 2);
 }
 ui-color.vertor2 {
-    width: 85px;
+    width: calc((100% - 15px) / 2);
 }
 </style>

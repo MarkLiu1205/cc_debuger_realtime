@@ -80,9 +80,9 @@
         "default": {
             "main": "./dist/main_panel.cjs",
             "size": {
-                "min-width": 400,
-                "min-height": 300,
-                "width": 1000,
+                "min-width": 600,
+                "min-height": 600,
+                "width": 800,
                 "height": 800
             }
         },

@@ -29,12 +29,14 @@
 }
 
 .property {
+    width: 100%;
     display: flex;
     flex-direction: row;
     align-items: center;
 }
 
 .vector-input {
+    flex: 1;
     display: flex;
     gap: 15px;
 }
@@ -48,15 +50,15 @@ ui-asset,
 ui-input,
 ui-num-input,
 ui-color {
-    width: 190px;
+    width: calc((100% - 105px));
 }
 
 .comp_node_selecter {
-    width: 190px;
+    width: calc((100% - 105px));
 }
 
 .comp_component_selecter {
-    width: 190px;
+    width: calc((100% - 105px));
 }
 
 label {

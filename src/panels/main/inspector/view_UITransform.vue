@@ -57,16 +57,7 @@ function onToggle(event){
 <style scoped>
 @import "./inspector.css";
 
-label {
-    width: 95px;
-    /* display: inline-block; */
-}
-
-input[type="number"] {
-    width: 80px;
-}
-
 ui-num-input {
-    width: 90px;
+    width: calc((100% - 15px) / 2);
 }
 </style>

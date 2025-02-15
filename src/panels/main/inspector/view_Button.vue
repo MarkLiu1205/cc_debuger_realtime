@@ -134,15 +134,11 @@ function onNodeChange(event){
         </div>
         <div class="property" v-if="compModel.transition==Transition.SCALE">
             <label>ZoomScale:</label>
-            <div class="vector-input">
-                <ui-num-input id="id_zoomScale" @change="onNumChange" :value="compModel.zoomScale"  step="0.1"></ui-num-input>
-            </div>
+            <ui-num-input id="id_zoomScale" @change="onNumChange" :value="compModel.zoomScale"  step="0.1"></ui-num-input>
         </div>
         <div class="property" v-if="compModel.transition==Transition.SCALE">
             <label>Duration:</label>
-            <div class="vector-input">
-                <ui-num-input id="id_duration" @change="onNumChange" :value="compModel.duration"  min="0" step="0.1"></ui-num-input>
-            </div>
+            <ui-num-input id="id_duration" @change="onNumChange" :value="compModel.duration"  min="0" step="0.1"></ui-num-input>
         </div>
         <div class="property" v-if="compModel.transition==Transition.COLOR">
             <label>NormalColor:</label>
