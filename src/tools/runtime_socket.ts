@@ -154,11 +154,7 @@ class RunTimeSocket {
                 })
                 return
             }
-            if (msg.action === 'getNewAddedAssets') {
-                const uuids:Array<string> = [];
-                assetManager.assets.forEach((_, uuid) => uuids.push(uuid));
-                data = _data.getNewAddedAssets()
-            } else if (msg.action === 'getRefCount') {
+            if (msg.action === 'getRefCount') {
                 const uuid = msg.data.uuid;
                 data = _data.getRefCount(uuid)
             } else if (msg.action === 'getNodeInfo') {
@@ -182,6 +178,8 @@ class RunTimeSocket {
                 this.m_isActive = msg.data as boolean
                 if(!this.m_isActive){
                     _data.clear()
+                }else{
+                    _data.checkPushAssetInfo()
                 }
                 console.log("this.m_isActive",this.m_isActive)
             }
@@ -219,36 +217,67 @@ class RunTimeSocket {
         this.sendPush_updateSceneTree()
     }
 
-    sendPush_updateSceneTree(){
+    public isReadyForPush(){
         if(!this._checkIsConnect()){
-            return
+            return false
         }
         if(!this.m_isActive){
-            return
+            return false
+        }
+
+        return true
+    }
+
+    private _sendPush(action,data){
+        if(!this.isReadyForPush()){
+            return false
+        }
+        this._send({ type: 'push', action, data });
+        return true
+    }
+
+    sendPush_updateSceneTree(){
+        if(!this.isReadyForPush()){
+            return false
         }
         if(_data.searchNodeTree()){
-            this._send({ type: 'push', action: 'updateSceneTree', data: _data.m_sceneTree });
+            return this._sendPush( 'updateSceneTree', _data.m_sceneTree );
         }
     }
 
     sendPush_sceneLaunched(){
-        if(!this._checkIsConnect()){
-            return
-        }
-        if(!this.m_isActive){
-            return
-        }
-        this._send({ type: 'push', action: 'sceneLaunched', data: "" });
+        return this._sendPush('sceneLaunched', "" );
     }
 
     sendPush_runtimeLog(obj){
-        this._send({ type: 'push', action: 'onRuntimeLog', data: obj });
+        return this._sendPush( 'onRuntimeLog', obj);
+    }
+    
+    /**资源引用计数改变 */
+    sendPush_resRefCountChange(obj:Record<string,number>){
+        return this._sendPush( 'onAssetRefCountChanged', obj);
+    }
+
+    /**资源添加进 assetManager.assets */
+    sendPush_resAdded(obj){
+        return this._sendPush( 'onAssetAdded', obj);
+    }
+
+    /**资源从 assetManager.assets 移出 */
+    sendPush_resRemoveed(obj){
+        return this._sendPush( 'onAssetRemoved', obj);
     }
 }
 
 class _RuntimeData{
-    /**记录出现过的uuid和相应引用计数 */
-    public m_assetUuidRefCountMap:Record<string,number> = {}
+    
+    /**已经销毁的资源 */
+    public m_hasDestroyedResArr:Array<string> = []
+    /**距离上次同步以来，新增的资源uuid */
+    public m_waitForPushResUuids_1:Array<string> = []
+    /**距离上次同步以来，引用计数改变的资源uuid */
+    public m_waitForPushResUuids_2:Array<string> = []
+
     /**当前节点数 */
     public m_sceneTree: NodeTreeItem = null;
 
@@ -435,7 +464,15 @@ class _RuntimeData{
     }
 
     clear(){
-        this.m_assetUuidRefCountMap = {}
+        this.m_hasDestroyedResArr = []
+        this.m_waitForPushResUuids_1 = []
+        this.m_waitForPushResUuids_2 = []
+
+        assetManager.assets.forEach((asset,key)=>{
+            this.m_waitForPushResUuids_1.push(key)
+            this.m_waitForPushResUuids_2.push(key)
+        })
+
         this.m_sceneTree = null
         this.m_nodeUuidMap = {}
         this.m_compUuidMap = {}
@@ -446,21 +483,6 @@ class _RuntimeData{
     private _onSceneChange(sceneNode:Scene){
         this.m_curSceneName = sceneNode.name
 
-    }
-
-    /**
-     * 获取相对于上次的新增资源的uuid和相应引用计数
-     * @returns 
-     */
-    getNewAddedAssets() {
-        const ret:Record<string,number> = {}
-        assetManager.assets.forEach((info, uuid) =>{
-            if(this.m_assetUuidRefCountMap[uuid]==null || this.m_assetUuidRefCountMap[uuid]!=info.refCount){
-                ret[uuid] = info.refCount
-                this.m_assetUuidRefCountMap[uuid] = info.refCount
-            }   
-        });
-        return ret
     }
 
     /**
@@ -475,12 +497,92 @@ class _RuntimeData{
         return -1
     }
 
-    onRes_addRef(asset:Asset){
+    /**
+     * 资源被添加进 assetManager.assets
+     */
+    onAsset_added(key:string,asset:Asset){
+        //@ts-ignore
+        // const cls = asset.__proto__
+        // this.m_assetUuidTypeMap[key] = cls.__classname__ 
+        if(this.m_waitForPushResUuids_1.indexOf(key)<0){
+            this.m_waitForPushResUuids_1.push(key)
+        }
+
+        this.checkPushAssetInfo()
+    }
+    /**
+     * 资源被添加进 assetManager.assets
+     */
+    onAsset_removed(key:string){
+        this.m_hasDestroyedResArr.push(key)
         
     }
 
-    onRes_decRef(asset:Asset){
+    checkPushAssetInfo(){
+        if(!_runtimeSocket.isReadyForPush()){
+            return
+        }
+        if(this.m_waitForPushResUuids_2?.length>0){
+            const obj:Record<string,number>= {}
+            const errArr = []
+            for(let uuid of this.m_waitForPushResUuids_2){
+                let asset = assetManager.assets.get(uuid)
+                if(asset==null){
+                    errArr.push(uuid)
+                    continue
+                }
+                obj[uuid] = asset.refCount
+            }
+            if(Object.keys(obj).length>0){
+                if(_runtimeSocket.sendPush_resRefCountChange(obj)){
+                    this.m_waitForPushResUuids_2 = errArr
+                }
+            }
+        }
+        
+        if(this.m_waitForPushResUuids_1?.length>0){
+            const obj:Record<string,string>= {}
+            const errArr = []
+            for(let uuid of this.m_waitForPushResUuids_1){
+                let asset = assetManager.assets.get(uuid)
+                if(asset==null){
+                    errArr.push(uuid)
+                    continue
+                }
+                //@ts-ignore
+                const cls = asset.__proto__ 
+                obj[uuid] = cls.__classname__ 
+            }
+            if(Object.keys(obj).length>0){
 
+                if(_runtimeSocket.sendPush_resAdded(obj)){
+                    this.m_waitForPushResUuids_1 = errArr
+                    
+                    
+                }
+            }
+        }
+        
+    }
+
+    onRes_addRef(asset:Asset){
+        if(this.m_waitForPushResUuids_2.indexOf(asset.uuid)<0){
+            this.m_waitForPushResUuids_2.push(asset.uuid)
+        }
+
+        this.checkPushAssetInfo()
+    }
+
+    onRes_decRef(asset:Asset){
+        if(this.m_waitForPushResUuids_2.indexOf(asset.uuid)<0){
+            this.m_waitForPushResUuids_2.push(asset.uuid)
+        }
+
+        this.checkPushAssetInfo()
+    }
+
+    onRes_destroy(asset:Asset){
+        
     }
 
     /**
@@ -1466,20 +1568,56 @@ function _initOnce() {
     _runtimeSocket = new RunTimeSocket();
     _runtimeSocket.initSocket(`ws://localhost:${plugin_server_port}`);
 
+    assetManager.assets.forEach((asset,key)=>{
+        _data.m_waitForPushResUuids_1.push(key)
+        _data.m_waitForPushResUuids_2.push(key)
+    })
+    
     const _addRef = Asset.prototype.addRef
     const _decRef = Asset.prototype.decRef
+    const _destroy = Asset.prototype.destroy
 
-    Asset.prototype.addRef = function():Asset{
-        _addRef.call(this)
+    //@ts-ignore
+    const cls_Cache = assetManager.assets.__proto__
+    const _add = cls_Cache?.add;
+    const _remove = cls_Cache?.remove;
+    if(_add){
+        assetManager.assets.add = function(key,val){
+            // console.log("add key",key)
+            
+            let ret = _add.call(assetManager.assets,key,val)
+            _data.onAsset_added(key,val)
+            return ret
+        }
+    }
+    if(_remove){
+        assetManager.assets.remove = function(key){
+            // console.log("remove key",key)
+            
+            let ret = _remove.call(assetManager.assets,key)
+            _data.onAsset_removed(key)
+            return ret
+        }
+    }
+
+    Asset.prototype.addRef = function(){
+        let ret = _addRef.call(this)
 
         _data.onRes_addRef(this)
-        return this
+        return ret
     }
-    Asset.prototype.decRef = function(autoRelease?: boolean):Asset{
-        _decRef.call(this,autoRelease)
+    Asset.prototype.decRef = function(autoRelease?: boolean){
+        let ret = _decRef.call(this,autoRelease)
 
         _data.onRes_decRef(this)
-        return this
+        return ret
+    }
+
+    Asset.prototype.destroy = function(autoRelease?: boolean){
+        let ret = _destroy.call(this,autoRelease)
+
+        _data.onRes_destroy(this)
+        return ret
     }
 
     setInterval(() => {

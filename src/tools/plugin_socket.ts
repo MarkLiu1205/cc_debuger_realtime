@@ -178,6 +178,18 @@ class PluginSocket {
         this.listenForPushData<any>(PushAction.onRuntimeLog,callback,null)
     }
 
+    listenAssetAdded(callback:(data:any)=>void){
+        this.listenForPushData<any>(PushAction.onAssetAdded,callback,null)
+    }
+
+    listenAssetRemoved(callback:(data:any)=>void){
+        this.listenForPushData<any>(PushAction.onAssetRemoved,callback,null)
+    }
+
+    listenAssetRefCountChanged(callback:(data:any)=>void){
+        this.listenForPushData<any>(PushAction.onAssetRefCountChanged,callback,null)
+    }
+
     private _onWaitRuntimeOnlineResolves:Array<(data:any)=>void> = []
     /**等待runtime上线连接上plugin */
     async waitForRuntimeIsInline(){
@@ -250,12 +262,6 @@ class PluginSocket {
             }, 5000); // 5 秒超时
             
         });
-    }
-
-    async getNewAddedAssets() {
-        await this.waitForRuntimeIsInline() //要先等plugin和runtime都连上服务器
-        let ret = await this._sendRequest<Record<string,number>>('getNewAddedAssets');
-        return ret
     }
 
     async getRefCount(uuid:string) {
@@ -352,6 +358,13 @@ enum PushAction{
     sceneLaunched = "sceneLaunched",
     /**收到运行日志 */
     onRuntimeLog = "onRuntimeLog",
+
+    /**资源被添加进 assetManager.assets */
+    onAssetAdded = "onAssetAdded",
+    /**资源从 assetManager.assets 删除 */
+    onAssetRemoved = "onAssetRemoved",
+    /**资源的uuid改变了 */
+    onAssetRefCountChanged = "onAssetRefCountChanged",
 
 }
 

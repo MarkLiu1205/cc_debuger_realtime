@@ -79,14 +79,17 @@ function handleClick(option:Option) {
 watch(isMenuVisible, (val) => {
     if (val) {
         document.addEventListener('click', handlerClickGlobal, { capture: true });
+        document.addEventListener('contextmenu', handlerClickGlobal, { capture: true });
     } else {
         document.removeEventListener('click', handlerClickGlobal, { capture: true });
+        document.removeEventListener('contextmenu', handlerClickGlobal, { capture: true });
     }
 });
 
 // 组件卸载时清理事件
 onUnmounted(() => {
     document.removeEventListener('click', handlerClickGlobal, { capture: true });
+    document.removeEventListener('contextmenu', handlerClickGlobal, { capture: true });
 });
 
 // 公开方法供外部调用

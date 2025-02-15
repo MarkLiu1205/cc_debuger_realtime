@@ -4,29 +4,14 @@ import NodeTreeAndAssetList from './components/NodeTreeAndAssetList.vue';
 import Inspector_Node from './components/Inspector_Node.vue';
 import dlg_list_selecter from './components/dlg_list_selecter.vue';
 import comp_node_selecter from './components/comp_node_selecter.vue';
-import { computed, createVNode, h, inject, onMounted, onUnmounted, provide, reactive, ref, render, watch } from 'vue';
+import { computed, createVNode, h, inject, nextTick, onMounted, onUnmounted, provide, reactive, ref, render, watch } from 'vue';
 import { ElButton, ElDialog, ElMessage } from 'element-plus';
 import { _funcs } from '../../tools/_funcs';
 import { _dataCtx } from '../../tools/_dataCtx';
 import { _pluginSocket } from '../../tools/plugin_socket';
 import ScriptExecutor from './ScriptExecutor.vue'
-import view_Node from './inspector/view_Node.vue'
-import view_Sprite from './inspector/view_Sprite.vue'
-import view_Label from './inspector/view_Label.vue'
-import view_UITransform from './inspector/view_UITransform.vue'
-import view_Button from './inspector/view_Button.vue'
-import view_ParticleSystem from './inspector/view_ParticleSystem2D.vue';
-import view_Layout from './inspector/view_Layout.vue';
-import view_Skeleton from './inspector/view_Skeleton.vue';
-import view_RichText from './inspector/view_RichText.vue';
-import view_UIOpacity from './inspector/view_UIOpacity.vue';
-import view_Camera from './inspector/view_Camera.vue';
-import view_EditBox from './inspector/view_EditBox.vue';
-import view_PageView from './inspector/view_PageView.vue';
-import view_Mask from './inspector/view_Mask.vue';
-import view_Scrollview from './inspector/view_Scrollview.vue';
-import view_Graphics from './inspector/view_Graphics.vue';
-import view_Widget from './inspector/view_Widget.vue';
+import Comp_left_tree_panel from './components/comp_left_tree_panel.vue';
+import { eventBus } from '../../tools/_enentBus';
 
 /**客户端是否在线 */
 const isRuntimeOffline = ref(true)
@@ -35,23 +20,24 @@ const runtimePreviewUrl = ref("http://localhost:7456")
 /**当前已加载的bundle列表 */
 const bundleNames = ref([])
 
-/**资源树数据 */
-const resTree_datas = ref([])
-
 /**节点数数据 */
-const nodeTree_datas = ref([]as Array<NodeTreeItem>)
+const nodeTree_datas = ref<Array<NodeTreeItem>>([])
 
 const cur_sel_node = ref(null as InspectorInfo_Node)
 
 provide('nodeTreeDatas', nodeTree_datas);
 
 
-_pluginSocket.getNewAddedAssets().then((uuidMap:Record<string,number>)=>{
-    console.log("全部列表",typeof uuidMap,uuidMap)
-    _dataCtx.mark_using_uuids(uuidMap).then(() => {
-        resTree_datas.value = _dataCtx.getResTree_datas()
-    
-        bundleNames.value = _dataCtx.m_bundleNames;
+/**资源树数据 */
+const resTree_datas = ref<ResTreeItem[]>([])
+
+_pluginSocket.listenAssetAdded((uuidMap:Record<string,string>)=>{
+    if(uuidMap==null){
+        return
+    }
+    // console.log("获取到新增资源",uuidMap)
+    _dataCtx.mark_using_uuids(uuidMap,() => {
+        resTree_datas.value = [..._dataCtx.getResTree_datas()]
     })
 })
 
@@ -282,26 +268,13 @@ onUnmounted(() => {
 })  
 
 function onSel_asset(item:ResTreeItem) {
-    if(item.isAsset){
+    if(item?.isAsset){
         console.log('选中资源:', item);
     }
 }
 
 function doOpenRuntimePreview() {
     _funcs.openWebSiteUrl(runtimePreviewUrl.value)
-}
-
-function onChange2ListView(){
-    console.log("切换list 1")
-
-    let obj = ""
-    for(let i=0;i<1024*10;i++){
-        obj += (i%9)+""
-    }
-    _pluginSocket._sendPush("test",obj)
-}
-function onChange2TreeView(){
-    console.log("切换tree")
 }
 
 async function onSel_node(item:NodeTreeItem){
@@ -363,13 +336,12 @@ function testLogPanel(){
             <div id="eid_view_main" class="cls_view_main" v-else>
                 <div id="eid_view_asset_list" class="cls_view_asset_list" :style="{ width: width_asset_list + 'px' }">
                     
-                    <NodeTreeAndAssetList
+                    <Comp_left_tree_panel 
                         :resTree_datas="resTree_datas"
                         :nodeTree_datas="nodeTree_datas"
-                        :bundleNames="bundleNames"
-                        @onClick_node="onSel_node($event)"
-                        @onClick_asset="onSel_asset($event)"
-                    ></NodeTreeAndAssetList>
+                        @onClick_node="onSel_node"
+                        @onClick_asset="onSel_asset"
+                    />
                 </div>
                 <div class="resizer-line-1" ref="resizer_ele_1"></div>
                 <div id="eid_view_node_tree" class="cls_view_node_tree" :style="{ width: width_node_tree + 'px' }">

@@ -19,7 +19,7 @@ function onToggle(event) {
 }
 
 onMounted(()=>{
-    console.log("compAttrs",props.compAttrs)
+    // console.log("compAttrs",props.compAttrs)
 })
 
 </script>

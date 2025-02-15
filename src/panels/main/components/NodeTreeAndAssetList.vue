@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, inject, onMounted, onUnmounted, reactive, ref, defineProps, nextTick} from 'vue';
+import { computed, inject, onMounted, onUnmounted, reactive, ref, defineProps, nextTick, watch} from 'vue';
 import { ElMessage } from 'element-plus';
 import { _funcs } from '../../../tools/_funcs';
 import { _dataCtx } from '../../../tools/_dataCtx';
@@ -21,6 +21,13 @@ const props = defineProps({
         type: Array<NodeTreeItem>,
         default:[]
     },
+})
+
+watch(props.resTree_datas,(newVal,oldVal)=>{
+    console.log("资源树 发生改变",newVal)
+})
+watch(props.nodeTree_datas,(newVal,oldVal)=>{
+    console.log("节点树 发生改变",newVal)
 })
 
 const emit = defineEmits([

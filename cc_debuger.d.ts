@@ -27,6 +27,13 @@ interface ResTreeItem{
     uuid?:TypeUUID;
     /**除了文件夹以外，ImageAsset也有SpriteFrame作为子节点 */
     children?:Array<ResTreeItem>;
+
+
+    /**
+     * 是否是远程资源或者文件缓存资源（如远程图片url、本地图片路径等）
+     */
+    isUrlAsset?:boolean,
+
 }
 
 // type CompType = "Sprite" | "Label" | "UITransform" | "Button" | "Canvas" | "EditBox" | "Layout" | 
