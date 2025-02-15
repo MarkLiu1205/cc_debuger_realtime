@@ -80,10 +80,8 @@ _pluginSocket.listenSceneLaunched((name)=>{
     cur_sel_node.value = null
 })
 
-const width_asset_list = ref(_funcs.clamp(200,500,window.innerWidth * 0.3)); // 默认左面板宽度占窗口宽度的30%
-const width_node_tree = ref(_funcs.clamp(320,500,window.innerWidth * 0.3)); // 默认左面板宽度占窗口宽度的30%
+const width_left_panel = ref(_funcs.clamp(200,500,window.innerWidth * 0.3)); // 默认左面板宽度占窗口宽度的30%
 const resizer_ele_1 = ref(null); //拉伸左右边界的线
-const resizer_ele_2 = ref(null); //拉伸左右边界的线
 
 
 watch(cur_sel_node, (newVal,old) => {
@@ -220,8 +218,8 @@ function applyChange(oldoObj,changeMap:Record<string,any>){
 }
 
 const onMouseDown = (e:MouseEvent) => {
-    const width_ref = e.target==resizer_ele_1.value?width_asset_list:width_node_tree
-    const minWidth = e.target==resizer_ele_1.value?200:320
+    const width_ref = width_left_panel
+    const minWidth = 200
     
     const startX = e.clientX
     const startWidth = width_ref.value
@@ -246,9 +244,6 @@ onMounted(() => {
         _funcs.waitForElementMounted(resizer_ele_1).then(()=>{
             resizer_ele_1.value.addEventListener('mousedown', onMouseDown);
         })
-        _funcs.waitForElementMounted(resizer_ele_2).then(()=>{
-            resizer_ele_2.value.addEventListener('mousedown', onMouseDown);
-        })
     })
 
     _funcs.getRuntimePreviewUrl().then((url)=>{
@@ -261,9 +256,6 @@ onMounted(() => {
 onUnmounted(() => {
     if (resizer_ele_1.value) {
         resizer_ele_1.value.removeEventListener('mousedown', onMouseDown)
-    }
-    if (resizer_ele_2.value) {
-        resizer_ele_2.value.removeEventListener('mousedown', onMouseDown)
     }
 })  
 
@@ -334,8 +326,7 @@ function testLogPanel(){
                 <ui-button type="default"  @confirm="doOpenRuntimePreview">点击打开预览 {{runtimePreviewUrl}}</ui-button>
             </div>
             <div id="eid_view_main" class="cls_view_main" v-else>
-                <div id="eid_view_asset_list" class="cls_view_asset_list" :style="{ width: width_asset_list + 'px' }">
-                    
+                <div id="eid_view_asset_list" class="left-panel" :style="{ width: width_left_panel + 'px' }">
                     <Comp_left_tree_panel 
                         :resTree_datas="resTree_datas"
                         :nodeTree_datas="nodeTree_datas"
@@ -344,17 +335,14 @@ function testLogPanel(){
                     />
                 </div>
                 <div class="resizer-line-1" ref="resizer_ele_1"></div>
-                <div id="eid_view_node_tree" class="cls_view_node_tree" :style="{ width: width_node_tree + 'px' }">
-                    <Inspector_Node v-model="cur_sel_node"/>
-                </div>
-                <div class="resizer-line-1" ref="resizer_ele_2"></div>
+                
                 <div class="right-panel">
-
-                    <h2 id="text-1" style="text-align: center;">哈哈哈哈哈哈2</h2>
-                    <div style="display: flex; gap: 20px;">
-                        <ui-button style="width: 100px;text-align: center;" @click="openEvalPanel">在runtime执行JS</ui-button>
-                        <ui-button style="width: 100px;text-align: center" @click="testXX">测试</ui-button>
-                        <ui-button style="width: 100px;text-align: center" @click="testLogPanel">打开日志</ui-button>
+                    
+                    <Inspector_Node v-if="cur_sel_node!=null" v-model="cur_sel_node"/>
+                    <div class="button-grid" v-else>
+                        <el-button  @click="openEvalPanel">执行JS</el-button>
+                        <el-button  @click="testXX">测试</el-button>
+                        <el-button  @click="testLogPanel">日志</el-button>
                     </div>
                 </div>
             </div>
@@ -368,14 +356,15 @@ function testLogPanel(){
 .cls_view_main {
     display: flex;
     flex-direction: row;
-    height: 100%; /* 使容器高度占满视口高度 */
+    height: 100%;
     
 }
 
-.cls_view_asset_list {
+.left-panel {
     display: flex;
     flex-direction: column; 
     border: 1px solid black;
+    min-width: 200px;
 }
 
 .resizer-line-1 {
@@ -393,6 +382,15 @@ function testLogPanel(){
     box-sizing: border-box; /* 包含内边距和边框在宽度内 */
 }
 
+.button-grid {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    border: 1px solid rgb(165, 165, 165);
+    padding: 10px;
+}
+
+
 .center-align {
     height: 100%;
     display: flex;
@@ -400,17 +398,4 @@ function testLogPanel(){
     align-items: center;
 }
 
-.tree-view-container {
-    height: 100%;
-    overflow-y: auto; /* 启用垂直滚动 */
-    /* border: 1px solid #ccc;  */
-}
-
-.cls_view_node_tree {
-    overflow-y: auto;
-    box-sizing: border-box; /* 包含内边距和边框在宽度内 */
-    display: flex;
-    flex-direction: column; 
-    border: 1px solid black;
-}
 </style>
