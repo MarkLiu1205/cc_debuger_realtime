@@ -118,18 +118,32 @@ function onClick_asset (data: ResTreeItem, node: TreeNode, e: MouseEvent){
 
 const contextMenuRef = ref(null);
 
-// 菜单选项
-const menuOptions_asset = [
-    { label: '选项 1', action: () => {
-        console.log("点击1")
-    }},
-    { label: '选项选项选项 2', action: () => alert('选项 2 被点击') },
-    { label: '选项选项选项 3', action: () => alert('选项 3 被点击') },
-];
+
 /**右键点击资源项 */
 function onRightClick_asset( event: MouseEvent, data: ResTreeItem, node: TreeNode) {
-    contextMenuRef.value.showContextMenu(event, menuOptions_asset);
-    console.log("右键点击资源",data)
+    ref_resTree.value.setCurrentKey(node.key)   
+    
+    selectedAssetId = null
+    onClick_asset(data,node,event)
+
+    const menuOptions_asset = [
+        { 
+            label: '列举相关节点', 
+            action: () => {
+                console.log("点击1")
+            }
+        },{ 
+            label: '监控引用计数', 
+            action: () => {
+                console.log("点击2")
+            }
+        }
+    ];
+    nextTick(()=>{
+        contextMenuRef.value.showContextMenu(event, menuOptions_asset);
+    })
+    
+    // console.log("右键点击资源",data)
 }
 
 const shakingNodeKey = ref<string | null>(null);
@@ -181,13 +195,6 @@ function shakeTreeItem(nodeKey: string) {
 
 <style scoped>
 
-
-.loading-div {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100%;
-}
 
 :deep(.el-tree-node__content) {
     cursor: default !important;

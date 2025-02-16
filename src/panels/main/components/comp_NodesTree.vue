@@ -128,18 +128,29 @@ function onClick_node (data: NodeTreeItem, node: TreeNode, e: MouseEvent){
 
 const contextMenuRef = ref(null);
 
-// 菜单选项
-const menuOptions_node = [
-    { label: '选项 1', action: () => {
-        console.log("点击1")
-    }},
-    { label: '选项选项选项 2', action: () => alert('选项 2 被点击') },
-    { label: '选项选项选项 3', action: () => alert('选项 3 被点击') },
-];
 /**右键点击节点项 */
 function onRightClick_node( event: MouseEvent, data: NodeTreeItem, node: TreeNode) {
-    console.log("右键点击节点",data)
-    contextMenuRef.value.showContextMenu(event, menuOptions_node);
+    ref_nodeTree.value.setCurrentKey(node.key)   
+    
+    selectedNodeId = null
+    onClick_node(data,node,event)
+
+    const menuOptions_node = [
+        { 
+            label: '查看资源依赖', 
+            action: () => {
+                console.log("点击1")
+            }
+        },{ 
+            label: '删除此节点', 
+            action: () => {
+                console.log("点击2")
+            }
+        }
+    ];
+    nextTick(()=>{
+        contextMenuRef.value.showContextMenu(event, menuOptions_node);
+    })
 }
 
 const shakingNodeKey = ref<string | null>(null);

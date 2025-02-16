@@ -12,6 +12,8 @@ import { _pluginSocket } from '../../tools/plugin_socket';
 import ScriptExecutor from './ScriptExecutor.vue'
 import Comp_left_tree_panel from './components/comp_left_tree_panel.vue';
 import { eventBus } from '../../tools/_enentBus';
+import comp_profiler from './components/comp_profiler.vue';
+import comp_md_info from './components/comp_md_info.vue';
 
 /**客户端是否在线 */
 const isRuntimeOffline = ref(true)
@@ -340,10 +342,14 @@ function testLogPanel(){
                 <div class="right-panel">
                     
                     <Inspector_Node v-if="cur_sel_node!=null" v-model="cur_sel_node"/>
-                    <div class="button-grid" v-else>
-                        <el-button  @click="openEvalPanel">执行JS</el-button>
-                        <el-button  @click="testXX">测试</el-button>
-                        <el-button  @click="testLogPanel">日志</el-button>
+                    <div v-else style="display: flex;flex-direction: column; gap: 20px;">
+                        <div class="button-grid" >
+                            <el-button  @click="openEvalPanel">执行JS</el-button>
+                            <el-button  @click="testXX">测试</el-button>
+                            <el-button  @click="testLogPanel">日志</el-button>
+                        </div>
+                        <comp_profiler/>
+                        <comp_md_info/>
                     </div>
                 </div>
             </div>
@@ -364,7 +370,7 @@ function testLogPanel(){
 .left-panel {
     display: flex;
     flex-direction: column; 
-    border: 1px solid black;
+    border: 1px solid rgb(165, 165, 165);;
 }
 
 .resizer-line-1 {
@@ -378,7 +384,7 @@ function testLogPanel(){
     flex-grow: 1; /* 使右面板占据剩余空间 */
     display: flex; 
     flex-direction: column;
-    border-left: 1px solid black; /* 添加左边框以分隔面板 */
+    border-left: 1px solid rgb(165, 165, 165); /* 添加左边框以分隔面板 */
     box-sizing: border-box; /* 包含内边距和边框在宽度内 */
     min-width: 360px;
 }
@@ -390,7 +396,6 @@ function testLogPanel(){
     border: 1px solid rgb(165, 165, 165);
     padding: 10px;
 }
-
 
 .center-align {
     height: 100%;

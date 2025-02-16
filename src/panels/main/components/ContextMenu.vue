@@ -70,9 +70,6 @@ function handleClick(option:Option) {
         }
     }, 0);
 
-    _funcs.getAssetInfoByUuid("b519ff7c-f0f4-4731-af85-d854e962bd4a").then((res)=>{
-        console.log("getAssetInfoByUuid",res)
-    })
 }
 
 // 监听菜单显示状态

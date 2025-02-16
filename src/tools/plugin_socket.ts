@@ -190,6 +190,10 @@ class PluginSocket {
         this.listenForPushData<any>(PushAction.onAssetRefCountChanged,callback,null)
     }
 
+    listenProfileInfo(callback:(data:any)=>void){
+        this.listenForPushData<any>(PushAction.profileInfoUpdate,callback,null)
+    }
+
     private _onWaitRuntimeOnlineResolves:Array<(data:any)=>void> = []
     /**等待runtime上线连接上plugin */
     async waitForRuntimeIsInline(){
@@ -341,6 +345,18 @@ class PluginSocket {
         return this._gameEnvObj
     }
 
+    async requestShowFPS(bool:boolean|string=""){
+        await this.waitForRuntimeIsInline()
+        if(bool===true){
+            bool = "true"
+        }else if(bool===false){
+            bool = "false"
+        }else{
+            bool = ""
+        }
+        return this._sendRequest("requestShowFPS",bool)
+    }
+
     clear(){
         this._gameEnvObj = null
         this._nodeLayers = null
@@ -365,6 +381,8 @@ enum PushAction{
     onAssetRemoved = "onAssetRemoved",
     /**资源的uuid改变了 */
     onAssetRefCountChanged = "onAssetRefCountChanged",
+    /**刷新drawcall等信息 */
+    profileInfoUpdate = "profileInfoUpdate",
 
 }
 
