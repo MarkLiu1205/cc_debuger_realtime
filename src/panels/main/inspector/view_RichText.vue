@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { reactive } from 'vue';
+import comp_selecter_asset from '../components/comp_selecter_asset.vue';
 
 enum CacheMode {
     NONE = 0,
@@ -51,17 +52,6 @@ function onInputChange(event) {
     }else if (eleId === "id_fontFamily") {
         compModel.value.fontFamily = value;
     }
-}
-
-function onAssetChange(event){
-    const eleId = event.target.id
-    const sel = event.target.value
-    if(eleId=="id_font"){
-        compModel.value.font = sel
-        console.log("font changed to:", event.target.value,compModel.value.font)
-    }else if (eleId === "id_imageAtlas") {
-        compModel.value.imageAtlas = sel;
-    } 
 }
 
 function onAlignChange(event) {
@@ -133,7 +123,7 @@ function onSelect(event){
         </div>
         <div class="property" v-if="!compModel.useSystemFont">
             <label>Font:</label>
-            <ui-asset @change="onAssetChange" droppable="cc.Font" id="id_font" :value="compModel.font"></ui-asset>
+            <comp_selecter_asset assetType="cc.Font"  v-model="compModel.font"/>
         </div>
         <div class="property" v-if="compModel.useSystemFont">
             <label>Font Family:</label>
@@ -155,7 +145,7 @@ function onSelect(event){
         </div>
         <div class="property">
             <label>Image Atlas:</label>
-            <ui-asset id="id_imageAtlas" droppable="cc.SpriteAtlas" :value="compModel.imageAtlas" @change="onAssetChange"></ui-asset>
+            <comp_selecter_asset assetType="cc.SpriteAtlas"  v-model="compModel.imageAtlas"/>
         </div>
         <div class="property">
             <label>Handle Touch Event:</label>

@@ -50,6 +50,7 @@ interface ResTreeItem{
 //     "LabelOutline" | "Skeleton" | "PageViewIndicator"
 
 type CompType = string
+type AssetType = string
 
 /**节点树信息 */
 interface NodeTreeItem{

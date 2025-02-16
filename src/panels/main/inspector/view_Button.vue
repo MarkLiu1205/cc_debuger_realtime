@@ -2,6 +2,7 @@
 import { reactive } from 'vue';
 import { _funcs } from '../../../tools/_funcs';
 import comp_node_selecter from '../components/comp_node_selecter.vue';
+import comp_selecter_asset from '../components/comp_selecter_asset.vue';
 
 enum Transition {
     NONE = 0,
@@ -88,23 +89,6 @@ function onConfirmColor(event){
     console.log("hex",hex,eleId)
 }
 
-function onAssetChange(event){
-    const eleId = event.target.id
-    const uuid = event.target.value
-    if(eleId=="id_normalSprite"){
-        compModel.value.normalSprite = uuid
-        console.log("normalSprite changed to:", event.target.value,compModel.value.normalSprite)
-    }else if(eleId=="id_pressedSprite"){
-        compModel.value.pressedSprite = uuid
-        console.log("pressedSprite changed to:", event.target.value,compModel.value.pressedSprite)
-    }else if(eleId=="id_hoverSprite"){
-        compModel.value.hoverSprite = uuid
-        console.log("hoverSprite changed to:", event.target.value,compModel.value.hoverSprite)
-    }else if(eleId=="id_disabledSprite"){
-        compModel.value.disabledSprite = uuid
-        console.log("disabledSprite changed to:", event.target.value,compModel.value.disabledSprite)
-    }
-}
 //已经自动绑定了，不需要赋值
 function onNodeChange(event){
     console.log("onNodeChange",event,compModel.value.target)
@@ -159,19 +143,19 @@ function onNodeChange(event){
 
         <div class="property" v-if="compModel.transition==Transition.SPRITE">
             <label>NormalSprite:</label>
-            <ui-asset @change="onAssetChange" droppable="cc.SpriteFrame" id="id_normalSprite" :value="compModel.normalSprite"></ui-asset>
+            <comp_selecter_asset assetType="cc.SpriteFrame"  v-model="compModel.normalSprite"/>
         </div>
         <div class="property" v-if="compModel.transition==Transition.SPRITE">
             <label>PressedSprite:</label>
-            <ui-asset @change="onAssetChange" droppable="cc.SpriteFrame" id="id_pressedSprite" :value="compModel.pressedSprite"></ui-asset>
+            <comp_selecter_asset assetType="cc.SpriteFrame"  v-model="compModel.pressedSprite"/>
         </div>
         <div class="property" v-if="compModel.transition==Transition.SPRITE">
             <label>HoverSprite:</label>
-            <ui-asset @change="onAssetChange" droppable="cc.SpriteFrame" id="id_hoverSprite" :value="compModel.hoverSprite"></ui-asset>
+            <comp_selecter_asset assetType="cc.SpriteFrame"  v-model="compModel.hoverSprite"/>
         </div>
         <div class="property" v-if="compModel.transition==Transition.SPRITE">
             <label>DisabledSprite:</label>
-            <ui-asset @change="onAssetChange" droppable="cc.SpriteFrame" id="id_disabledSprite" :value="compModel.disabledSprite"></ui-asset>
+            <comp_selecter_asset assetType="cc.SpriteFrame"  v-model="compModel.disabledSprite"/>
         </div>
         
     </div>

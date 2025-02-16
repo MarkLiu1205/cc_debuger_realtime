@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { reactive } from 'vue';
 import { _funcs } from '../../../tools/_funcs';
-
+import comp_selecter_asset from '../components/comp_selecter_asset.vue';
 
 const enumDesc_EmitterMode = [
     "GRAVITY",
@@ -107,7 +107,7 @@ function onColorChange(event) {
         </div>
         <div class="property">
             <label>CustomMaterial:</label>
-            <ui-asset id="customMaterial" @change="onTextChange" droppable="cc.Material" :value="compModel.customMaterial"></ui-asset>
+            <comp_selecter_asset assetType="cc.Material"  v-model="compModel.customMaterial"/>
         </div>
         <div class="property">
             <label>Preview:</label>
@@ -123,11 +123,11 @@ function onColorChange(event) {
         </div>
         <div class="property">
             <label>File:</label>
-            <ui-asset id="file" @change="onTextChange" droppable="cc.ParticleAsset" :value="compModel.file"></ui-asset>
+            <comp_selecter_asset assetType="cc.ParticleAsset"  v-model="compModel.file"/>
         </div>
         <div class="property">
             <label>Sprite Frame:</label>
-            <ui-asset id="spriteFrame" @change="onTextChange" droppable="cc.SpriteFrame" :value="compModel.spriteFrame"></ui-asset>
+            <comp_selecter_asset assetType="cc.SpriteFrame"  v-model="compModel.spriteFrame"/>
         </div>
         <div class="property">
             <label>Total Particles:</label>

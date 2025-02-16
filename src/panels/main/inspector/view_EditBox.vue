@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { reactive } from 'vue';
 import comp_component_selecter from '../components/comp_component_selecter.vue';
+import comp_selecter_asset from '../components/comp_selecter_asset.vue';
 
 enum InputMode {
     ANY = 0,
@@ -113,20 +114,7 @@ function onSelectChange(event) {
         compModel.value.returnType = value;
     }
 }
-function onAssetChange(event) {
-    const uuid = event.target.value;
-    compModel.value.backgroundImage = uuid;
-}
 
-function onNodeChange(event) {
-    const eleId = event.target.id;
-    const uuid = event.target.value
-    if (eleId === "id_textLabel") {
-        compModel.value.textLabel = uuid;
-    } else if (eleId === "id_placeholderLabel") {
-        compModel.value.placeholderLabel = uuid;
-    }
-}
 
 </script>
 
@@ -154,7 +142,7 @@ function onNodeChange(event) {
         </div>
         <div class="property">
             <label>Background Image:</label>
-            <ui-asset id="id_backgroundImage" :value="compModel.backgroundImage" @change="onAssetChange" droppable="cc.SpriteFrame"></ui-asset>
+            <comp_selecter_asset assetType="cc.SpriteFrame"  v-model="compModel.backgroundImage"/>
         </div>
         <div class="property">
             <label>Input Flag:</label>

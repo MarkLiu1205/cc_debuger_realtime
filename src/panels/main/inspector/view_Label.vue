@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { reactive } from 'vue';
 import { _funcs } from '../../../tools/_funcs';
+import comp_selecter_asset from '../components/comp_selecter_asset.vue';
 
 enum Overflow {
     NONE = 0,
@@ -125,18 +126,6 @@ function onSelect(event){
     
 }
 
-function onAssetChange(event){
-    const eleId = event.target.id
-    const sel = event.target.value
-    if(eleId=="id_font"){
-        compModel.value.font = sel
-        console.log("font changed to:", event.target.value,compModel.value.font)
-    }else if(eleId=="id_customMaterial"){
-        compModel.value.customMaterial = sel
-        console.log("customMaterial changed to:", event.target.value,compModel.value.customMaterial)
-    }
-}
-
 function toggleBold() {
     compModel.value.isBold = !compModel.value.isBold
 }
@@ -157,7 +146,7 @@ function toggleUnderline() {
         </div>
         <div class="property">
             <label>CustomMaterial:</label>
-            <ui-asset @change="onAssetChange" droppable="cc.Material" id="id_customMaterial" :value="compModel.customMaterial"></ui-asset>
+            <comp_selecter_asset assetType="cc.Material"  v-model="compModel.customMaterial"/>
         </div>
         <div class="property">
             <label>Color:</label>
@@ -208,7 +197,7 @@ function toggleUnderline() {
         </div>
         <div class="property" v-if="!compModel.useSystemFont">
             <label>Font:</label>
-            <ui-asset @change="onAssetChange" droppable="cc.Font" ref="id_font" :value="compModel.font"></ui-asset>
+            <comp_selecter_asset assetType="cc.Font"  v-model="compModel.font"/>
         </div>
         <div class="property" v-if="!compModel.useSystemFont">
             <label>SpacingX:</label>

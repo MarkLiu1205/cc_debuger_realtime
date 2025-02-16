@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { reactive } from 'vue';
+import comp_selecter_asset from '../components/comp_selecter_asset.vue';
 
 enum AnimationCacheMode {
     REALTIME = 0,
@@ -53,14 +54,6 @@ function onToggle(event) {
     }
 }
 
-function onInput(event) {
-    const eleId = event.target.id;
-    const value = event.target.value;
-    if (eleId === "id_skeletonData") {
-        compModel.value.skeletonData = value;
-    }
-}
-
 function onNumChange(event) {
     const eleId = event.target.id;
     const num = parseFloat(event.target.value);
@@ -92,7 +85,7 @@ function onSelect(event) {
         </div>
         <div class="property">
             <label>Skeleton Data:</label>
-            <ui-asset id="id_skeletonData" type="sp.SkeletonData" :value="compModel.skeletonData" @change="onInput"></ui-asset>
+            <comp_selecter_asset assetType="cc.SkeletonData"  v-model="compModel.skeletonData"/>
         </div>
         <div class="property">
             <label>Default Skin:</label>

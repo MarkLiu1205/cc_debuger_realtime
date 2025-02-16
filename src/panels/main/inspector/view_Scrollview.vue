@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { reactive } from 'vue';
 import comp_node_selecter from '../components/comp_node_selecter.vue';
+import comp_component_selecter from '../components/comp_component_selecter.vue';
 
 // const scrollViewData = reactive({
 //     enabled: true,
@@ -47,17 +48,6 @@ function onNumChange(event) {
     }
 }
 
-function onAssetChange(event) {
-    const id = event.target.id;
-    const value = event.target.value;
-    if (id === "content") {
-        compModel.value.content = value;
-    } else if (id === "horizontalScrollBar") {
-        compModel.value.horizontalScrollBar = value;
-    } else if (id === "verticalScrollBar") {
-        compModel.value.verticalScrollBar = value;
-    }
-}
 </script>
 
 <template>
@@ -75,7 +65,7 @@ function onAssetChange(event) {
         </div>
         <div class="property" v-if="compModel.horizontal">
             <label>Horizontal Scroll Bar:</label>
-            <ui-asset id="horizontalScrollBar" :value="compModel.horizontalScrollBar" @change="onAssetChange" droppable="cc.Scrollbar"></ui-asset>
+            <comp_component_selecter compType="cc.Scrollbar"  v-model="compModel.horizontalScrollBar"/>
         </div>
 
         <div class="property">
@@ -85,7 +75,7 @@ function onAssetChange(event) {
 
         <div class="property" v-if="compModel.vertical">
             <label>Vertical Scroll Bar:</label>
-            <ui-asset id="verticalScrollBar" :value="compModel.verticalScrollBar" @change="onAssetChange" droppable="cc.Scrollbar"></ui-asset>
+            <comp_component_selecter compType="cc.Scrollbar"  v-model="compModel.verticalScrollBar"/>
         </div>
 
         <div class="property">

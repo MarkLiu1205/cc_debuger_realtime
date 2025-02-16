@@ -62,6 +62,39 @@ onUnmounted(() => {
     document.removeEventListener('click', handleClickOutside)
 });
 
+function on_click_in_inspector_asset(uuid: string){
+    const info = _dataCtx.getResNodeInfoWithUuid(uuid)
+    const key = info.path
+
+    if (!key) return;
+    shakeTreeItem(key); // 触发抖动动画
+    const tree = ref_resTree.value;
+    if (!tree) return;
+    const nodeItem = tree.getNode(key);
+    if (!nodeItem) {
+        console.warn("资源未找到:", key);
+        return;
+    }
+    // 递归展开所有父节点
+    let parent = nodeItem.parent;
+    while (parent) {
+        tree.expandNode(parent, true); // 确保父级被展开
+        parent = parent.parent;
+    }
+    // 滚动到目标节点
+    nextTick(() => {
+        tree.scrollToNode(nodeItem);
+    });
+}
+
+onMounted(() => {
+    eventBus.on("click-asset-in-inspector", on_click_in_inspector_asset);
+});
+
+onUnmounted(() => {
+    eventBus.off("click-asset-in-inspector", on_click_in_inspector_asset);
+});
+
 let selectedAssetId: string | null = null
 const customClass_Asset = (nodeData): string => {
   return nodeData.path === selectedAssetId ? 'custom-current' : ''
@@ -131,7 +164,13 @@ function shakeTreeItem(nodeKey: string) {
         >
             <template #default="{ node }">
                 <ui-icon color="red" :value="node.data.icon"></ui-icon>
-                <span>{{ node.label }}</span>
+
+                <ui-label 
+                    :class="{ 'shake-animation': shakingNodeKey === node.data.path }"
+                >
+                    {{ node.label }}
+                </ui-label>
+
                 <span style="margin-left: 5px;color: aquamarine;" v-if="node.data.assetType=='cc.ImageAsset'">  ({{ node.data.width }}x{{ node.data.height }})</span>
             </template>
         </el-tree-v2>
@@ -170,14 +209,6 @@ function shakeTreeItem(nodeKey: string) {
 :deep(.custom-current:hover) > .el-tree-node__content {
     background-color: #227F9B !important; /* 高亮背景色 */
     color: #ffffff !important; /* 文字颜色 */
-}
-
-.nodeItem{
-    color: #EDEDED;
-}
-
-.nodeItem.noActive{
-    color: #929292;
 }
 
 @keyframes shakeEffect {

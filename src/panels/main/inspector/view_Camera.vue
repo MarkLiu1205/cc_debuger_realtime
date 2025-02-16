@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { nextTick, reactive, ref } from 'vue';
 import { _funcs } from '../../../tools/_funcs';
-
+import comp_selecter_asset from '../components/comp_selecter_asset.vue';
 
 enum ClearFlag {
     SKYBOX = 14,
@@ -213,11 +213,6 @@ function onConfirmColor(event){
     compModel.value.clearColor = _funcs.rgbaToHex(r,g,b,a)
 }
 
-function onAssetChange(event) {
-    const value = event.target.value;
-    compModel.value.targetTexture = value;
-}
-
 const editingVisibility = ref(false);
 const visibilityInputRef = ref(null)
 const toggleVisibility = () => {
@@ -351,7 +346,7 @@ const handleNameBlur = () => {
 
         <div class="property">
             <label>TargetTexture:</label>
-            <ui-asset id="targetTexture" :value="compModel.targetTexture" @change="onAssetChange" droppable="cc.RenderTexture"></ui-asset>
+            <comp_selecter_asset assetType="cc.RenderTexture"  v-model="compModel.targetTexture"/>
         </div>
 
     </div>

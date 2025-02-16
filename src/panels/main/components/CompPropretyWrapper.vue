@@ -3,6 +3,7 @@ import { ref, reactive, onUnmounted, watch, nextTick, defineExpose,defineProps, 
 
 import comp_component_selecter from '../components/comp_component_selecter.vue';
 import comp_node_selecter from '../components/comp_node_selecter.vue';
+import comp_selecter_asset from '../components/comp_selecter_asset.vue';
 import { _dataCtx } from '../../../tools/_dataCtx';
 import { _funcs } from '../../../tools/_funcs';
 
@@ -82,7 +83,7 @@ function onAssetChange(event){
 
         <comp_component_selecter class="comp_component_selecter" v-model="pModel[propretyName]" :compType="attrs.ctor" v-if="attrs.type=='Component'"/>
         <comp_node_selecter class="comp_node_selecter" v-model="pModel[propretyName]" v-else-if="attrs.type=='Node'"/>
-        <ui-asset :value="pModel[propretyName]" @change="onAssetChange" :droppable="attrs.ctor" v-else-if="attrs.type=='Asset'" />
+        <comp_selecter_asset :assetType="attrs.ctor"  v-model="pModel[propretyName]" v-else-if="attrs.type=='Asset'"/>
         <ui-color :value="pModel[propretyName]" @confirm="onConfirmColor" v-else-if="attrs.type=='Color'" />
 
         <div class="vectorInput"  v-else-if="attrs.type=='Vec2'||attrs.type=='Vec3'||attrs.type=='Vec4'||attrs.type=='Rect'">

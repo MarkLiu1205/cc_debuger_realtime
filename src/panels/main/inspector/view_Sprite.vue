@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, reactive, ref } from 'vue';
 import { _funcs } from '../../../tools/_funcs';
+import comp_selecter_asset from '../components/comp_selecter_asset.vue';
 
 enum _SizeMode {
     CUSTOM = 0,
@@ -42,44 +43,12 @@ const enumDesc_SpriteType = [
 
 const compModel = defineModel<CompInfo_Sprite>()
 
-const ref_customMaterial = ref(null)
-const ref_spriteAtlas = ref(null)
-const ref_spriteFrame = ref(null)
-
-function onAssetConfirm(event:CustomEvent ){
-    const element = event.target as HTMLElement
-    //@ts-ignore
-    const assetUuid = element.value;
-    if(element==ref_customMaterial.value){
-        console.log("选中材质",assetUuid)
-        compModel.value.customMaterial = assetUuid
-    }else if(element==ref_spriteAtlas.value){
-        console.log("选中图集",assetUuid)
-        compModel.value.spriteAtlas = assetUuid
-    }else if(element==ref_spriteFrame.value){
-        console.log("选中精灵帧",assetUuid)
-        compModel.value.spriteFrame = assetUuid
-    }
-}
-
 function onConfirmColor(event){
     const [r,g,b,a] = event.target.value
     
     compModel.value.color = _funcs.rgbaToHex(r,g,b,a)
     console.log("r,g,b,a",r,g,b,a,compModel.value.color)
 }
-
-onMounted(()=>{
-    ref_customMaterial.value.addEventListener('confirm', onAssetConfirm);
-    ref_spriteAtlas.value.addEventListener('confirm', onAssetConfirm);
-    ref_spriteFrame.value.addEventListener('confirm', onAssetConfirm);
-})
-
-onUnmounted(()=>{
-    ref_customMaterial.value?.removeEventListener('confirm', onAssetConfirm);
-    ref_spriteAtlas.value?.removeEventListener('confirm', onAssetConfirm);
-    ref_spriteFrame.value?.removeEventListener('confirm', onAssetConfirm);
-})
 
 function onSelect(event){
     const eleId = event.target.id
@@ -122,7 +91,7 @@ function onToggle(event){
         </div>
         <div class="property">
             <label>CustomMaterial:</label>
-            <ui-asset droppable="cc.Material" ref="ref_customMaterial" :value="compModel.customMaterial"></ui-asset>
+            <comp_selecter_asset assetType="cc.Material"  v-model="compModel.customMaterial"/>
         </div>
         <div class="property">
             <label>Color:</label>
@@ -130,11 +99,11 @@ function onToggle(event){
         </div>
         <div class="property">
             <label>SpriteAtlas:</label>
-            <ui-asset droppable="cc.SpriteAtlas" ref="ref_spriteAtlas" :value="compModel.spriteAtlas"></ui-asset>
+            <comp_selecter_asset assetType="cc.SpriteAtlas"  v-model="compModel.spriteAtlas"/>
         </div>
         <div class="property">
             <label>SpriteFrame:</label>
-            <ui-asset droppable="cc.SpriteFrame" ref="ref_spriteFrame" :value="compModel.spriteFrame"></ui-asset>
+            <comp_selecter_asset assetType="cc.SpriteFrame"  v-model="compModel.spriteFrame"/>
         </div>
         <div class="property">
             <label>Grayscale:</label>
