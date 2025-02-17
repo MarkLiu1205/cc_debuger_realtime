@@ -33,7 +33,11 @@ function updateInfo(index, newInfo) {
 .inspector_container {
     height: 100%;
     overflow-y: auto;
-    /* border: 1px solid #ccc; */
+    border-top: 1px solid #ccc;
+    border-bottom: 1px solid #ccc;
+    border-right: 1px solid #ccc;
+    
+    padding: 5px;
 }
 
 </style>

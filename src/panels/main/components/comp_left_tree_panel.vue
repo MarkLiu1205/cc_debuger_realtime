@@ -7,8 +7,8 @@ import { _pluginSocket } from '../../../tools/plugin_socket';
 import { TreeNodeData,TreeNode, TreeOptionProps,Tree } from 'element-plus/es/components/tree-v2/src/types';
 import ContextMenu from './ContextMenu.vue';
 import { eventBus } from '../../../tools/_enentBus';
-import Comp_NodesTree from './comp_NodesTree.vue';
-import Comp_AssetsTree from './comp_AssetsTree.vue';
+import comp_NodesTree from './comp_NodesTree.vue';
+import comp_AssetsTree from './comp_AssetsTree.vue';
 
 const props = defineProps({
     resTree_datas: {
@@ -95,13 +95,13 @@ function onClick_node (data: ResTreeItem, node: TreeNode, e: MouseEvent){
 
 <template>
     <div ref="ref_parentContainer" class="parent-container">
-        <Comp_NodesTree ref="ref_container_nodeTree"
+        <comp_NodesTree ref="ref_container_nodeTree"
             :nodeTree_datas="props.nodeTree_datas" 
             :height_nodeTree="height_nodeTree"
             @onClick_node="onClick_node"
         />
         <div class="gap_line" ref="gap_line"></div>
-        <Comp_AssetsTree  ref="ref_container_resTree"
+        <comp_AssetsTree  ref="ref_container_resTree"
             :resTree_datas="props.resTree_datas"
             :height_resTree="height_resTree"
             @onClick_asset="onClick_asset"

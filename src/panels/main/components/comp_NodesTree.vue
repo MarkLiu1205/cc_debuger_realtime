@@ -176,7 +176,6 @@ function onDrop(data: TreeNodeData, node: TreeNode, e: DragEvent){
             <span style="margin-left: 10px;">正在加载节点树</span>
         </div>
         <el-tree-v2 v-else ref="ref_nodeTree"
-            style="max-width: 600px;"
             :data="props.nodeTree_datas"
             :props="{...treeProp_node,class: customClass_Node}"
             :height="props.height_nodeTree"

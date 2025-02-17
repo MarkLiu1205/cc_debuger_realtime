@@ -10,7 +10,7 @@ import { _funcs } from '../../tools/_funcs';
 import { _dataCtx } from '../../tools/_dataCtx';
 import { _pluginSocket } from '../../tools/plugin_socket';
 import ScriptExecutor from './ScriptExecutor.vue'
-import Comp_left_tree_panel from './components/comp_left_tree_panel.vue';
+import comp_left_tree_panel from './components/comp_left_tree_panel.vue';
 import { eventBus } from '../../tools/_enentBus';
 import comp_profiler from './components/comp_profiler.vue';
 import comp_md_info from './components/comp_md_info.vue';
@@ -83,7 +83,8 @@ _pluginSocket.listenSceneLaunched((name)=>{
     cur_sel_node.value = null
 })
 
-const width_left_panel = ref(window.innerWidth * 0.5); // 默认左面板宽度占窗口宽度的30%
+const width_left_panel = ref(window.innerWidth * 0.5); 
+const width_right_panel = ref(window.innerWidth * 0.5); 
 const resizer_ele_1 = ref(null); //拉伸左右边界的线
 
 
@@ -221,17 +222,17 @@ function applyChange(oldoObj,changeMap:Record<string,any>){
 }
 
 const onMouseDown = (e:MouseEvent) => {
-    const width_ref = width_left_panel
     const minWidth = 300
     
     const startX = e.clientX
-    const startWidth = width_ref.value
+    const startWidth = width_left_panel.value
 
     const onMouseMove = (moveEvent) => {
         const newWidth = startWidth + (moveEvent.clientX - startX)
         // 限制最小和最大宽度
         
-        width_ref.value = _funcs.clamp(minWidth,window.innerWidth - 360,newWidth)
+        width_left_panel.value = _funcs.clamp(minWidth,window.innerWidth - 360,newWidth)
+        width_right_panel.value = window.innerWidth - width_left_panel.value
     }
 
     const onMouseUp = () => {
@@ -262,6 +263,19 @@ onUnmounted(() => {
         resizer_ele_1.value.removeEventListener('mousedown', onMouseDown)
     }
 })  
+
+function onPanelResize(){
+    width_left_panel.value = window.innerWidth * 0.5
+    width_right_panel.value = window.innerWidth * 0.5
+}
+
+onMounted(() => {
+    window.addEventListener("resize", onPanelResize);
+});
+
+onUnmounted(() => {
+    window.removeEventListener("resize", onPanelResize);
+});
 
 function onSel_asset(item:ResTreeItem) {
     if(item&&!item.isDirectory){
@@ -331,7 +345,7 @@ function testLogPanel(){
             </div>
             <div id="eid_view_main" class="cls_view_main" v-else>
                 <div id="eid_view_asset_list" class="left-panel" :style="{ width: width_left_panel + 'px' }">
-                    <Comp_left_tree_panel 
+                    <comp_left_tree_panel 
                         :resTree_datas="resTree_datas"
                         :nodeTree_datas="nodeTree_datas"
                         @onClick_node="onSel_node"
@@ -340,7 +354,7 @@ function testLogPanel(){
                 </div>
                 <div class="resizer-line-1" ref="resizer_ele_1"></div>
                 
-                <div class="right-panel">
+                <div class="right-panel" :style="{ width: width_right_panel + 'px' }">
                     
                     <Inspector_Node v-if="cur_sel_node!=null" v-model="cur_sel_node"/>
                     <div v-else style="display: flex;flex-direction: column; gap: 10px;margin: 10px;">
@@ -372,7 +386,10 @@ function testLogPanel(){
 .left-panel {
     display: flex;
     flex-direction: column; 
-    border: 1px solid rgb(165, 165, 165);;
+    border-top: 1px solid #ccc;
+    border-bottom: 1px solid #ccc;
+    border-left: 1px solid #ccc;
+  
 }
 
 .resizer-line-1 {
@@ -386,7 +403,7 @@ function testLogPanel(){
     flex-grow: 1; /* 使右面板占据剩余空间 */
     display: flex; 
     flex-direction: column;
-    border-left: 1px solid rgb(165, 165, 165); /* 添加左边框以分隔面板 */
+    border-left: 1px solid #ccc; /* 添加左边框以分隔面板 */
     box-sizing: border-box; /* 包含内边距和边框在宽度内 */
     min-width: 360px;
 }
@@ -395,7 +412,7 @@ function testLogPanel(){
     display: flex;
     gap: 10px;
     align-items: center;
-    border: 1px solid rgb(165, 165, 165);
+    border: 1px solid #ccc;
     padding: 10px;
 }
 

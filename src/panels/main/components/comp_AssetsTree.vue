@@ -177,7 +177,6 @@ function getItemDesc(data:ResTreeItem){
             <span style="margin-left: 10px;">正在加载资源列表</span>
         </div>
         <el-tree-v2 v-else  ref="ref_resTree"
-            style="max-width: 600px;"
             :data="props.resTree_datas"
             :props="{...treeProp_res,class: customClass_Asset}"
             :height="height_resTree"
