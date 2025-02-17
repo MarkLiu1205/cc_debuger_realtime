@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, inject, onMounted, onUnmounted, reactive, ref, defineProps, nextTick, watch} from 'vue';
+import { computed, inject, onMounted, onUnmounted, reactive, ref, defineProps, nextTick, watch, Ref} from 'vue';
 import { ElMessage } from 'element-plus';
 import { _funcs } from '../../../tools/_funcs';
 import { _dataCtx } from '../../../tools/_dataCtx';
@@ -9,10 +9,7 @@ import ContextMenu from './ContextMenu.vue';
 import { eventBus } from '../../../tools/_enentBus';
 
 const props = defineProps({
-    resTree_datas: {
-        type: Array<ResTreeItem>,
-        default:[]
-    },
+    
     height_resTree: {
         type: Number
     }
@@ -23,9 +20,7 @@ watch(props,(newVal,oldVal)=>{
 },{ deep: true })
 
 const emit = defineEmits([
-    'onClick_asset',
-    'onClick_node',
-    'change2ListView',
+    'onSel_asset',
 ])
 
 const treeProp_res:TreeOptionProps = {
@@ -34,6 +29,17 @@ const treeProp_res:TreeOptionProps = {
   children: 'children',
 }
 
+const resTree_datas = ref<ResTreeItem[]>([])
+
+_pluginSocket.listenAssetAdded((arr:Array<ResMemInfo>)=>{
+    if(arr==null){
+        return
+    }
+    // console.log("获取到新增资源",JSON.stringify(arr))
+    _dataCtx.mark_using_uuids(arr,() => {
+        resTree_datas.value = [..._dataCtx.getResTree_datas()]
+    })
+})
 
 const ref_container_resTree = ref(null);
 const ref_resTree = ref(null);
@@ -47,7 +53,7 @@ function handleClickOutside(event) {
             nextTick(() => {
                 ref_resTree.value?.setCurrentKey(null); // 确保 UI 重新渲染
             });
-            emit('onClick_asset', null);
+            emit('onSel_asset', null);
         }
     }
 }
@@ -108,11 +114,11 @@ function onClick_asset (data: ResTreeItem, node: TreeNode, e: MouseEvent){
             nextTick(() => {
                 ref_resTree.value?.setCurrentKey(null); // 确保 UI 重新渲染
             });
-            emit('onClick_asset', null);
+            emit('onSel_asset', null);
         }
     }else{
         selectedAssetId = data.path
-        emit('onClick_asset', data);
+        emit('onSel_asset', data);
     }
 }
 
@@ -177,7 +183,7 @@ function getItemDesc(data:ResTreeItem){
             <span style="margin-left: 10px;">正在加载资源列表</span>
         </div>
         <el-tree-v2 v-else  ref="ref_resTree"
-            :data="props.resTree_datas"
+            :data="resTree_datas"
             :props="{...treeProp_res,class: customClass_Asset}"
             :height="height_resTree"
             @node-click="onClick_asset"

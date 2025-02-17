@@ -26,29 +26,17 @@ const bundleNames = ref([])
 /**节点数数据 */
 const nodeTree_datas = ref<Array<NodeTreeItem>>([])
 
-const cur_sel_node = ref(null as InspectorInfo_Node)
+const _curSelNodeInfo = ref<InspectorInfo_Node>()
 
-provide('nodeTreeDatas', nodeTree_datas);
+provide('nodeTree_datas', nodeTree_datas);
 
 
-/**资源树数据 */
-const resTree_datas = ref<ResTreeItem[]>([])
-
-_pluginSocket.listenAssetAdded((arr:Array<ResMemInfo>)=>{
-    if(arr==null){
-        return
-    }
-    // console.log("获取到新增资源",JSON.stringify(arr))
-    _dataCtx.mark_using_uuids(arr,() => {
-        resTree_datas.value = [..._dataCtx.getResTree_datas()]
-    })
-})
 
 _pluginSocket.listenRuntimeOnlineInfo((info)=>{
     _funcs.log_1("runtime在线吗?",info)
     isRuntimeOffline.value = !info.bIsOnline
     if(!info.bIsOnline){
-        cur_sel_node.value = null
+        _curSelNodeInfo.value = null
         _pluginSocket.clear()
         _dataCtx.clear()
     }
@@ -59,167 +47,15 @@ _pluginSocket.listenRuntimeList((nameArr)=>{
     _funcs.log_1("runtime 列表：",JSON.stringify(nameArr))
 })
 
-function _updateNodeTreeKeys(node:NodeTreeItem){
-    function traverse(node: NodeTreeItem) {
-        node["key"] = node.path+""+node.uuid
-        if (node.children) {
-            node.children.forEach(child => traverse(child));
-        }
-    }
-    traverse(node)
-}
-
-_pluginSocket.listenSceneNodeTree((data)=>{
-    // _funcs.log_1("节点树变化：",JSON.stringify(data,null,2))
-    if(data){
-        _updateNodeTreeKeys(data)
-        _dataCtx.curNodeTreeInfo = data
-        nodeTree_datas.value = [_dataCtx.curNodeTreeInfo]
-    }
-})
 
 _pluginSocket.listenSceneLaunched((name)=>{
     _funcs.log_1("场景切换",name)
-    cur_sel_node.value = null
+    _curSelNodeInfo.value = null
 })
 
 const width_left_panel = ref(window.innerWidth * 0.5); 
 const width_right_panel = ref(window.innerWidth * 0.5); 
 const resizer_ele_1 = ref(null); //拉伸左右边界的线
-
-
-watch(cur_sel_node, (newVal,old) => {
-    if(old==null){
-        return
-    }
-    if(newVal==null){
-        return
-    }
-    // console.log("newVal",JSON.stringify(newVal))
-    
-    const oldVal = _dataCtx.curSelNodeInspectorInfo;
-    // console.log("xxx",_dataCtx._curSelectNodeUuid)
-    // console.log("oldVal",oldVal)
-    if(oldVal==null){
-        return
-    }
-    if(oldVal.uuid!=newVal.uuid){
-        return
-    }
-
-    compareChangedNodeInfo(newVal,oldVal)
-   
-}, { deep: true })
-
-function compareChangedNodeInfo(newVal:InspectorInfo_Node,oldVal:InspectorInfo_Node){
-    const _obj:ChangedNodeInfo = {
-        uuid:newVal.uuid,
-        nodeChange:{},
-        compChanges:{}
-    }
-    
-    for (let key in newVal) {
-        if (key === "components") {
-            continue;
-        }
-        if (typeof newVal[key] === 'object' && newVal[key] !== null) {
-            _obj.nodeChange = _obj.nodeChange ?? {};
-            _obj.nodeChange[key] = deepCompare(newVal[key], oldVal[key]);
-            if(_obj.nodeChange[key]==null){
-                delete _obj.nodeChange[key]
-            }
-        } else if (newVal[key] !== oldVal[key]) {
-            _obj.nodeChange = _obj.nodeChange ?? {};
-            _obj.nodeChange[key] = newVal[key];
-            // oldVal[key] = newVal[key];
-        }
-    }
-    
-    for(let i=0;i<newVal.components.length;i++){
-        let newComp = newVal.components[i]
-        let oldComp = oldVal.components[i];
-        // console.log("newComp",JSON.stringify(newComp))
-        // console.log("oldComp",JSON.stringify(oldComp))
-        if(oldComp==null){
-            break
-        }
-
-        for(let key in newComp){
-            if (typeof newComp[key] === 'object' && newComp[key] !== null) {
-                _obj.compChanges[newComp.uuid] = _obj.compChanges[newComp.uuid] ?? {};
-                _obj.compChanges[newComp.uuid][key] = deepCompare(newComp[key], oldComp[key]);
-                if(_obj.compChanges[newComp.uuid][key]==null){
-                    delete _obj.compChanges[newComp.uuid][key]
-                }
-            } else if (newComp[key] !== oldComp[key]) {
-                _obj.compChanges[newComp.uuid] = _obj.compChanges[newComp.uuid] ?? {};
-                _obj.compChanges[newComp.uuid][key] = newComp[key];
-                // oldComp[key] = newComp[key];
-            }
-            // console.log("_obj.compChanges[newComp.uuid]",_obj.compChanges[newComp.uuid])
-            
-        }
-        if(_obj.compChanges[newComp.uuid]!=null && Object.keys(_obj.compChanges[newComp.uuid]).length==0){
-            delete _obj.compChanges[newComp.uuid]
-        }else{
-            applyChange(oldComp,_obj.compChanges[newComp.uuid])
-        }
-
-    }
-    if(Object.keys(_obj.nodeChange).length==0){
-        delete _obj.nodeChange
-    }else{
-        applyChange(oldVal,_obj.nodeChange)
-    }
-    if(Object.keys(_obj.compChanges).length==0){
-        delete _obj.compChanges
-    }
-    if(_obj.nodeChange==null && _obj.compChanges==null){
-        return
-    }
-    console.log("节点改变",JSON.stringify(_obj))
-    _pluginSocket.reqModifyNodeInfo(_obj)
-}
-
-/**递归比较两个对象 */
-function deepCompare(newObj: any, oldObj: any) {
-    if(oldObj==null){
-        return null
-    }
-    let changes: Record<string, any> = {}
-    for (let key in newObj) {
-        if (typeof newObj[key] === 'object' && newObj[key] !== null) {
-            if (!oldObj[key]) {
-                changes[key] = newObj[key];
-            } else {
-                changes[key] = deepCompare(newObj[key], oldObj[key]);
-                if (Object.keys(changes[key]).length === 0) {
-                    delete changes[key];
-                }
-            }
-        } else if (newObj[key] !== oldObj[key]) {
-            changes[key] = newObj[key];
-            // oldObj[key] = newObj[key];
-        }
-    }
-    if(Object.keys(changes).length==0){
-        return null
-    }
-    return changes;
-}
-
-function applyChange(oldoObj,changeMap:Record<string,any>){
-    for(let key in changeMap){
-        const oldVal = oldoObj[key]
-        const newVal = changeMap[key]
-        
-        if(typeof newVal === "object"){
-            applyChange(oldVal,newVal)
-        }else{
-            oldoObj[key] = newVal
-        }
-    }
-}
 
 const onMouseDown = (e:MouseEvent) => {
     const minWidth = 300
@@ -277,6 +113,11 @@ onUnmounted(() => {
     window.removeEventListener("resize", onPanelResize);
 });
 
+async function onSel_node(info:InspectorInfo_Node){
+    console.log('选中节点:', info);
+    _curSelNodeInfo.value = info
+}
+
 function onSel_asset(item:ResTreeItem) {
     if(item&&!item.isDirectory){
         console.log('选中资源:', item);
@@ -285,20 +126,6 @@ function onSel_asset(item:ResTreeItem) {
 
 function doOpenRuntimePreview() {
     _funcs.openWebSiteUrl(runtimePreviewUrl.value)
-}
-
-async function onSel_node(item:NodeTreeItem){
-    // console.log('选中节点:', item);
-    if(item==null){
-        cur_sel_node.value = null
-        return
-    }
-    
-    let newVal = await _pluginSocket.getNodeInfo(item.uuid)
-    // console.log(newVal)
-    _dataCtx.parseCompAttrInfos(newVal)
-    cur_sel_node.value = newVal
-    _dataCtx.setCurSelectNodeInfo(JSON.parse(JSON.stringify(newVal)))
 }
 
 const scriptExecutorRef = ref(null);
@@ -346,17 +173,15 @@ function testLogPanel(){
             <div id="eid_view_main" class="cls_view_main" v-else>
                 <div id="eid_view_asset_list" class="left-panel" :style="{ width: width_left_panel + 'px' }">
                     <comp_left_tree_panel 
-                        :resTree_datas="resTree_datas"
-                        :nodeTree_datas="nodeTree_datas"
-                        @onClick_node="onSel_node"
-                        @onClick_asset="onSel_asset"
+                        @onSel_asset="onSel_asset"
+                        @onSel_node="onSel_node"
                     />
                 </div>
                 <div class="resizer-line-1" ref="resizer_ele_1"></div>
                 
                 <div class="right-panel" :style="{ width: width_right_panel + 'px' }">
                     
-                    <Inspector_Node v-if="cur_sel_node!=null" v-model="cur_sel_node"/>
+                    <Inspector_Node v-if="_curSelNodeInfo!=null" v-model="_curSelNodeInfo"/>
                     <div v-else style="display: flex;flex-direction: column; gap: 10px;margin: 10px;">
                         <div class="button-grid" >
                             <el-button  @click="openEvalPanel">执行JS</el-button>

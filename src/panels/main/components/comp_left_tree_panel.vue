@@ -11,19 +11,12 @@ import comp_NodesTree from './comp_NodesTree.vue';
 import comp_AssetsTree from './comp_AssetsTree.vue';
 
 const props = defineProps({
-    resTree_datas: {
-        type: Array<ResTreeItem>,
-        default:[]
-    },
-    nodeTree_datas: {
-        type: Array<NodeTreeItem>,
-        default:[]
-    },
+    
 })
 
 const emit = defineEmits([
-    'onClick_asset',
-    'onClick_node',
+    'onSel_asset',
+    'onSel_node',
 ])
 
 const height_nodeTree = ref(200);
@@ -83,12 +76,12 @@ onUnmounted(() => {
 
 });
 
-function onClick_asset (data: ResTreeItem, node: TreeNode, e: MouseEvent){
-    emit('onClick_asset', data);
+function onSel_asset (data: ResTreeItem, node: TreeNode, e: MouseEvent){
+    emit('onSel_asset', data);
 }
 
-function onClick_node (data: ResTreeItem, node: TreeNode, e: MouseEvent){
-    emit('onClick_node', data);
+function onSel_node (data: InspectorInfo_Node, node: TreeNode, e: MouseEvent){
+    emit('onSel_node', data);
 }
 
 </script>
@@ -96,15 +89,13 @@ function onClick_node (data: ResTreeItem, node: TreeNode, e: MouseEvent){
 <template>
     <div ref="ref_parentContainer" class="parent-container">
         <comp_NodesTree ref="ref_container_nodeTree"
-            :nodeTree_datas="props.nodeTree_datas" 
             :height_nodeTree="height_nodeTree"
-            @onClick_node="onClick_node"
+            @onSel_node="onSel_node"
         />
         <div class="gap_line" ref="gap_line"></div>
         <comp_AssetsTree  ref="ref_container_resTree"
-            :resTree_datas="props.resTree_datas"
             :height_resTree="height_resTree"
-            @onClick_asset="onClick_asset"
+            @onSel_asset="onSel_asset"
         />
         <ContextMenu ref="contextMenuRef" />
     </div>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, inject, onMounted, onUnmounted, reactive, ref, defineProps, nextTick, watch} from 'vue';
+import { computed, inject, onMounted, onUnmounted, reactive, ref, defineProps, nextTick, watch, Ref} from 'vue';
 import { ElMessage } from 'element-plus';
 import { _funcs } from '../../../tools/_funcs';
 import { _dataCtx } from '../../../tools/_dataCtx';
@@ -9,30 +9,193 @@ import ContextMenu from './ContextMenu.vue';
 import { eventBus } from '../../../tools/_enentBus';
 
 const props = defineProps({
-    nodeTree_datas: {
-        type: Array<NodeTreeItem>,
-        default:[]
-    },
     height_nodeTree: {
         type: Number,
         
     }
 })
 
-watch(props.nodeTree_datas,(newVal,oldVal)=>{
-    console.log("节点树 发生改变",newVal)
-},{deep:true})
 
 const emit = defineEmits([
-    'onClick_asset',
-    'onClick_node',
-    'change2ListView',
+    'onSel_node',
 ])
 
 const treeProp_node:TreeOptionProps = {
   value: 'key',
   label: 'name',
   children: 'children',
+}
+
+const nodeTree_datas:Ref<Array<NodeTreeItem>> = inject('nodeTree_datas');
+
+function _updateNodeTreeKeys(node:NodeTreeItem){
+    function traverse(node: NodeTreeItem) {
+        node["key"] = node.path+""+node.uuid
+        if (node.children) {
+            node.children.forEach(child => traverse(child));
+        }
+    }
+    traverse(node)
+}
+
+_pluginSocket.listenSceneNodeTree((data)=>{
+    // _funcs.log_1("节点树变化：",JSON.stringify(data,null,2))
+    if(data){
+        _updateNodeTreeKeys(data)
+        _dataCtx.curNodeTreeInfo = data
+        nodeTree_datas.value = [_dataCtx.curNodeTreeInfo]
+    }
+})
+
+const _curSelNodeInfo = ref<InspectorInfo_Node>(null)
+
+async function onSel_node(item:NodeTreeItem){
+    // console.log('选中节点:', item);
+    if(item==null){
+        _curSelNodeInfo.value = null
+        return null
+    }
+    
+    let newVal = await _pluginSocket.getNodeInfo(item.uuid)
+    // console.log(newVal)
+    _dataCtx.parseCompAttrInfos(newVal)
+    _curSelNodeInfo.value = newVal
+    _dataCtx.setCurSelectNodeInfo(JSON.parse(JSON.stringify(newVal)))
+
+    return newVal
+}
+
+watch(_curSelNodeInfo, (newVal,old) => {
+    if(old==null){
+        return
+    }
+    if(newVal==null){
+        return
+    }
+    // console.log("newVal",JSON.stringify(newVal))
+    
+    const oldVal = _dataCtx.curSelNodeInspectorInfo;
+    // console.log("xxx",_dataCtx._curSelectNodeUuid)
+    // console.log("oldVal",oldVal)
+    if(oldVal==null){
+        return
+    }
+    if(oldVal.uuid!=newVal.uuid){
+        return
+    }
+
+    compareChangedNodeInfo(newVal,oldVal)
+   
+}, { deep: true })
+
+function compareChangedNodeInfo(newVal:InspectorInfo_Node,oldVal:InspectorInfo_Node){
+    const _obj:ChangedNodeInfo = {
+        uuid:newVal.uuid,
+        nodeChange:{},
+        compChanges:{}
+    }
+    
+    for (let key in newVal) {
+        if (key === "components") {
+            continue;
+        }
+        if (typeof newVal[key] === 'object' && newVal[key] !== null) {
+            _obj.nodeChange = _obj.nodeChange ?? {};
+            _obj.nodeChange[key] = deepCompare(newVal[key], oldVal[key]);
+            if(_obj.nodeChange[key]==null){
+                delete _obj.nodeChange[key]
+            }
+        } else if (newVal[key] !== oldVal[key]) {
+            _obj.nodeChange = _obj.nodeChange ?? {};
+            _obj.nodeChange[key] = newVal[key];
+            // oldVal[key] = newVal[key];
+        }
+    }
+    
+    for(let i=0;i<newVal.components.length;i++){
+        let newComp = newVal.components[i]
+        let oldComp = oldVal.components[i];
+        // console.log("newComp",JSON.stringify(newComp))
+        // console.log("oldComp",JSON.stringify(oldComp))
+        if(oldComp==null){
+            break
+        }
+
+        for(let key in newComp){
+            if (typeof newComp[key] === 'object' && newComp[key] !== null) {
+                _obj.compChanges[newComp.uuid] = _obj.compChanges[newComp.uuid] ?? {};
+                _obj.compChanges[newComp.uuid][key] = deepCompare(newComp[key], oldComp[key]);
+                if(_obj.compChanges[newComp.uuid][key]==null){
+                    delete _obj.compChanges[newComp.uuid][key]
+                }
+            } else if (newComp[key] !== oldComp[key]) {
+                _obj.compChanges[newComp.uuid] = _obj.compChanges[newComp.uuid] ?? {};
+                _obj.compChanges[newComp.uuid][key] = newComp[key];
+                // oldComp[key] = newComp[key];
+            }
+            // console.log("_obj.compChanges[newComp.uuid]",_obj.compChanges[newComp.uuid])
+            
+        }
+        if(_obj.compChanges[newComp.uuid]!=null && Object.keys(_obj.compChanges[newComp.uuid]).length==0){
+            delete _obj.compChanges[newComp.uuid]
+        }else{
+            applyChange(oldComp,_obj.compChanges[newComp.uuid])
+        }
+
+    }
+    if(Object.keys(_obj.nodeChange).length==0){
+        delete _obj.nodeChange
+    }else{
+        applyChange(oldVal,_obj.nodeChange)
+    }
+    if(Object.keys(_obj.compChanges).length==0){
+        delete _obj.compChanges
+    }
+    if(_obj.nodeChange==null && _obj.compChanges==null){
+        return
+    }
+    console.log("节点改变",JSON.stringify(_obj))
+    _pluginSocket.reqModifyNodeInfo(_obj)
+}
+
+/**递归比较两个对象 */
+function deepCompare(newObj: any, oldObj: any) {
+    if(oldObj==null){
+        return null
+    }
+    let changes: Record<string, any> = {}
+    for (let key in newObj) {
+        if (typeof newObj[key] === 'object' && newObj[key] !== null) {
+            if (!oldObj[key]) {
+                changes[key] = newObj[key];
+            } else {
+                changes[key] = deepCompare(newObj[key], oldObj[key]);
+                if (Object.keys(changes[key]).length === 0) {
+                    delete changes[key];
+                }
+            }
+        } else if (newObj[key] !== oldObj[key]) {
+            changes[key] = newObj[key];
+            // oldObj[key] = newObj[key];
+        }
+    }
+    if(Object.keys(changes).length==0){
+        return null
+    }
+    return changes;
+}
+
+function applyChange(oldoObj,changeMap:Record<string,any>){
+    for(let key in changeMap){
+        const oldVal = oldoObj[key]
+        const newVal = changeMap[key]
+        
+        if(typeof newVal === "object"){
+            applyChange(oldVal,newVal)
+        }else{
+            oldoObj[key] = newVal
+        }
+    }
 }
 
 const ref_container_nodeTree = ref(null);
@@ -47,7 +210,9 @@ function handleClickOutside(event) {
             nextTick(() => {
                 ref_nodeTree.value?.setCurrentKey(null); // 确保 UI 重新渲染
             });
-            emit('onClick_node', null);
+            
+            onSel_node(null)
+            emit('onSel_node', null);
         }
     }
 }
@@ -109,7 +274,7 @@ let selectedNodeId: string | null = null
 const customClass_Node = (nodeData): string => {
   return nodeData.uuid === selectedNodeId ? 'custom-current' : ''
 }
-function onClick_node (data: NodeTreeItem, node: TreeNode, e: MouseEvent){
+async function onClick_node (data: NodeTreeItem, node: TreeNode, e: MouseEvent){
     if(selectedNodeId == data.uuid){
         if(ref_nodeTree.value){            
             selectedNodeId = null
@@ -117,11 +282,14 @@ function onClick_node (data: NodeTreeItem, node: TreeNode, e: MouseEvent){
             nextTick(() => {
                 ref_nodeTree.value?.setCurrentKey(null); // 确保 UI 重新渲染
             });
-            emit('onClick_node', null);
+            
+            onSel_node(null)
+            emit('onSel_node', null);
         }
     }else{
         selectedNodeId = data.uuid
-        emit('onClick_node', data);
+
+        emit('onSel_node', await onSel_node(data));
     }
 
 }
@@ -176,7 +344,7 @@ function onDrop(data: TreeNodeData, node: TreeNode, e: DragEvent){
             <span style="margin-left: 10px;">正在加载节点树</span>
         </div>
         <el-tree-v2 v-else ref="ref_nodeTree"
-            :data="props.nodeTree_datas"
+            :data="nodeTree_datas"
             :props="{...treeProp_node,class: customClass_Node}"
             :height="props.height_nodeTree"
             @node-click="onClick_node"

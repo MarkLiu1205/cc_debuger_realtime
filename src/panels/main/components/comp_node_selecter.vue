@@ -28,10 +28,10 @@ const curSelectName = computed(() => {
     return "";
 });
 
-const nodeTreeDatas = inject('nodeTreeDatas') as Ref<Array<NodeTreeItem>>;
+const nodeTree_datas = inject('nodeTree_datas') as Ref<Array<NodeTreeItem>>;
 
 const nodeLists = computed(() => {
-    const arr = flattenTree(nodeTreeDatas.value);
+    const arr = flattenTree(nodeTree_datas.value);
     return arr;
 });
 
