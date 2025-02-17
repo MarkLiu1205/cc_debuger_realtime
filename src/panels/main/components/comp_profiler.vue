@@ -42,8 +42,8 @@ function onToggle(event){
             <ui-checkbox @change="onToggle" :value="bShow"><h3>显示FPS</h3></ui-checkbox>
         </div>
         <div v-if="bShow" class="item" v-for="item in items" :key="item.desc">
-            <span>{{ item.desc }}</span>
-            <span style="flex: 1;text-align: right;">{{ item.value }}</span>
+            <span style="margin-left: 10px;">{{ item.desc }}</span>
+            <span style="flex: 1;text-align: right;margin-right: 10px;">{{ item.value }}</span>
         </div>
     </div>
 </template>
@@ -67,7 +67,7 @@ function onToggle(event){
     display: flex;
     margin-top: 15px;
     margin-bottom: 15px;
-    margin-left: 5px;
+    margin-left: 10px;
     gap: 20px;
 }
 

@@ -164,7 +164,9 @@ function shakeTreeItem(nodeKey: string) {
     }, 0.8*1000);
 }
 
-
+function onDrop(data: TreeNodeData, node: TreeNode, e: DragEvent){
+    console.log(data)
+}
 </script>
 
 <template>
@@ -182,6 +184,7 @@ function shakeTreeItem(nodeKey: string) {
             :highlight-current="true"
             :expand-on-click-node="false"
             @node-contextmenu="onRightClick_node"
+            @node-drop="onDrop"
         >
             <template #default="{ node }">
                 <ui-label 

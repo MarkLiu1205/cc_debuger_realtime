@@ -14,6 +14,7 @@ import Comp_left_tree_panel from './components/comp_left_tree_panel.vue';
 import { eventBus } from '../../tools/_enentBus';
 import comp_profiler from './components/comp_profiler.vue';
 import comp_md_info from './components/comp_md_info.vue';
+import comp_deviceInfo from './components/comp_deviceInfo.vue';
 
 /**客户端是否在线 */
 const isRuntimeOffline = ref(true)
@@ -43,15 +44,15 @@ _pluginSocket.listenAssetAdded((arr:Array<ResMemInfo>)=>{
     })
 })
 
-_pluginSocket.listenRuntimeOnlineInfo((bIsOnline)=>{
-    _funcs.log_1("runtime在线吗?",bIsOnline)
-    isRuntimeOffline.value = !bIsOnline
-    if(!bIsOnline){
+_pluginSocket.listenRuntimeOnlineInfo((info)=>{
+    _funcs.log_1("runtime在线吗?",info)
+    isRuntimeOffline.value = !info.bIsOnline
+    if(!info.bIsOnline){
         cur_sel_node.value = null
         _pluginSocket.clear()
         _dataCtx.clear()
     }
-    Editor.Message.request(_funcs.getPluginName(),"onRuntimeOnlineState",bIsOnline)
+    Editor.Message.request(_funcs.getPluginName(),"onRuntimeOnlineState",info.bIsOnline)
 })
 
 _pluginSocket.listenRuntimeList((nameArr)=>{
@@ -342,12 +343,13 @@ function testLogPanel(){
                 <div class="right-panel">
                     
                     <Inspector_Node v-if="cur_sel_node!=null" v-model="cur_sel_node"/>
-                    <div v-else style="display: flex;flex-direction: column; gap: 20px;">
+                    <div v-else style="display: flex;flex-direction: column; gap: 10px;margin: 10px;">
                         <div class="button-grid" >
                             <el-button  @click="openEvalPanel">执行JS</el-button>
                             <el-button  @click="testXX">测试</el-button>
                             <el-button  @click="testLogPanel">日志</el-button>
                         </div>
+                        <comp_deviceInfo/>
                         <comp_profiler/>
                         <comp_md_info/>
                     </div>

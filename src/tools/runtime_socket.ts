@@ -14,6 +14,7 @@ import { color } from 'cc';
 import { Rect } from 'cc';
 import { Size } from 'cc';
 import { EventHandler } from 'cc';
+import { profiler } from 'cc';
 import { log } from 'cc';
 import { CCClass } from 'cc';
 import { Vec4 } from 'cc';
@@ -117,7 +118,7 @@ class RunTimeSocket {
     }
     private _spiltMsg:Record<number,Array<SplitMsg>> = {}
     private _onMessage(msg: OneMsg) {
-        log("cc_onMesage",JSON.stringify(msg))
+        // log("cc_onMesage",JSON.stringify(msg))
         if(msg["isSplit"]){
             const obj = msg as any as SplitMsg
             this._spiltMsg[obj.uniqueId] = this._spiltMsg[obj.uniqueId] || []
@@ -169,6 +170,14 @@ class RunTimeSocket {
                 data = _data.getNodeOfComp(uuid)
             } else if (msg.action === 'getGameEnv') {
                 data = _data.getGameEnv()
+            } else if (msg.action === 'requestShowFPS') {
+                let bool = msg.data
+                if(bool=="true"){
+                    profiler.showStats()
+                }else if(bool=="false"){
+                    profiler.hideStats()
+                }
+                data = profiler.isShowingStats()
             }
     
             responseData.data = data
@@ -180,6 +189,7 @@ class RunTimeSocket {
                     _data.clear()
                 }else{
                     _data.checkPushAssetInfo()
+                    _runtimeSocket.sendPush_checkUpdateSceneTree()
                 }
                 console.log("this.m_isActive",this.m_isActive)
             }
@@ -206,7 +216,8 @@ class RunTimeSocket {
         // console.error('[Runtime] WebSocket error:', error);
     }
 
-    loop(){
+    private _profileTimeAcc = 0
+    loop(dt?:number){
         if(!this._checkIsConnect()){
             return
         }
@@ -214,7 +225,14 @@ class RunTimeSocket {
             return
         }
 
-        this.sendPush_updateSceneTree()
+        this._profileTimeAcc+=dt;
+        if(this._profileTimeAcc>=1000){
+            this._profileTimeAcc = 0;
+            this.sendPush_profile()
+        }
+
+        this.sendPush_checkUpdateSceneTree()
+        _data.checkPushAssetInfo()
     }
 
     public isReadyForPush(){
@@ -236,7 +254,7 @@ class RunTimeSocket {
         return true
     }
 
-    sendPush_updateSceneTree(){
+    sendPush_checkUpdateSceneTree(){
         if(!this.isReadyForPush()){
             return false
         }
@@ -266,6 +284,37 @@ class RunTimeSocket {
     /**资源从 assetManager.assets 移出 */
     sendPush_resRemoveed(obj){
         return this._sendPush( 'onAssetRemoved', obj);
+    }
+
+    /**发送drawcall等信息 */
+    sendPush_profile(){
+        let stats = profiler._stats
+        if(stats){
+            const keys = [
+                'fps',
+                'draws',
+                'frame',
+                'instances',
+                'tricount',
+                'logic',
+                'physics',
+                'render',
+                'textureMemory',
+                'bufferMemory',
+            ]
+            const arr:Array<{desc:string,value}> = []
+            keys.forEach(key => {
+                const data = stats[key];
+                let value = null
+                if (data.isInteger) {
+                    value = data.counter._value | 0;
+                } else {
+                    value = data.counter._value.toFixed(2);
+                }
+                arr.push({desc:data.desc,value})
+            });
+            return this._sendPush( 'profileInfoUpdate', arr);
+        }
     }
 }
 
@@ -544,7 +593,7 @@ class _RuntimeData{
     onAsset_added(key:string,asset:Asset){
         this._checkRecordResMemInfo(key,asset)
 
-        this.checkPushAssetInfo()
+        // this.checkPushAssetInfo()
     }
     /**
      * 资源被添加进 assetManager.assets
@@ -568,13 +617,13 @@ class _RuntimeData{
     onRes_addRef(asset:Asset){
         this._checkRecordResMemInfo(asset.uuid,asset)
 
-        this.checkPushAssetInfo()
+        // this.checkPushAssetInfo()
     }
 
     onRes_decRef(asset:Asset){
         this._checkRecordResMemInfo(asset.uuid,asset)
 
-        this.checkPushAssetInfo()
+        // this.checkPushAssetInfo()
     }
 
     onRes_destroy(asset:Asset){
@@ -1265,14 +1314,15 @@ function _initOnce() {
         return ret
     }
 
+    const duration = 1000
     setInterval(() => {
-        _runtimeSocket.loop()
-    }, 1000);
+        _runtimeSocket.loop(duration)
+    }, duration);
 
     
     director.on(Director.EVENT_AFTER_SCENE_LAUNCH, () => {
         _runtimeSocket.sendPush_sceneLaunched()
-        _runtimeSocket.sendPush_updateSceneTree()
+        _runtimeSocket.sendPush_checkUpdateSceneTree()
     })
 
     interceptLog()

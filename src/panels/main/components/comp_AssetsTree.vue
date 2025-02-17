@@ -157,6 +157,16 @@ function shakeTreeItem(nodeKey: string) {
     }, 0.8*1000);
 }
 
+function getItemDesc(data:ResTreeItem){
+    if(data.isDirectory||data.refCount==null){
+        return ""
+    }
+    let str = `(${data.refCount})`
+    if(data.assetType=='cc.ImageAsset'){
+        str+=`(${data.width}x${data.height})`
+    }
+    return str
+}
 
 </script>
 
@@ -185,7 +195,7 @@ function shakeTreeItem(nodeKey: string) {
                     {{ node.label }}
                 </ui-label>
 
-                <span style="margin-left: 5px;color: aquamarine;" v-if="node.data.assetType=='cc.ImageAsset'">  ({{ node.data.width }}x{{ node.data.height }})</span>
+                <span style="margin-left: 5px;color: aquamarine;" > {{ getItemDesc(node.data) }}</span>
             </template>
         </el-tree-v2>
     </div>
@@ -195,6 +205,13 @@ function shakeTreeItem(nodeKey: string) {
 
 <style scoped>
 
+
+.loading-div {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+}
 
 :deep(.el-tree-node__content) {
     cursor: default !important;

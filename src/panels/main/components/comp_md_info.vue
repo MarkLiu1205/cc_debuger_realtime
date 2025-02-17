@@ -29,7 +29,9 @@ import { onMounted, ref } from 'vue';
     display: flex;
     flex-direction: column; 
     font-size: 15px; 
-    padding: 15px;
+    padding-top: 15px;
+    padding-bottom: 15px;
+    padding-left: 10px;
     border: 1px solid rgb(165, 165, 165);
     gap: 5px;
 }

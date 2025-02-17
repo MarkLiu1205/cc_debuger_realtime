@@ -6,18 +6,23 @@ class WebSocketServerWrapper {
         this.m_ws_plugin = null;
         this.m_ws_runtime = null; //当前活跃的runtime socket
         this.m_runtime_list = []; //所有链接的runtime socket (可能存在多个可调式的runtime socket，但是同时只能有一个活跃的)
+        this._socketInfoMap = {}; //记录runtimesocket的连接信息，如IP地址端口等
     }
 
     start() {
         this.wss = new WebSocketServer({ port: this.m_port });
         console.log(`WebSocket server running on ws://localhost:${this.m_port}`);
 
-        this.wss.on('connection', (ws) => {
-            console.log('New client connected.');
+        this.wss.on('connection', (ws,req) => {
+            const ip = req.socket.remoteAddress;
+            this._socketInfoMap[ws] = {ip:req.socket.remoteAddress,port:req.socket.remotePort,family:req.socket.remoteFamily}
+            console.log('New client connected from IP:', ip);
             ws.on('message', (message) => this._onMessage(ws, message));
             ws.on('close', () => this._onClose(ws));
         });
     }
+
+    
 
     _onMessage(ws, message) {
         const msg = JSON.parse(message);
@@ -36,14 +41,16 @@ class WebSocketServerWrapper {
         // console.log('我是server', JSON.stringify(msg));
         if (msg.type === 'identify') {
             if (msg.role === 'runtime') {
-                this._add1Runtime(ws,msg.name)
+                const _name = this._add1Runtime(ws,msg.name)
                 if(this.m_ws_runtime==null){
                     this.m_ws_runtime = ws;
 
                     // ws.send(JSON.stringify({ type: 'ack', message: 'Runtime registered.' }));
                     if(this.m_ws_plugin){//插件先上线
-                        this._doSelectActiveRuntime(msg.name)
-                        this.m_ws_plugin.send(JSON.stringify({ type: 'push', action: "otherSideOnlineChange", data: true}))
+                        this._doSelectActiveRuntime(_name)
+                        const info = this._socketInfoMap[ws]
+                        const name = _name
+                        this.m_ws_plugin.send(JSON.stringify({ type: 'push', action: "otherSideOnlineChange", data: {bIsOnline:true,info,name}}))
                     }
                 }
                 if(this.m_ws_plugin){//通知客户端当前链接的运行时列表
@@ -51,7 +58,7 @@ class WebSocketServerWrapper {
                     this.m_ws_plugin.send(JSON.stringify({ type: 'push', action: "pushRuntimeList", data: nameList}))
                 }
                 
-                console.log('Runtime connected.',msg.name);
+                console.log('Runtime connected.',_name);
                 
             } else if (msg.role === 'plugin') {
                 this.m_ws_plugin = ws;
@@ -60,7 +67,9 @@ class WebSocketServerWrapper {
                 if(this.m_ws_runtime){//运行时先上线
                     this._doSelectActiveRuntime(null)
                     // console.log("主动推送在线信息",JSON.stringify({ type: 'push', action: "otherSideOnlineChange", data: true}))
-                    this.m_ws_plugin.send(JSON.stringify({ type: 'push', action: "otherSideOnlineChange", data: true}))
+                    let name = this._getNameByRuntime(this.m_ws_runtime)
+                    const info = this._socketInfoMap[this.m_ws_runtime]
+                    this.m_ws_plugin.send(JSON.stringify({ type: 'push', action: "otherSideOnlineChange", data: {bIsOnline:true,name,info}}))
                 }
             }
         }else if (msg.type === 'request') {
@@ -98,7 +107,12 @@ class WebSocketServerWrapper {
             }
         }else if (msg.type === 'push') {
             if(ws==this.m_ws_plugin && msg.action === 'selectActiveRuntime') {//plugin发来的，从多个runtime中，选中一个需要调试的runtime
-                this._doSelectActiveRuntime(msg.data)
+                let name = this._getNameByRuntime(this.m_ws_runtime)
+                const info = this._socketInfoMap[this.m_ws_runtime]
+                this.m_ws_plugin.send(JSON.stringify({ type: 'push', action: "otherSideOnlineChange", data: {bIsOnline:false,name,info}}))
+                setTimeout(() => {
+                    this._doSelectActiveRuntime(msg.data)
+                }, 500);
             }else{
                 if(ws==this.m_ws_plugin){//是从plugin端发过来的，转发给runtime端
                     if(this.m_ws_runtime!=null){
@@ -116,16 +130,19 @@ class WebSocketServerWrapper {
 
     _onClose(ws) {
         if (ws === this.m_ws_runtime) {
+            let name = this._getNameByRuntime(this.m_ws_runtime)
+            const info = this._socketInfoMap[ws]
             this.m_ws_runtime = null;
             console.log('Runtime disconnected.');
             if(this.m_ws_plugin){
-                this.m_ws_plugin.send(JSON.stringify({ type: 'push', action: "otherSideOnlineChange", data: false}))
+                this.m_ws_plugin.send(JSON.stringify({ type: 'push', action: "otherSideOnlineChange", data: {bIsOnline:false,name,info}}))
             }
         }
         if (ws === this.m_ws_plugin) {
             this.m_ws_plugin = null;
             console.log('Plugin disconnected.');
         }
+        delete this._socketInfoMap[ws]
         let idx = -1
         for(let i=0;i<this.m_runtime_list.length;i++){
             let obj = this.m_runtime_list[i]
@@ -156,6 +173,18 @@ class WebSocketServerWrapper {
             ws:ws,
             name:name
         })
+        return name
+    }
+
+    _getNameByRuntime(ws){
+        let name = null
+        for(let obj of this.m_runtime_list){
+            if(obj.ws==ws){
+                name = obj.name
+                break
+            }
+        }
+        return name
     }
 
     _getRuntimeByName(name){
@@ -182,6 +211,10 @@ class WebSocketServerWrapper {
             }
             _newWs.send(JSON.stringify({ type: 'push', action:"markActive", data:true}))
             this.m_ws_runtime = _newWs
+
+            let name = this._getNameByRuntime(this.m_ws_runtime)
+            const info = this._socketInfoMap[this.m_ws_runtime]
+            this.m_ws_plugin.send(JSON.stringify({ type: 'push', action: "otherSideOnlineChange", data: {bIsOnline:true,name,info}}))
         }
     }
 }

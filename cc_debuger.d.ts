@@ -41,6 +41,7 @@ interface ResTreeItem{
     memory?:number,
     width?:number,
     height?:number,
+    refCount?:number,
 }
 
 // type CompType = "Sprite" | "Label" | "UITransform" | "Button" | "Canvas" | "EditBox" | "Layout" | 
@@ -392,3 +393,12 @@ interface ResMemInfo{
     width?:number,
     height?:number,
 }
+
+interface OnlineInfo{
+    bIsOnline:boolean,
+    name:string,
+    info: { 
+        ip: string, 
+        port: number, 
+        family: string 
+    }}

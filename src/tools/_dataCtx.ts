@@ -72,6 +72,9 @@ class _DataContext{
                 let hasRecord = this.getResNodeInfoWithUuid(uuid)
                 
                 if(hasRecord){
+                    if(resObj?.refCount>0){
+                        hasRecord.refCount = resObj.refCount
+                    }
                     continue
                 }
 
@@ -125,6 +128,9 @@ class _DataContext{
                     if(i==_resPaths.length-1){
                         if(resObj?.memory>0){
                             obj.memory = resObj.memory
+                        }
+                        if(resObj?.refCount>0){
+                            obj.refCount = resObj.refCount
                         }
                         if(resObj?.width>0){
                             obj.width = resObj.width
@@ -293,7 +299,7 @@ class _DataContext{
      * @param uuid 
      * @returns 
      */
-    getResNodeInfoWithUuid(uuid:string){
+    getResNodeInfoWithUuid(uuid:string):ResTreeItem{
         if(this.m_asset_map[uuid]){
             return this.m_asset_map[uuid]
         }

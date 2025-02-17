@@ -114,11 +114,13 @@ class PluginSocket {
             }
         }else if(msg.type === 'push'){
             this._on_push_dataMap[msg.action] = msg.data
-            if(this._onChangeForPushData[msg.action]){//表示注册过了监听
-                this._onChangeForPushData[msg.action](msg.data)
+            if(this._onChangeForPushData[msg.action]?.length>0){//表示注册过了监听
+                for(let cb of this._onChangeForPushData[msg.action]){
+                    cb(msg.data)
+                }
             }
             if(msg.action === PushAction.otherSideOnlineChange){
-                let bIsOnline = msg.data as boolean
+                let {bIsOnline,name} = msg.data
                 if(bIsOnline){
                     if(this._onWaitRuntimeOnlineResolves){
                         for(let resolve of this._onWaitRuntimeOnlineResolves){
@@ -133,21 +135,34 @@ class PluginSocket {
 
     /**存储推送过来的，需要存储的数据，如在线列表、当前节点树 */
     private _on_push_dataMap:Record<string,any> = {}
-    private _onChangeForPushData:Record<string,Function> = {};
+    private _onChangeForPushData:Record<string,Array<(data)=>void>> = {};
     private listenForPushData<T>(pushAction:string,callback:(data:T)=>void,defaultData:T=null){
-        this._onChangeForPushData[pushAction] = callback
+        this._onChangeForPushData[pushAction] = this._onChangeForPushData[pushAction]??[]
+        this._onChangeForPushData[pushAction].push(callback)
         
         const data = this._on_push_dataMap[pushAction]??defaultData
-        if(callback){
+        if(data!=null&&callback){
             callback(data)
+        }
+    }
+
+    /**取消监听 */
+    cancelPushListener(pushAction:string,callback:(data)=>void){
+        let arr = this._onChangeForPushData[pushAction]
+        if(arr){
+            for(let i=arr.length-1;i>=0;i--){
+                if(arr[i]==callback){
+                    delete arr[i]
+                }
+            }
         }
     }
 
     /**
      * 监听运行时的在线情况
      */
-    listenRuntimeOnlineInfo(callback:(bIsOnline:boolean)=>void){
-        this.listenForPushData<boolean>(PushAction.otherSideOnlineChange,callback,this.checkIsConnect())
+    listenRuntimeOnlineInfo(callback:(info:OnlineInfo)=>void){
+        this.listenForPushData(PushAction.otherSideOnlineChange,callback)
     }
 
     /**
@@ -335,7 +350,7 @@ class PluginSocket {
         return this._nodeLayers
     }
     
-    private _gameEnvObj = null
+    private _gameEnvObj:GameEnvParam = null
     async getGameEnv(){
         if(this._gameEnvObj){
             return this._gameEnvObj
