@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import TestFlow from './components/TestFlow.vue';
-import NodeTreeAndAssetList from './components/NodeTreeAndAssetList.vue';
 import Inspector_Node from './components/Inspector_Node.vue';
 import dlg_list_selecter from './components/dlg_list_selecter.vue';
 import comp_node_selecter from './components/comp_node_selecter.vue';
