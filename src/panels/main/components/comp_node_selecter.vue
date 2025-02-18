@@ -2,6 +2,7 @@
 import { ref, computed, inject, Ref, watch, defineModel } from 'vue';
 import dlg_list_selecter from './dlg_list_selecter.vue';
 import { eventBus } from '../../../tools/_enentBus';
+import { _dataCtx } from '../../../tools/_dataCtx';
 
 // 使用 defineModel 绑定 v-model 的属性
 const elementUuid = defineModel<string>();
@@ -28,14 +29,12 @@ const curSelectName = computed(() => {
     return "";
 });
 
-const nodeTree_datas = inject('nodeTree_datas') as Ref<Array<NodeTreeItem>>;
-
 const nodeLists = computed(() => {
-    const arr = flattenTree(nodeTree_datas.value);
+    const arr = flattenTree(_dataCtx.curNodeTreeInfo);
     return arr;
 });
 
-function flattenTree(arr: Array<NodeTreeItem>) {
+function flattenTree(item: NodeTreeItem) {
     const result = [];
 
     function traverse(node: NodeTreeItem) {
@@ -51,7 +50,7 @@ function flattenTree(arr: Array<NodeTreeItem>) {
         }
     }
 
-    arr.forEach(node => traverse(node));
+    traverse(item)
     return result;
 }
 

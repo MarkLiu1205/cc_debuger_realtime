@@ -14,6 +14,7 @@ import { eventBus } from '../../tools/_enentBus';
 import comp_profiler from './components/comp_profiler.vue';
 import comp_md_info from './components/comp_md_info.vue';
 import comp_deviceInfo from './components/comp_deviceInfo.vue';
+import view_asset_info from './components/view_asset_info.vue';
 
 /**客户端是否在线 */
 const isRuntimeOffline = ref(true)
@@ -22,14 +23,8 @@ const runtimePreviewUrl = ref("http://localhost:7456")
 /**当前已加载的bundle列表 */
 const bundleNames = ref([])
 
-/**节点数数据 */
-const nodeTree_datas = ref<Array<NodeTreeItem>>([])
-
 const _curSelNodeInfo = ref<InspectorInfo_Node>()
-
-provide('nodeTree_datas', nodeTree_datas);
-
-
+const _curSelResItem = ref<ResTreeItem>()
 
 _pluginSocket.listenRuntimeOnlineInfo((info)=>{
     _funcs.log_1("runtime在线吗?",info)
@@ -115,12 +110,15 @@ onUnmounted(() => {
 async function onSel_node(info:InspectorInfo_Node){
     console.log('选中节点:', info);
     _curSelNodeInfo.value = info
+    _curSelResItem.value = null
 }
 
 function onSel_asset(item:ResTreeItem) {
     if(item&&!item.isDirectory){
         console.log('选中资源:', item);
     }
+    _curSelResItem.value = item
+    _curSelNodeInfo.value = null
 }
 
 function doOpenRuntimePreview() {
@@ -181,6 +179,7 @@ function testLogPanel(){
                 <div class="right-panel" :style="{ width: width_right_panel + 'px' }">
                     
                     <Inspector_Node v-if="_curSelNodeInfo!=null" v-model="_curSelNodeInfo"/>
+                    <view_asset_info v-else-if="_curSelResItem!=null" v-model="_curSelResItem"/>
                     <div v-else style="display: flex;flex-direction: column; gap: 10px;margin: 10px;">
                         <div class="button-grid" >
                             <el-button  @click="openEvalPanel">执行JS</el-button>

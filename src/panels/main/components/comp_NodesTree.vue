@@ -26,7 +26,7 @@ const treeProp_node:TreeOptionProps = {
   children: 'children',
 }
 
-const nodeTree_datas:Ref<Array<NodeTreeItem>> = inject('nodeTree_datas');
+const nodeTree_datas = ref<Array<NodeTreeItem>>([]);
 
 function _updateNodeTreeKeys(node:NodeTreeItem){
     function traverse(node: NodeTreeItem) {
@@ -50,9 +50,9 @@ _pluginSocket.listenSceneNodeTree((data)=>{
 const _curSelNodeInfo = ref<InspectorInfo_Node>(null)
 
 async function onSel_node(item:NodeTreeItem){
-    // console.log('选中节点:', item);
     if(item==null){
         _curSelNodeInfo.value = null
+        emit('onSel_node', null);
         return null
     }
     
@@ -62,6 +62,7 @@ async function onSel_node(item:NodeTreeItem){
     _curSelNodeInfo.value = newVal
     _dataCtx.setCurSelectNodeInfo(JSON.parse(JSON.stringify(newVal)))
 
+    emit('onSel_node', newVal);
     return newVal
 }
 
@@ -72,11 +73,8 @@ watch(_curSelNodeInfo, (newVal,old) => {
     if(newVal==null){
         return
     }
-    // console.log("newVal",JSON.stringify(newVal))
     
     const oldVal = _dataCtx.curSelNodeInspectorInfo;
-    // console.log("xxx",_dataCtx._curSelectNodeUuid)
-    // console.log("oldVal",oldVal)
     if(oldVal==null){
         return
     }
@@ -108,15 +106,13 @@ function compareChangedNodeInfo(newVal:InspectorInfo_Node,oldVal:InspectorInfo_N
         } else if (newVal[key] !== oldVal[key]) {
             _obj.nodeChange = _obj.nodeChange ?? {};
             _obj.nodeChange[key] = newVal[key];
-            // oldVal[key] = newVal[key];
         }
     }
     
     for(let i=0;i<newVal.components.length;i++){
         let newComp = newVal.components[i]
         let oldComp = oldVal.components[i];
-        // console.log("newComp",JSON.stringify(newComp))
-        // console.log("oldComp",JSON.stringify(oldComp))
+        
         if(oldComp==null){
             break
         }
@@ -131,9 +127,7 @@ function compareChangedNodeInfo(newVal:InspectorInfo_Node,oldVal:InspectorInfo_N
             } else if (newComp[key] !== oldComp[key]) {
                 _obj.compChanges[newComp.uuid] = _obj.compChanges[newComp.uuid] ?? {};
                 _obj.compChanges[newComp.uuid][key] = newComp[key];
-                // oldComp[key] = newComp[key];
             }
-            // console.log("_obj.compChanges[newComp.uuid]",_obj.compChanges[newComp.uuid])
             
         }
         if(_obj.compChanges[newComp.uuid]!=null && Object.keys(_obj.compChanges[newComp.uuid]).length==0){
@@ -154,7 +148,7 @@ function compareChangedNodeInfo(newVal:InspectorInfo_Node,oldVal:InspectorInfo_N
     if(_obj.nodeChange==null && _obj.compChanges==null){
         return
     }
-    console.log("节点改变",JSON.stringify(_obj))
+    // console.log("节点改变",JSON.stringify(_obj))
     _pluginSocket.reqModifyNodeInfo(_obj)
 }
 
@@ -204,15 +198,14 @@ const ref_nodeTree = ref(null);
 
 function handleClickOutside(event) {
     if(_funcs.checkMouseIsInElemen(ref_container_nodeTree.value, event)){
-        if(selectedNodeId){
-            selectedNodeId = null
+        if(_curSelNodeInfo.value){
+            _curSelNodeInfo.value = null
             ref_nodeTree.value.setCurrentKey(null)   
             nextTick(() => {
                 ref_nodeTree.value?.setCurrentKey(null); // 确保 UI 重新渲染
             });
             
             onSel_node(null)
-            emit('onSel_node', null);
         }
     }
 }
@@ -240,7 +233,7 @@ function on_click_in_inspector_node(uuid: string) {
         console.warn("节点未找到:", key);
         return;
     }
-    console.log("目标节点:", nodeItem);
+    // console.log("目标节点:", nodeItem);
     // 递归展开所有父节点
     let parent = nodeItem.parent;
     while (parent) {
@@ -268,28 +261,23 @@ onUnmounted(() => {
     eventBus.off("click-component-in-inspector", on_click_in_inspector_component);
 });
 
-// 记录当前选中的节点
-let selectedNodeId: string | null = null
-
 const customClass_Node = (nodeData): string => {
-  return nodeData.uuid === selectedNodeId ? 'custom-current' : ''
+  return nodeData.uuid === _curSelNodeInfo.value?.uuid ? 'custom-current' : ''
 }
 async function onClick_node (data: NodeTreeItem, node: TreeNode, e: MouseEvent){
-    if(selectedNodeId == data.uuid){
+    if(_curSelNodeInfo.value?.uuid == data.uuid){
         if(ref_nodeTree.value){            
-            selectedNodeId = null
+            _curSelNodeInfo.value = null
             ref_nodeTree.value.setCurrentKey(null)   
             nextTick(() => {
                 ref_nodeTree.value?.setCurrentKey(null); // 确保 UI 重新渲染
             });
             
             onSel_node(null)
-            emit('onSel_node', null);
         }
     }else{
-        selectedNodeId = data.uuid
 
-        emit('onSel_node', await onSel_node(data));
+        onSel_node(data)
     }
 
 }
@@ -300,7 +288,7 @@ const contextMenuRef = ref(null);
 function onRightClick_node( event: MouseEvent, data: NodeTreeItem, node: TreeNode) {
     ref_nodeTree.value.setCurrentKey(node.key)   
     
-    selectedNodeId = null
+    _curSelNodeInfo.value = null
     onClick_node(data,node,event)
 
     const menuOptions_node = [
