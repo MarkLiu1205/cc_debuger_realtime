@@ -114,12 +114,12 @@ function onSel_node (data: InspectorInfo_Node, node: TreeNode, e: MouseEvent){
 
 
 .gap_line {
-    height: 2px; /* 分隔条宽度 */
+    height: 1px; /* 分隔条宽度 */
     cursor: row-resize; /* 改变鼠标光标样式 */
     user-select: none; /* 禁止用户选择文本 */
     background-color: #ccc; /* 分隔条背景色 */
     padding-top: 1px;
-    /* padding-bottom: 2px; */
+    padding-bottom: 1px;
 }
 
 

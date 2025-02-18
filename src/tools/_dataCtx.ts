@@ -58,7 +58,7 @@ class _DataContext{
     }
 
     /**bundle列表 */
-    public m_bundleNames:Array<string> = []
+    public m_bundles:Record<string,ResTreeItem> = {}
     /**
      * 标记正在被使用的资源
      * @param uuids 是资源列表，如SpriteFrame、Texture2D、AnimationClip等，不包含文件夹
@@ -74,6 +74,12 @@ class _DataContext{
                 if(hasRecord){
                     if(resObj?.refCount>0){
                         hasRecord.refCount = resObj.refCount
+                    }
+                    if(resObj?.width>0){
+                        hasRecord.width = resObj.width
+                    }
+                    if(resObj?.height>0){
+                        hasRecord.height = resObj.height
                     }
                     continue
                 }
@@ -119,8 +125,12 @@ class _DataContext{
                             _parentInfo.children.push(obj);
                             if(obj.isBundleFloder){
                                 bundleName = obj.bundleName
-                                if(this.m_bundleNames.indexOf(bundleName)==-1){
-                                    this.m_bundleNames.push(bundleName)
+                                if(!this.m_bundles[obj.bundleName]){
+                                    this.m_bundles[obj.bundleName] = obj
+                                }
+                            }else{
+                                if(_parentInfo.bundleName){
+                                    obj.bundleName = _parentInfo.bundleName
                                 }
                             }
                         }
@@ -333,7 +343,7 @@ class _DataContext{
         this.curNodeTreeInfo = null;
         this._curSelectNodeUuid = null;
         this._compAttrMap = {}
-        this.m_bundleNames = []
+        this.m_bundles = {}
     }
 }
 

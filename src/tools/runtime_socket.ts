@@ -225,10 +225,12 @@ class RunTimeSocket {
             return
         }
 
-        this._profileTimeAcc+=dt;
-        if(this._profileTimeAcc>=1000){
-            this._profileTimeAcc = 0;
-            this.sendPush_profile()
+        if(dt!=null){
+            this._profileTimeAcc+=dt;
+            if(this._profileTimeAcc>=1000){
+                this._profileTimeAcc = 0;
+                this.sendPush_profile()
+            }
         }
 
         this.sendPush_checkUpdateSceneTree()
@@ -577,9 +579,14 @@ class _RuntimeData{
                 classname:cls.__classname__,
                 memory:_getResMemory(asset),
             }
-            if(asset instanceof ImageAsset){
+            if(asset instanceof ImageAsset || asset instanceof Texture2D){
                 obj.width = asset.width
                 obj.height = asset.height
+            }else if(asset instanceof SpriteFrame){
+                if(asset.texture){
+                    obj.width = asset.width
+                    obj.height = asset.height
+                }
             }
             this.m_waitForPushResArr.push(obj)
         }

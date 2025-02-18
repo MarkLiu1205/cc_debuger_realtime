@@ -164,14 +164,17 @@ function shakeTreeItem(nodeKey: string) {
 }
 
 function getItemDesc(data:ResTreeItem){
-    if(data.isDirectory||data.refCount==null){
-        return ""
+    if (data.isDirectory) {
+        return "";
     }
-    let str = `(${data.refCount})`
-    if(data.assetType=='cc.ImageAsset'){
-        str+=`(${data.width}x${data.height})`
+    if(data.refCount == null){
+        return ''
     }
-    return str
+    let str = `(${data.refCount})`;
+    if (data.assetType == 'cc.ImageAsset') {
+        str += `(${data.width}x${data.height})`;
+    }
+    return str;
 }
 
 </script>
