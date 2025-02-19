@@ -363,6 +363,8 @@ function doCollapseAll() {
     }
 }
 
+const searchBarHeight = 26;
+
 </script>
 
 <template>
@@ -374,7 +376,7 @@ function doCollapseAll() {
         <div v-else>
 
         </div>
-            <div class="searchBar">
+            <div class="searchBar" :style="{height:searchBarHeight+'px'}">
                 <ui-input style="flex: 1;" @change="onQueryChanged" placeholder="筛选路径或uuid" type="text"/>
                 <div class="searchBar-button-container">
                     <ui-button type="icon" tooltip="展开全部" @confirm="doExpandAll" v-if="isCollapsed">
@@ -388,7 +390,7 @@ function doCollapseAll() {
             <el-tree-v2 ref="ref_nodeTree"
                 :data="nodeTree_datas"
                 :props="{...treeProp_node,class: customClass_Node}"
-                :height="props.height_nodeTree"
+                :height="props.height_nodeTree - searchBarHeight-10"
                 @node-click="onClick_node"
                 :highlight-current="true"
                 :expand-on-click-node="false"

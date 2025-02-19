@@ -100,9 +100,12 @@ function on_click_in_inspector_asset(uuid: string){
         parent = parent.parent;
     }
     // 滚动到目标节点
-    nextTick(() => {
-        tree.scrollToNode(nodeItem);
-    });
+    
+    setTimeout(() => {
+        nextTick(() => {
+            tree.scrollToNode(nodeItem);
+        });
+    }, 100);
 }
 
 onMounted(() => {
@@ -259,6 +262,7 @@ function updateRealAssetsData(){
     }
 }
 
+const searchBarHeight = 26;
 
 </script>
 
@@ -269,7 +273,7 @@ function updateRealAssetsData(){
             <span style="margin-left: 10px;">正在加载资源列表</span>
         </div>
         <div v-else>
-            <div class="searchBar">
+            <div class="searchBar" :style="{height:searchBarHeight+'px'}">
                 <ui-input style="flex: 1;" @change="onQueryChanged" placeholder="筛选路径或uuid" type="text"/>
                 <div class="searchBar-button-container">
                     <ui-button type="icon" tooltip="切换为列表模式" @confirm="changeToListMode" v-if="_isTreeMode">
@@ -283,7 +287,7 @@ function updateRealAssetsData(){
             <el-tree-v2  ref="ref_resTree"
                 :data="_realAssetsData"
                 :props="{...treeProp_res,class: customClass_Asset}"
-                :height="height_resTree"
+                :height="height_resTree - searchBarHeight - 5"
                 @node-click="onClick_asset"
                 :highlight-current="true"
                 :expand-on-click-node="false"
@@ -321,7 +325,6 @@ function updateRealAssetsData(){
 .searchBar{
     display: flex;
     flex-direction: row;
-    margin: 5px;
 }
 
 .searchBar-button-container {
