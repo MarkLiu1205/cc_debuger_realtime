@@ -84,6 +84,9 @@ class _DataContext{
                     if(resObj?.height>0){
                         hasRecord.height = resObj.height
                     }
+                    if(resObj?.imgSrc!=null){
+                        hasRecord.imgSrc = resObj.imgSrc
+                    }
                     continue
                 }
 
@@ -94,7 +97,20 @@ class _DataContext{
                 let info = await _funcs.getAssetInfoByUuid(uuid)
                 if(info==null){
                     //是网络资源，如 http://xxx/prop/11.png 这种
-                    if(_funcs.isValidURL(uuid)){
+                    if(resObj.isPackImg){
+                        info = {
+                            url:resObj.imgSrc??resObj.uuid,
+                            type:resObj.classname,
+                            uuid:uuid,
+                            path:resObj.imgSrc??resObj.uuid,
+                            isDirectory:false,
+                        }
+                        if(resObj.classname=="cc.Texture2D"){
+                            info.path+="/texture"
+                        }else if(resObj.classname=="cc.SpriteFrame"){
+                            info.path+="/spriteFrame"
+                        }
+                    }else if(_funcs.isValidURL(uuid)){
                         info = {
                             url:uuid,
                             type:resObj.classname,
@@ -158,6 +174,9 @@ class _DataContext{
                         }
                         if(resObj?.height>0){
                             obj.height = resObj.height
+                        }
+                        if(resObj?.imgSrc!=null){
+                            obj.imgSrc = resObj.imgSrc
                         }
                         this.m_asset_map[uuid] = obj
                     }

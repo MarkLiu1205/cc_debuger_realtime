@@ -552,6 +552,7 @@ class _RuntimeData{
     }
 
     private _checkRecordResMemInfo(uuid:string,asset?:Asset){
+        
         if(this.m_waitForPushResArr.indexOf(uuid)<0){
             this.m_waitForPushResArr.push(uuid)
         }
@@ -595,13 +596,29 @@ class _RuntimeData{
                     memory : _getResMemory(asset),
                 }
                 
-                if(asset instanceof ImageAsset || asset instanceof Texture2D){
+                if(asset instanceof ImageAsset){
                     obj.width = asset.width
                     obj.height = asset.height
+                    if(uuid.length==9){
+                        //@ts-ignore
+                        const imgSrc = asset._nativeData.currentSrc
+                        obj.imgSrc = imgSrc
+                        obj.isPackImg = true
+                    }
+                }else if(asset instanceof Texture2D){
+                    obj.width = asset.width
+                    obj.height = asset.height
+                    obj.depUuid = asset.image?.uuid?[asset.image.uuid]:[]
+                    if(uuid.length==15){
+                        //@ts-ignore
+                        obj.imgSrc = asset.image?._nativeData.currentSrc
+                        obj.isPackImg = true
+                    }
                 }else if(asset instanceof SpriteFrame){
                     if(asset.texture){
                         obj.width = asset.originalSize.width
                         obj.height = asset.originalSize.height
+                        obj.depUuid = asset.texture?.uuid?[asset.texture.uuid]:[]
                     }
                 }
                 arr.push(obj)

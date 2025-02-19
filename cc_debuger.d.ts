@@ -43,6 +43,8 @@ interface ResTreeItem{
     width?:number,
     height?:number,
     refCount?:number,
+
+    imgSrc?:string,
 }
 
 // type CompType = "Sprite" | "Label" | "UITransform" | "Button" | "Canvas" | "EditBox" | "Layout" | 
@@ -393,6 +395,12 @@ interface ResMemInfo{
 
     width?:number,
     height?:number,
+
+    isPackImg?:boolean,
+    //主要给自动合图用
+    imgSrc?:string,
+    //直接依赖,主要给spriteFrame和texture2D用
+    depUuid?:Array<string>,
 }
 
 interface OnlineInfo{

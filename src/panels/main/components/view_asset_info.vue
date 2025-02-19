@@ -147,7 +147,7 @@ function handleLabelClick(mode: string) {
             </div>
             <div v-if="bIsImage">
                 <div class="image" :style="{width:_width,height:_height}" >
-                    <ui-image :value="assetInfo.uuid" :style="{width:_width,height:_height}" />
+                    <ui-image :value="assetInfo.imgSrc??assetInfo.uuid" :style="{width:_width,height:_height}" />
                 </div>
                 <div class="row" style="gap: 5px; margin-top: 10px;">
                     <label class="orange">size:</label>
