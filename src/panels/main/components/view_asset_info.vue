@@ -210,10 +210,11 @@ function handleLabelClick(mode: string) {
     transition: color 0.3s;
     user-select: none;
     margin-left: 5px;
+    color: rgb(195, 214, 111);;
 }
 
 .clickable:hover {
-    color: rgb(195, 214, 111); /* 设置 hover 颜色 */
+    color: rgb(255, 255, 255); /* 设置 hover 颜色 */
 }
 
 </style>

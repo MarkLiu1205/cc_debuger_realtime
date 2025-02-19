@@ -23,11 +23,22 @@ const emit = defineEmits([
     'onSel_asset',
 ])
 
-const treeProp_res:TreeOptionProps = {
-  value: 'path',
-  label: 'name',
-  children: 'children',
-}
+const treeProp_res = computed(()=>{
+    if(_isTreeMode.value){
+        return {
+            value: 'path',
+            label: 'name',
+            children: 'children',
+        }
+    }else{
+        return {
+            value: 'path',
+            label: 'path',
+            children: 'children',
+        }
+    }
+    
+})
 
 const resTree_datas = ref<ResTreeItem[]>([])
 
@@ -38,6 +49,7 @@ _pluginSocket.listenAssetAdded((arr:Array<ResMemInfo>)=>{
     // console.log("获取到新增资源",JSON.stringify(arr))
     _dataCtx.mark_using_uuids(arr,() => {
         resTree_datas.value = [..._dataCtx.getResTree_datas()]
+        updateRealAssetsData()
     })
 })
 
@@ -168,7 +180,7 @@ function getItemDesc(data:ResTreeItem){
         return "";
     }
     if(data.refCount == null){
-        return ''
+        return '(！)'
     }
     let str = `(${data.refCount})`;
     if (data.assetType == 'cc.ImageAsset') {
@@ -176,6 +188,77 @@ function getItemDesc(data:ResTreeItem){
     }
     return str;
 }
+
+function getItemStyle(data:ResTreeItem){
+    if(!data.isDirectory && data.refCount == null){
+        return 'margin-left: 5px;color: #ff0000;'
+    }
+    return 'margin-left: 5px;color: aquamarine;'
+}
+
+const filterMethod = (query, data:ResTreeItem,node) => {
+    if (!query) return true;
+    
+    if (!data || !data.path) return false;
+    let bMatch = data.path.toLowerCase().includes(query.toLowerCase());
+    if(!bMatch){
+        if(data.uuid?.indexOf(query)>=0){
+            bMatch = true
+        }
+    }
+    return bMatch;
+};
+
+const onQueryChanged = (event) => {
+    if (ref_resTree.value) {
+        // console.log("开始筛选，输入值:", event.target.value);
+        ref_resTree.value.filter(event.target.value);
+    }
+};
+
+const _isTreeMode = ref(true)
+function changeToListMode(){
+    _isTreeMode.value = false
+    updateRealAssetsData()
+}
+function changeToTreeMode(){
+    _isTreeMode.value = true
+    updateRealAssetsData()
+}
+
+function flattenTree(arr: ResTreeItem[]) {
+    const result = [];
+
+    function traverse(node: ResTreeItem) {
+        if (!node.isDirectory) {
+            const obj = {...node}
+            obj.children = null
+            result.push(obj);
+        }
+        if (node.children) {
+            node.children.forEach(child => traverse(child));
+        }
+    }
+
+    for(let item of arr){
+        traverse(item)
+    }
+    return result;
+}
+
+const _listDatas = computed(()=>{
+    return flattenTree(resTree_datas.value)
+})
+
+const _realAssetsData = ref(null)
+function updateRealAssetsData(){
+    if(_isTreeMode.value){
+        _realAssetsData.value = resTree_datas.value
+    }else{
+        _realAssetsData.value = _listDatas.value
+    }
+}
+
 
 </script>
 
@@ -185,27 +268,41 @@ function getItemDesc(data:ResTreeItem){
             <ui-loading></ui-loading>
             <span style="margin-left: 10px;">正在加载资源列表</span>
         </div>
-        <el-tree-v2 v-else  ref="ref_resTree"
-            :data="resTree_datas"
-            :props="{...treeProp_res,class: customClass_Asset}"
-            :height="height_resTree"
-            @node-click="onClick_asset"
-            :highlight-current="true"
-            :expand-on-click-node="false"
-            @node-contextmenu="onRightClick_asset"
-        >
-            <template #default="{ node }">
-                <ui-icon color="red" :value="node.data.icon"></ui-icon>
+        <div v-else>
+            <div class="searchBar">
+                <ui-input style="flex: 1;" @change="onQueryChanged" placeholder="筛选" type="text"/>
+                <div class="searchBar-button-container">
+                    <ui-button type="icon" @confirm="changeToListMode" v-if="_isTreeMode">
+                        <ui-icon value="list"></ui-icon>
+                    </ui-button>
+                    <ui-button type="icon" @confirm="changeToTreeMode" v-else>
+                        <ui-icon value="render-stage"></ui-icon>
+                    </ui-button>
+                </div>
+            </div>
+            <el-tree-v2  ref="ref_resTree"
+                :data="_realAssetsData"
+                :props="{...treeProp_res,class: customClass_Asset}"
+                :height="height_resTree"
+                @node-click="onClick_asset"
+                :highlight-current="true"
+                :expand-on-click-node="false"
+                @node-contextmenu="onRightClick_asset"
+                :filter-method="filterMethod"
+            >
+                <template #default="{ node }">
+                    <ui-icon color="red" :value="node.data.icon"></ui-icon>
 
-                <ui-label 
-                    :class="{ 'shake-animation': shakingNodeKey === node.data.path }"
-                >
-                    {{ node.label }}
-                </ui-label>
+                    <ui-label 
+                        :class="{ 'shake-animation': shakingNodeKey === node.data.path }"
+                    >
+                        {{ _isTreeMode?node.label:node.data.url }}
+                    </ui-label>
 
-                <span style="margin-left: 5px;color: aquamarine;" > {{ getItemDesc(node.data) }}</span>
-            </template>
-        </el-tree-v2>
+                    <span :style="getItemStyle(node.data)" > {{ getItemDesc(node.data) }}</span>
+                </template>
+            </el-tree-v2>
+        </div>
     </div>
     
     <ContextMenu ref="contextMenuRef" />
@@ -219,6 +316,19 @@ function getItemDesc(data:ResTreeItem){
     justify-content: center;
     align-items: center;
     height: 100%;
+}
+
+.searchBar{
+    display: flex;
+    flex-direction: row;
+    margin: 5px;
+}
+
+.searchBar-button-container {
+    display: flex;
+    justify-content: center; /* 横向居中对齐 */
+    align-items: center;
+    width: 30px;
 }
 
 :deep(.el-tree-node__content) {
