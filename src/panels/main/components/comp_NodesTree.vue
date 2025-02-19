@@ -27,10 +27,13 @@ const treeProp_node:TreeOptionProps = {
 }
 
 const nodeTree_datas = ref<Array<NodeTreeItem>>([]);
+const allParendKeys = []//所有有子节点的节点的key列表，用于一键展开
 
 function _updateNodeTreeKeys(node:NodeTreeItem){
+    allParendKeys.length = 0
     function traverse(node: NodeTreeItem) {
         node["key"] = node.path+""+node.uuid
+        allParendKeys.push(node["key"])
         if (node.children) {
             node.children.forEach(child => traverse(child));
         }
@@ -323,6 +326,43 @@ function shakeTreeItem(nodeKey: string) {
 function onDrop(data: TreeNodeData, node: TreeNode, e: DragEvent){
     console.log(data)
 }
+
+const filterMethod = (query:string, data:ResTreeItem,node) => {
+    if (!query) return true;
+    
+    if (!data || !data.path) return false;
+    let bMatch = data.path.toLowerCase().includes(query.toLowerCase());
+    if(!bMatch){
+        if(data.uuid?.indexOf(query)>=0){
+            bMatch = true
+        }
+    }
+    return bMatch;
+};
+
+const onQueryChanged = (event) => {
+    if (ref_nodeTree.value) {
+        // console.log("开始筛选，输入值:", event.target.value);
+        ref_nodeTree.value.filter(event.target.value);
+    }
+};
+
+const isCollapsed = ref(true)
+function doExpandAll() {
+    isCollapsed.value = false;
+    if (ref_nodeTree.value) {
+
+        ref_nodeTree.value.setExpandedKeys(allParendKeys);
+    }
+}
+
+function doCollapseAll() {
+    isCollapsed.value = true;
+    if (ref_nodeTree.value) {
+        ref_nodeTree.value.setExpandedKeys([]);
+    }
+}
+
 </script>
 
 <template>
@@ -331,25 +371,40 @@ function onDrop(data: TreeNodeData, node: TreeNode, e: DragEvent){
             <ui-loading></ui-loading>
             <span style="margin-left: 10px;">正在加载节点树</span>
         </div>
-        <el-tree-v2 v-else ref="ref_nodeTree"
-            :data="nodeTree_datas"
-            :props="{...treeProp_node,class: customClass_Node}"
-            :height="props.height_nodeTree"
-            @node-click="onClick_node"
-            :highlight-current="true"
-            :expand-on-click-node="false"
-            @node-contextmenu="onRightClick_node"
-            @node-drop="onDrop"
-        >
-            <template #default="{ node }">
-                <ui-label 
-                    class="nodeItem" 
-                    :class="{ 'shake-animation': shakingNodeKey === node.data.key, noActive: !node.data.activeInHierarchy }"
-                >
-                    {{ node.label }}
-                </ui-label>
-            </template>
-        </el-tree-v2>
+        <div v-else>
+
+        </div>
+            <div class="searchBar">
+                <ui-input style="flex: 1;" @change="onQueryChanged" placeholder="筛选路径或uuid" type="text"/>
+                <div class="searchBar-button-container">
+                    <ui-button type="icon" tooltip="展开全部" @confirm="doExpandAll" v-if="isCollapsed">
+                        <ui-icon value="expand"></ui-icon>
+                    </ui-button>
+                    <ui-button type="icon" tooltip="折叠全部" @confirm="doCollapseAll" v-else>
+                        <ui-icon value="collapse"></ui-icon>
+                    </ui-button>
+                </div>
+            </div>
+            <el-tree-v2 ref="ref_nodeTree"
+                :data="nodeTree_datas"
+                :props="{...treeProp_node,class: customClass_Node}"
+                :height="props.height_nodeTree"
+                @node-click="onClick_node"
+                :highlight-current="true"
+                :expand-on-click-node="false"
+                @node-contextmenu="onRightClick_node"
+                :filter-method="filterMethod"
+                @node-drop="onDrop"
+            >
+                <template #default="{ node }">
+                    <ui-label 
+                        class="nodeItem" 
+                        :class="{ 'shake-animation': shakingNodeKey === node.data.key, noActive: !node.data.activeInHierarchy }"
+                    >
+                        {{ node.label }}
+                    </ui-label>
+                </template>
+            </el-tree-v2>
     </div>
     
     <ContextMenu ref="contextMenuRef" />
@@ -362,6 +417,19 @@ function onDrop(data: TreeNodeData, node: TreeNode, e: DragEvent){
     justify-content: center;
     align-items: center;
     height: 100%;
+}
+
+.searchBar{
+    display: flex;
+    flex-direction: row;
+    margin: 5px;
+}
+
+.searchBar-button-container {
+    display: flex;
+    justify-content: center; /* 横向居中对齐 */
+    align-items: center;
+    width: 30px;
 }
 
 :deep(.el-tree-node__content) {

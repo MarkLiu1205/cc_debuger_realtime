@@ -180,7 +180,7 @@ function getItemDesc(data:ResTreeItem){
         return "";
     }
     if(data.refCount == null){
-        return '(！)'
+        return '⚠️'
     }
     let str = `(${data.refCount})`;
     if (data.assetType == 'cc.ImageAsset') {
@@ -196,7 +196,7 @@ function getItemStyle(data:ResTreeItem){
     return 'margin-left: 5px;color: aquamarine;'
 }
 
-const filterMethod = (query, data:ResTreeItem,node) => {
+const filterMethod = (query:string, data:ResTreeItem,node) => {
     if (!query) return true;
     
     if (!data || !data.path) return false;
@@ -270,12 +270,12 @@ function updateRealAssetsData(){
         </div>
         <div v-else>
             <div class="searchBar">
-                <ui-input style="flex: 1;" @change="onQueryChanged" placeholder="筛选" type="text"/>
+                <ui-input style="flex: 1;" @change="onQueryChanged" placeholder="筛选路径或uuid" type="text"/>
                 <div class="searchBar-button-container">
-                    <ui-button type="icon" @confirm="changeToListMode" v-if="_isTreeMode">
+                    <ui-button type="icon" tooltip="切换为列表模式" @confirm="changeToListMode" v-if="_isTreeMode">
                         <ui-icon value="list"></ui-icon>
                     </ui-button>
-                    <ui-button type="icon" @confirm="changeToTreeMode" v-else>
+                    <ui-button type="icon" tooltip="切换为树形模式" @confirm="changeToTreeMode" v-else>
                         <ui-icon value="render-stage"></ui-icon>
                     </ui-button>
                 </div>
