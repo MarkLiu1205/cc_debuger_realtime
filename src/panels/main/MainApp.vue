@@ -31,6 +31,7 @@ _pluginSocket.listenRuntimeOnlineInfo((info)=>{
     isRuntimeOffline.value = !info.bIsOnline
     if(!info.bIsOnline){
         _curSelNodeInfo.value = null
+        _curSelResItem.value = null
         _pluginSocket.clear()
         _dataCtx.clear()
     }
@@ -45,6 +46,7 @@ _pluginSocket.listenRuntimeList((nameArr)=>{
 _pluginSocket.listenSceneLaunched((name)=>{
     _funcs.log_1("场景切换",name)
     _curSelNodeInfo.value = null
+    _curSelResItem.value = null
 })
 
 const width_left_panel = ref(window.innerWidth * 0.5); 
@@ -114,9 +116,9 @@ async function onSel_node(info:InspectorInfo_Node){
 }
 
 function onSel_asset(item:ResTreeItem) {
-    if(item&&!item.isDirectory){
-        console.log('选中资源:', item);
-    }
+    // if(item&&!item.isDirectory){
+    //     console.log('选中资源:', item);
+    // }
     _curSelResItem.value = item
     _curSelNodeInfo.value = null
 }

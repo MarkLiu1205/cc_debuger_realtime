@@ -327,7 +327,7 @@ class _RuntimeData{
     /**已经销毁的资源 */
     public m_hasDestroyedResArr:Array<string> = []
     /**距离上次同步以来，有变化的资源 */
-    public m_waitForPushResArr:Array<ResMemInfo> = []
+    public m_waitForPushResArr:Array<string> = []
 
     /**当前节点数 */
     public m_sceneTree: NodeTreeItem = null;
@@ -529,19 +529,8 @@ class _RuntimeData{
     public initAssetForPush(){
         this.m_waitForPushResArr = []
 
-        assetManager.assets.forEach((asset,key)=>{
-            let obj:ResMemInfo = {
-                uuid:key,
-                refCount:asset.refCount,
-                //@ts-ignore
-                classname:asset.__proto__.__classname__,
-                memory:_getResMemory(asset),
-            }
-            if(asset instanceof ImageAsset){
-                obj.width = asset.width
-                obj.height = asset.height
-            }
-            this.m_waitForPushResArr.push(obj)
+        assetManager.assets.forEach((asset,uuid)=>{
+            this.m_waitForPushResArr.push(uuid)
         })
     }
 
@@ -563,35 +552,9 @@ class _RuntimeData{
     }
 
     private _checkRecordResMemInfo(uuid:string,asset?:Asset){
-        asset = asset??assetManager.assets.get(uuid);
-        if(asset==null){
-            return
+        if(this.m_waitForPushResArr.indexOf(uuid)<0){
+            this.m_waitForPushResArr.push(uuid)
         }
-        //@ts-ignore
-        const cls = asset.__proto__
-        let obj = this.m_waitForPushResArr.find((item)=>{
-            return item.uuid==uuid
-        })
-        if(!obj){
-            obj = {
-                uuid:uuid,
-                refCount:asset.refCount,
-                classname:cls.__classname__,
-                memory:_getResMemory(asset),
-            }
-            if(asset instanceof ImageAsset || asset instanceof Texture2D){
-                obj.width = asset.width
-                obj.height = asset.height
-            }else if(asset instanceof SpriteFrame){
-                if(asset.texture){
-                    obj.width = asset.width
-                    obj.height = asset.height
-                }
-            }
-            this.m_waitForPushResArr.push(obj)
-        }
-        obj.refCount = asset.refCount
-
     }
 
     /**
@@ -615,8 +578,37 @@ class _RuntimeData{
             return
         }
         if(this.m_waitForPushResArr?.length>0){
-            if(_runtimeSocket.sendPush_resAdded(this.m_waitForPushResArr)){
-                this.m_waitForPushResArr = []
+            let arr = []
+            let fails = []
+            for(let uuid of this.m_waitForPushResArr){
+                const asset = assetManager.assets.get(uuid)
+                if(asset==null){
+                    fails.push(uuid)
+                    continue
+                }
+                //@ts-ignore
+                const classname = asset.__proto__.__classname__
+                const obj:ResMemInfo = {
+                    uuid,
+                    classname,
+                    refCount:asset.refCount,
+                    memory : _getResMemory(asset),
+                }
+                
+                if(asset instanceof ImageAsset || asset instanceof Texture2D){
+                    obj.width = asset.width
+                    obj.height = asset.height
+                }else if(asset instanceof SpriteFrame){
+                    if(asset.texture){
+                        obj.width = asset.originalSize.width
+                        obj.height = asset.originalSize.height
+                    }
+                }
+                arr.push(obj)
+            }
+            
+            if(_runtimeSocket.sendPush_resAdded(arr)){
+                this.m_waitForPushResArr = fails
             }
         }
     }

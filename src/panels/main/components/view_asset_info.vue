@@ -19,38 +19,23 @@ const originalWidth = computed(()=>{
     if(assetInfo.value?.width){
         return assetInfo.value.width
     }
-    let uuid = assetInfo.value.uuid
-    if(uuid.indexOf("@f9941")>0){
-        uuid = uuid.replace("@f9941","")
-        return _dataCtx.getResNodeInfoWithUuid(uuid)?.width
-    }else if(uuid.indexOf("@6c48a")>0){
-        uuid = uuid.replace("@6c48a","")
-        return _dataCtx.getResNodeInfoWithUuid(uuid)?.width
-    }
+    
 })
 
 const originalHeight = computed(()=>{
     if(assetInfo.value?.height){
         return assetInfo.value.height
     }
-    let uuid = assetInfo.value.uuid
-    if(uuid.indexOf("@f9941")>0){
-        uuid = uuid.replace("@f9941","")
-        return _dataCtx.getResNodeInfoWithUuid(uuid)?.height
-    }else if(uuid.indexOf("@6c48a")>0){
-        uuid = uuid.replace("@6c48a","")
-        return _dataCtx.getResNodeInfoWithUuid(uuid)?.height
-    }
 })
 
 const maxWidth = 350
 const maxHeight = 300
 const _width = computed(()=>{
-    let scale = Math.min(maxWidth/originalWidth.value,maxHeight/originalHeight.value)
+    let scale = Math.min(maxWidth/originalWidth.value,maxHeight/originalHeight.value,1)
     return Math.floor(originalWidth.value*scale)+"px"
 })
 const _height = computed(()=>{
-    let scale = Math.min(maxWidth/originalWidth.value,maxHeight/originalHeight.value)
+    let scale = Math.min(maxWidth/originalWidth.value,maxHeight/originalHeight.value,1)
     return Math.floor(originalHeight.value*scale)+"px"
 })
 
@@ -170,10 +155,10 @@ function handleLabelClick(mode: string) {
                     <label>x</label>
                     <label>{{ originalHeight }}</label>
                 </div>
-                <div class="row">
-                <ui-label class="orange" tooltip="根据纹理图片的宽高计算的，仅是预估值，不完全准确">预估内存:</ui-label>
-                <label class="break-word">{{ (assetInfo.memory/1024/1024).toFixed(2) }}M</label>
-            </div>
+                <div class="row" v-if="assetInfo.assetType=='cc.ImageAsset'">
+                    <ui-label class="orange" tooltip="根据纹理图片的宽高计算的，仅是预估值，不完全准确">预估内存:</ui-label>
+                    <label class="break-word" >{{ (assetInfo.memory/1024/1024).toFixed(2) }}M</label>
+                </div>
             </div>
         </div>
         

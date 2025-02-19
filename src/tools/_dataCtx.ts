@@ -75,6 +75,9 @@ class _DataContext{
                     if(resObj?.refCount>0){
                         hasRecord.refCount = resObj.refCount
                     }
+                    if(resObj?.memory>0){
+                        hasRecord.memory = resObj.memory
+                    }
                     if(resObj?.width>0){
                         hasRecord.width = resObj.width
                     }
@@ -121,8 +124,16 @@ class _DataContext{
                         if(isDatabase){
                             this._assetTreeInfo.push(obj);
                         }else{
-                            
+                            if(_parentInfo.children==null){
+                                // console.error("_parentInfo.children==null",_parentInfo)
+                                // console.log("xxxx obj",obj)
+                                _parentInfo.children = []
+                            }
                             _parentInfo.children.push(obj);
+                            if(_parentInfo.uuid){
+                                obj.parent = _parentInfo.uuid
+                            }
+                            
                             if(obj.isBundleFloder){
                                 bundleName = obj.bundleName
                                 if(!this.m_bundles[obj.bundleName]){
@@ -206,7 +217,7 @@ class _DataContext{
         }
         if(isDirectory  && (info.type=="cc.Texture2D"||info.type=="cc.SpriteFrame")){
             let _data = await _funcs.getAssetInfoByUuid(_url)
-            if(_data?.type=="cc.ImageAsset"){
+            if(_data?.type=="cc.ImageAsset"||_data?.type=="cc.SpriteAtlas"){
                 obj.isDirectory = isDirectory = false
                 info = _data
             }
@@ -219,7 +230,7 @@ class _DataContext{
             obj.uuid = info.uuid;
             obj.icon = _funcs.getIconOfResType(info.type);
             obj.url = info.url
-            if(obj.assetType === "cc.ImageAsset"){
+            if(obj.assetType === "cc.ImageAsset" || obj.assetType === "cc.SpriteAtlas"){
                 obj.children = [];
             }            
         }else {

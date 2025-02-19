@@ -31,7 +31,8 @@ interface ResTreeItem{
     /**除了文件夹以外，ImageAsset也有SpriteFrame作为子节点 */
     children?:Array<ResTreeItem>;
 
-
+    /**对于cc.SpriteFrame、cc.Texture2D，可能存在父节点cc.ImageAsset和cc.SpriteAtlas */
+    parent?:string,
     /**
      * 是否是远程资源或者文件缓存资源（如远程图片url、本地图片路径等）
      */
@@ -384,7 +385,7 @@ interface GameEnvParam{
 interface ResMemInfo{
     uuid:string,
     /**所占用内存 */
-    memory:number,
+    memory?:number,
     /**引用计数 */
     refCount:number,
     /**资源类名，如cc.SpriteFrame */
