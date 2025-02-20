@@ -1,7 +1,9 @@
+import { IBuildPaths, IBuildTaskOption } from '../../@types/packages/builder/@types';
 import packageJSON from '../../package.json'
 import { _funcs } from '../tools/_funcs';
 import { _pluginSocket } from '../tools/plugin_socket';
 import { load_ts_to_runtime, unload_ts_from_runtime } from '../tools/runtime_socket_helper';
+const { pathExists, writeFileSync, readFileSync } = require('fs-extra');
 
 console.log("packageJSON",packageJSON)
 
@@ -41,8 +43,39 @@ export const methods = {
                 }
             }
         },2000)
+    },
+    async onBeforeBuild(){
+        console.error(`----------onBeforeBuild`)
+    },
+    async onAfterBuild(options:IBuildTaskOption,dest:string,paths){
+        const index_js_path = paths?.indexJs
+        // console.log(`----------onAfterBuild,${dest}`)
+        // console.log(`indexjs:${paths?.indexJs}`)
+
+        let str = readFileSync(index_js_path);
+        // // console.warn(`str:${str}`)
+        str = log_intercept_str + "\n" + str;
+        writeFileSync(index_js_path, str);
     }
 };
+
+const log_intercept_str = `window["cc_debuger_intercept_log"] = function(){
+    if(!window["cc_debuger_log_intercepted"]){
+      window["cc_debuger_log_intercepted"] = true;
+      ["log", "warn", "error"].forEach(level => {
+        const originalMethod = console[level];
+  
+        console[level] = (...args) => {
+          if(window["cc_debuger_handleLog"]){
+              window["cc_debuger_handleLog"](level, args);
+          }
+          return originalMethod.apply(console, args);
+        };
+      });
+    }
+  }
+  window["cc_debuger_intercept_log"]()
+  `;
 
 /**
  * @en Hooks triggered after extension loading is complete

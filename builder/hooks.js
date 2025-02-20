@@ -22,6 +22,7 @@ const load = function () {
 exports.load = load;
 const onBeforeBuild = function (options, result) {
     return __awaiter(this, void 0, void 0, function* () {
+        Editor.Message.request("cc_debuger_realtime","onBeforeBuild","111")
     });
 };
 exports.onBeforeBuild = onBeforeBuild;
@@ -37,32 +38,10 @@ const onAfterCompressSettings = function (options, result) {
 exports.onAfterCompressSettings = onAfterCompressSettings;
 const onAfterBuild = function (options, result) {
     return __awaiter(this, void 0, void 0, function* () {
-        // console.warn(`result.dest:${result.dest}`)//D:\myproject\cocos-demos\res_debuger_demo\build\web-desktop
-        const index_js_path = result.dest + "/index.js";
-        let str = Fs.readFileSync(index_js_path);
-        // console.warn(`str:${str}`)
-        str = log_intercept_str + "\n" + str;
-        Fs.writeFileSync(index_js_path, str);
+        Editor.Message.request("cc_debuger_realtime","onAfterBuild",options,result.dest,result.paths)        
     });
 };
 exports.onAfterBuild = onAfterBuild;
-const log_intercept_str = `window["cc_debuger_intercept_log"] = function(){
-  if(!window["cc_debuger_log_intercepted"]){
-    window["cc_debuger_log_intercepted"] = true;
-    ["log", "warn", "error"].forEach(level => {
-      const originalMethod = console[level];
-
-      console[level] = (...args) => {
-        if(window["cc_debuger_handleLog"]){
-            window["cc_debuger_handleLog"](level, args);
-        }
-        return originalMethod.apply(console, args);
-      };
-    });
-  }
-}
-window["cc_debuger_intercept_log"]()
-`;
 const unload = function () {
     return __awaiter(this, void 0, void 0, function* () {
         // console.warn(`[${PACKAGE_NAME}] Unload cocos plugin example in builder.`);
