@@ -59,6 +59,36 @@ class _DataContext{
 
     /**bundle列表 */
     public m_bundles:Record<string,ResTreeItem> = {}
+
+    private _mergeResMemInfo2ResTreeItem( resObj: ResMemInfo, item: ResTreeItem){
+        if(resObj?.refCount>=0){
+            item.refCount = resObj.refCount
+        }
+        if(resObj?.memory>0){
+            item.memory = resObj.memory
+        }
+        if(resObj?.width>0){
+            item.width = resObj.width
+        }
+        if(resObj?.height>0){
+            item.height = resObj.height
+        }
+        if(resObj?.imgSrc!=null){
+            item.imgSrc = resObj.imgSrc
+        }
+        if(resObj?.textureUuid!=null){
+            item.textureUuid = resObj.textureUuid
+        }
+        if(resObj?.imageUuid!=null){
+            item.imageUuid = resObj.imageUuid
+        }
+        if(resObj?.isUrlImg!=null){
+            item.isUrlImg = resObj.isUrlImg
+        }
+        if(resObj?.isNativeImg!=null){
+            item.isNativeImg = resObj.isNativeImg
+        }
+    }
     /**
      * 标记正在被使用的资源
      * @param uuids 是资源列表，如SpriteFrame、Texture2D、AnimationClip等，不包含文件夹
@@ -72,21 +102,8 @@ class _DataContext{
                 let hasRecord = this.getResNodeInfoWithUuid(uuid)
                 
                 if(hasRecord){
-                    if(resObj?.refCount>0){
-                        hasRecord.refCount = resObj.refCount
-                    }
-                    if(resObj?.memory>0){
-                        hasRecord.memory = resObj.memory
-                    }
-                    if(resObj?.width>0){
-                        hasRecord.width = resObj.width
-                    }
-                    if(resObj?.height>0){
-                        hasRecord.height = resObj.height
-                    }
-                    if(resObj?.imgSrc!=null){
-                        hasRecord.imgSrc = resObj.imgSrc
-                    }
+                    
+                    this._mergeResMemInfo2ResTreeItem(resObj,hasRecord)
                     continue
                 }
 
@@ -96,7 +113,7 @@ class _DataContext{
                 }
                 let info = await _funcs.getAssetInfoByUuid(uuid)
                 if(info==null){
-                    if(resObj.isPackImg){//自动图集
+                    if(resObj.isAutoPackImg){//自动图集
                         info = {
                             url:resObj.imgSrc??resObj.uuid,
                             type:resObj.classname,
@@ -117,13 +134,17 @@ class _DataContext{
                         continue
                     }
                 }
+                if(resObj.classname=="cc.SpriteFrame"){
+                    console.log("SpriteFrame,info",resObj)
+                }
                 // console.log("info",info)
                 let _url = info.url
-                if(resObj.classname=="cc.Texture2D"){
-                    _url+="/texture"
-                }else if(resObj.classname=="cc.SpriteFrame"){
-                    _url+="/spriteFrame"
+                if(resObj.isAutoPackImg){
+                    if(resObj.classname=="cc.Texture2D"){
+                        _url+=".texture"
+                    }
                 }
+                
                 let _resPaths = _funcs.getAllSubpathsFromUrl(_url);//根据资源的url解析出来的各级路径
                 let _parentInfo:ResTreeItem = null
                 let bundleName:string = null
@@ -136,7 +157,10 @@ class _DataContext{
                     let obj = this._getTreeItemInfoFromPath(_path);
                     
                     if(!obj){
-                        obj = await this._createNewItemToTreeDataFromPath(_path,isDatabase,info,isFloder);
+                        obj = await this._createNewItemToTreeDataFromPath(_path,isDatabase,info,isFloder,resObj);
+                        if(obj==null){
+                            continue
+                        }
                         if(isDatabase){
                             this._assetTreeInfo.push(obj);
                         }else{
@@ -163,22 +187,7 @@ class _DataContext{
                         }
                     }
                     if(i==_resPaths.length-1){
-                        if(resObj?.memory>0){
-                            obj.memory = resObj.memory
-                        }
-                        if(resObj?.refCount>0){
-                            obj.refCount = resObj.refCount
-                        }
-                        if(resObj?.width>0){
-                            obj.width = resObj.width
-                        }
-                        if(resObj?.height>0){
-                            obj.height = resObj.height
-                        }
-                        if(resObj?.imgSrc!=null){
-                            obj.imgSrc = resObj.imgSrc
-                        }
-                        this.m_asset_map[uuid] = obj
+                        this._mergeResMemInfo2ResTreeItem(resObj,obj)
                     }
                     _parentInfo = obj;
                     if(bundleName){
@@ -226,7 +235,7 @@ class _DataContext{
         this._processAssetTask();
     }
 
-    private async _createNewItemToTreeDataFromPath(_path:string,isDatabase:boolean,info: EditorAssetInfo,isDirectory:boolean){
+    private async _createNewItemToTreeDataFromPath(_path:string,isDatabase:boolean,info: EditorAssetInfo,isDirectory:boolean,resObj: ResMemInfo){
         let _url = "db://"+_path
         let name = path.basename(_path);
         let obj:ResTreeItem = {
@@ -236,9 +245,14 @@ class _DataContext{
         }
         if(isDirectory  && (info.type=="cc.Texture2D"||info.type=="cc.SpriteFrame")){
             let _data = await _funcs.getAssetInfoByUuid(_url)
+            console.log("xxxx",_data,resObj?.isAutoPackImg)
             if(_data?.type=="cc.ImageAsset"||_data?.type=="cc.SpriteAtlas"){
-                obj.isDirectory = isDirectory = false
-                info = _data
+                if(resObj?.isAutoPackImg){//是已经打包到自动图集中的原imageAsset路径，这里就不是ImageAsset了，而是仅作为文件夹使用
+                    obj.isDirectory = isDirectory = true
+                }else{
+                    obj.isDirectory = isDirectory = false
+                    info = _data
+                }
             }
         }
         if(isDatabase){

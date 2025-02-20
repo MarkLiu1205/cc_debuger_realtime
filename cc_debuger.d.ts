@@ -45,6 +45,12 @@ interface ResTreeItem{
     refCount?:number,
 
     imgSrc?:string,
+    textureUuid?:string,
+    imageUuid?:string,
+    //是否是http链接的图片资源
+    isUrlImg?:boolean,
+    //是本地文件夹的资源
+    isNativeImg?:boolean,
 }
 
 // type CompType = "Sprite" | "Label" | "UITransform" | "Button" | "Canvas" | "EditBox" | "Layout" | 
@@ -396,11 +402,19 @@ interface ResMemInfo{
     width?:number,
     height?:number,
 
-    isPackImg?:boolean,
+    //是否是自动图集（暂时是根据uuid的长度判断,imageAsset长度是9，texture2D的长度是15）
+    isAutoPackImg?:boolean,
     //主要给自动合图用
     imgSrc?:string,
-    //直接依赖,主要给spriteFrame和texture2D用
-    depUuid?:Array<string>,
+    //对于texture2D，其依赖的Texture2D的Uuid
+    textureUuid?:string,
+    //对于texture2D，其依赖的ImageAsset的uuid
+    imageUuid?:string,
+    
+    //是否是http链接的图片资源
+    isUrlImg?:boolean,
+    //是本地文件夹的资源
+    isNativeImg?:boolean,
 }
 
 interface OnlineInfo{

@@ -75,10 +75,14 @@ const bundles = computed(()=>{
     return Object.keys(_dataCtx.m_bundles)
 })
 
-function handleLabelClick(mode: string) {
+function onClickBundle(mode: string) {
     console.log(`Label clicked: ${mode}`,_dataCtx.m_bundles[mode]);
     
-    eventBus.emit("click-asset-in-inspector", _dataCtx.m_bundles[mode].uuid);
+    onClickUuid(_dataCtx.m_bundles[mode].uuid)
+}
+
+function onClickUuid(uuid){
+    eventBus.emit("click-asset-in-inspector", uuid);
 }
 
 </script>
@@ -97,7 +101,7 @@ function handleLabelClick(mode: string) {
             <div >
                 <label class="orange">bundle列表:</label>
                 <div v-for="(mode, index) in bundles" :key="mode" :value="mode">
-                    <label class="clickable" @click="handleLabelClick(mode)">@{{ mode }}</label>
+                    <label class="clickable" @click="onClickBundle(mode)">@{{ mode }}</label>
                 </div>
             </div>
         </div>
@@ -131,7 +135,8 @@ function handleLabelClick(mode: string) {
             
             <div class="row">
                 <label class="orange">url:</label>
-                <label class="break-word">{{ assetInfo.url }}</label>
+                <ui-link v-if="assetInfo.imgSrc!=null">{{ assetInfo.imgSrc }}</ui-link>
+                <label class="break-word" v-else>{{ assetInfo.url }}</label>
             </div>
             <div class="row">
                 <label class="orange">uuid:</label>
@@ -144,6 +149,14 @@ function handleLabelClick(mode: string) {
             <div class="row">
                 <label class="orange">引用计数:</label>
                 <label>{{ assetInfo.refCount??"没有调用过addRef，疑似没有做内存管理" }}</label>
+            </div>
+            <div class="row" v-if="assetInfo.textureUuid">
+                <label class="orange">依赖的Texture2D:</label>
+                <label class="clickable" @click="onClickUuid(assetInfo.textureUuid)">{{ assetInfo.textureUuid }}</label>
+            </div>
+            <div class="row" v-if="assetInfo.imageUuid">
+                <label class="orange">依赖的ImageAsset:</label>
+                <label class="clickable" @click="onClickUuid(assetInfo.imageUuid)">{{ assetInfo.imageUuid }}</label>
             </div>
             <div v-if="bIsImage">
                 <div class="image" :style="{width:_width,height:_height}" >
@@ -214,7 +227,7 @@ function handleLabelClick(mode: string) {
 }
 
 .clickable:hover {
-    color: rgb(255, 255, 255); /* 设置 hover 颜色 */
+    color: rgb(247, 232, 29); /* 设置 hover 颜色 */
 }
 
 </style>

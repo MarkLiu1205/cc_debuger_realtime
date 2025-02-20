@@ -64,7 +64,7 @@ export async function waitForSeconds(seconds:number){
  */
 export function getAllSubpathsFromUrl(resUrl:string) {
     // 移除协议部分，只保留路径部分
-    const pathWithoutProtocol = resUrl.replace(/^[^:]+:\/\//, '');
+    const pathWithoutProtocol = resUrl.replace(/^[^:]+:\/+/, '');
 
     // 分割路径为数组
     const pathParts = pathWithoutProtocol.split('/');

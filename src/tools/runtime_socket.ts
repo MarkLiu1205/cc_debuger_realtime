@@ -15,6 +15,7 @@ import { Rect } from 'cc';
 import { Size } from 'cc';
 import { EventHandler } from 'cc';
 import { profiler } from 'cc';
+import { native } from 'cc';
 import { log } from 'cc';
 import { CCClass } from 'cc';
 import { Vec4 } from 'cc';
@@ -41,7 +42,7 @@ import {
 } from 'cc';
 
 // @ts-ignore
-import { DEBUG, DEV, EDITOR, JSB, PREVIEW, SUPPORT_JIT } from 'cc/env';
+import { DEBUG, DEV, EDITOR, JSB, NATIVE, PREVIEW, SUPPORT_JIT } from 'cc/env';
 
 let _data:_RuntimeData = null;
 
@@ -603,23 +604,36 @@ class _RuntimeData{
                     obj.width = asset.width
                     obj.height = asset.height
                     if(uuid.length==9){
-                        obj.isPackImg = true
+                        obj.isAutoPackImg = true
                         obj.imgSrc = _getImactAssetUrl(asset)
+                        if(sys.isBrowser){
+                            obj.isUrlImg = true
+                        }else if(NATIVE){
+                            obj.isNativeImg = true
+                        }
                     }
                 }else if(asset instanceof Texture2D){
                     obj.width = asset.width
                     obj.height = asset.height
-                    obj.depUuid = asset.image?.uuid?[asset.image.uuid]:[]
+                    obj.imageUuid = asset.image?.uuid??asset.image?._uuid
                     if(uuid.length==15){
                         //@ts-ignore
                         obj.imgSrc = _getImactAssetUrl(asset.image)
-                        obj.isPackImg = true
+                        obj.isAutoPackImg = true
+                        if(sys.isBrowser){
+                            obj.isUrlImg = true
+                        }else if(NATIVE){
+                            obj.isNativeImg = true
+                        }
                     }
                 }else if(asset instanceof SpriteFrame){
                     if(asset.texture){
                         obj.width = asset.originalSize.width
                         obj.height = asset.originalSize.height
-                        obj.depUuid = asset.texture?.uuid?[asset.texture.uuid]:[]
+                        obj.textureUuid = asset.texture?.uuid??asset.texture?._uuid
+                        if(obj.textureUuid?.length==15){
+                            obj.isAutoPackImg = true
+                        }
                     }
                 }
                 arr.push(obj)
@@ -1291,16 +1305,16 @@ function interceptLog(){
 }
 
 function _getImactAssetUrl(asset:ImageAsset){
-    const imagePath = asset.nativeUrl
-    if(imagePath){
-        if(sys.isBrowser){
-            const baseUrl = window.location.origin; // http://192.168.1.17:7456
-            const fullPath = window.location.pathname; // /web-desktop/web-desktop/index.html
-            const subPath = fullPath.substring(0, fullPath.lastIndexOf('/') + 1); // /web-desktop/web-desktop/
+    if(sys.isBrowser && asset.nativeUrl){
+        const baseUrl = window.location.origin; // http://192.168.1.17:7456
+        const fullPath = window.location.pathname; // /web-desktop/web-desktop/index.html
+        const subPath = fullPath.substring(0, fullPath.lastIndexOf('/') + 1); // /web-desktop/web-desktop/
 
-            const imgSrc = `${baseUrl}${subPath}${imagePath}`;
-            return imgSrc
-        }
+        const imgSrc = `${baseUrl}${subPath}${asset.nativeUrl}`;
+        return imgSrc
+    }else if(NATIVE && asset.url){
+        const imgPath = native.fileUtils.fullPathForFilename(asset.url)
+        return imgPath
     }
 }
 
