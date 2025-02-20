@@ -9,7 +9,6 @@ declare module 'vue' {
   export interface GlobalComponents {
     ElButton: typeof import('element-plus/es')['ElButton']
     ElDialog: typeof import('element-plus/es')['ElDialog']
-    ElTree: typeof import('element-plus/es')['ElTree']
     ElTreeV2: typeof import('element-plus/es')['ElTreeV2']
   }
 }

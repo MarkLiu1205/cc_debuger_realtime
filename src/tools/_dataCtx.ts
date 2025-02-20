@@ -96,8 +96,7 @@ class _DataContext{
                 }
                 let info = await _funcs.getAssetInfoByUuid(uuid)
                 if(info==null){
-                    //是网络资源，如 http://xxx/prop/11.png 这种
-                    if(resObj.isPackImg){
+                    if(resObj.isPackImg){//自动图集
                         info = {
                             url:resObj.imgSrc??resObj.uuid,
                             type:resObj.classname,
@@ -105,12 +104,7 @@ class _DataContext{
                             path:resObj.imgSrc??resObj.uuid,
                             isDirectory:false,
                         }
-                        if(resObj.classname=="cc.Texture2D"){
-                            info.path+="/texture"
-                        }else if(resObj.classname=="cc.SpriteFrame"){
-                            info.path+="/spriteFrame"
-                        }
-                    }else if(_funcs.isValidURL(uuid)){
+                    }else if(_funcs.isValidURL(uuid)){//是网络资源，如 http://xxx/prop/11.png 这种
                         info = {
                             url:uuid,
                             type:resObj.classname,
@@ -124,7 +118,13 @@ class _DataContext{
                     }
                 }
                 // console.log("info",info)
-                let _resPaths = _funcs.getAllSubpathsFromUrl(info.url);//根据资源的url解析出来的各级路径
+                let _url = info.url
+                if(resObj.classname=="cc.Texture2D"){
+                    _url+="/texture"
+                }else if(resObj.classname=="cc.SpriteFrame"){
+                    _url+="/spriteFrame"
+                }
+                let _resPaths = _funcs.getAllSubpathsFromUrl(_url);//根据资源的url解析出来的各级路径
                 let _parentInfo:ResTreeItem = null
                 let bundleName:string = null
                 // console.log("打印路径",info.url)

@@ -603,10 +603,8 @@ class _RuntimeData{
                     obj.width = asset.width
                     obj.height = asset.height
                     if(uuid.length==9){
-                        //@ts-ignore
-                        const imgSrc = asset._nativeData.currentSrc
-                        obj.imgSrc = imgSrc
                         obj.isPackImg = true
+                        obj.imgSrc = _getImactAssetUrl(asset)
                     }
                 }else if(asset instanceof Texture2D){
                     obj.width = asset.width
@@ -614,7 +612,7 @@ class _RuntimeData{
                     obj.depUuid = asset.image?.uuid?[asset.image.uuid]:[]
                     if(uuid.length==15){
                         //@ts-ignore
-                        obj.imgSrc = asset.image?._nativeData.currentSrc
+                        obj.imgSrc = _getImactAssetUrl(asset.image)
                         obj.isPackImg = true
                     }
                 }else if(asset instanceof SpriteFrame){
@@ -1255,7 +1253,7 @@ function interceptLog(){
                         return JSON.stringify(a)
                     }catch(e){
                         if(a.toString){
-                            return a.tostring()
+                            return a.toString()
                         }else{
                             return "[object]"
                         }
@@ -1290,6 +1288,20 @@ function interceptLog(){
         });
     }
     
+}
+
+function _getImactAssetUrl(asset:ImageAsset){
+    const imagePath = asset.nativeUrl
+    if(imagePath){
+        if(sys.isBrowser){
+            const baseUrl = window.location.origin; // http://192.168.1.17:7456
+            const fullPath = window.location.pathname; // /web-desktop/web-desktop/index.html
+            const subPath = fullPath.substring(0, fullPath.lastIndexOf('/') + 1); // /web-desktop/web-desktop/
+
+            const imgSrc = `${baseUrl}${subPath}${imagePath}`;
+            return imgSrc
+        }
+    }
 }
 
 let _runtimeSocket:RunTimeSocket = null
