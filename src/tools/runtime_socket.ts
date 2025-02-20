@@ -552,7 +552,10 @@ class _RuntimeData{
     }
 
     private _checkRecordResMemInfo(uuid:string,asset?:Asset){
-        
+        // if(uuid.length==9||uuid.length==15){
+        //     //@ts-ignore
+        //     const _name = asset?.__proto__?.__classname__
+        // }
         if(this.m_waitForPushResArr.indexOf(uuid)<0){
             this.m_waitForPushResArr.push(uuid)
         }
@@ -1246,7 +1249,21 @@ function interceptLog(){
     let _handleLog = window["cc_debuger_handleLog"]
     if(!_handleLog){
         window["cc_debuger_handleLog"] = _handleLog = function (level: LogLevel, args: any[]) {
-            const message = args.map(a => (typeof a === "object" ? JSON.stringify(a) : String(a))).join(" ");
+            const message = args.map((a) => {
+                if(typeof a === "object"){
+                    try{
+                        return JSON.stringify(a)
+                    }catch(e){
+                        if(a.toString){
+                            return a.tostring()
+                        }else{
+                            return "[object]"
+                        }
+                    }
+                }else{
+                    return String(a)
+                }
+            }).join(" ");
             let time = new Date();
             let timeStr = `${time.getHours()}:${time.getMinutes()}:${time.getSeconds()}.${time.getMilliseconds()}`;
             const logEntry: LogEntry = {
