@@ -3,7 +3,7 @@ import packageJSON from '../../package.json'
 import { _funcs } from '../tools/_funcs';
 import { _pluginSocket } from '../tools/plugin_socket';
 import { load_ts_to_runtime, unload_ts_from_runtime } from '../tools/runtime_socket_helper';
-const { pathExists, writeFileSync, readFileSync } = require('fs-extra');
+const { pathExistsSync, writeFileSync, readFileSync } = require('fs-extra');
 
 console.log("packageJSON",packageJSON)
 
@@ -48,34 +48,41 @@ export const methods = {
         console.error(`----------onBeforeBuild`)
     },
     async onAfterBuild(options:IBuildTaskOption,dest:string,paths){
-        const index_js_path = paths?.indexJs
-        // console.log(`----------onAfterBuild,${dest}`)
-        // console.log(`indexjs:${paths?.indexJs}`)
+        const app_js_path = paths?.cache?.applicationJS
+        console.log(`----------onAfterBuild,${dest}`)
+        
+        console.log(`options:${JSON.stringify(options,null,2)}`)
+        console.log(`paths:${JSON.stringify(paths,null,2)}`)
 
-        let str = readFileSync(index_js_path);
-        // // console.warn(`str:${str}`)
-        str = log_intercept_str + "\n" + str;
-        writeFileSync(index_js_path, str);
+        const bExist = await pathExistsSync(app_js_path)
+        console.log(`indexjs:${app_js_path},bExist:${bExist}`)
+        if(bExist){
+            let str = readFileSync(app_js_path);
+            // // console.warn(`str:${str}`)
+            str = str + "\n" + log_intercept_str;
+            writeFileSync(app_js_path, str);
+        }
     }
 };
 
-const log_intercept_str = `window["cc_debuger_intercept_log"] = function(){
-    if(!window["cc_debuger_log_intercepted"]){
-      window["cc_debuger_log_intercepted"] = true;
+const log_intercept_str = `
+window["cc_debuger_intercept_log"] = function(){
+  if(!window["cc_debuger_log_intercepted"]){
+    window["cc_debuger_log_intercepted"] = true;
       ["log", "warn", "error"].forEach(level => {
-        const originalMethod = console[level];
-  
-        console[level] = (...args) => {
-          if(window["cc_debuger_handleLog"]){
-              window["cc_debuger_handleLog"](level, args);
-          }
-          return originalMethod.apply(console, args);
-        };
-      });
-    }
+      const originalMethod = console[level];
+
+      console[level] = (...args) => {
+        if(window["cc_debuger_handleLog"]){
+            window["cc_debuger_handleLog"](level, args);
+        }
+        return originalMethod.apply(console, args);
+      };
+    });
   }
-  window["cc_debuger_intercept_log"]()
-  `;
+}
+window["cc_debuger_intercept_log"]()
+`;
 
 /**
  * @en Hooks triggered after extension loading is complete
