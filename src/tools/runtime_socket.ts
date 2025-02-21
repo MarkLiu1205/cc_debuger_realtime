@@ -557,6 +557,9 @@ class _RuntimeData{
         //     //@ts-ignore
         //     const _name = asset?.__proto__?.__classname__
         // }
+        if(uuid==null){
+            return
+        }
         if(this.m_waitForPushResArr.indexOf(uuid)<0){
             this.m_waitForPushResArr.push(uuid)
         }
@@ -646,13 +649,13 @@ class _RuntimeData{
     }
 
     onRes_addRef(asset:Asset){
-        this._checkRecordResMemInfo(asset.uuid,asset)
+        this._checkRecordResMemInfo(asset.uuid??asset._uuid,asset)
 
         // this.checkPushAssetInfo()
     }
 
     onRes_decRef(asset:Asset){
-        this._checkRecordResMemInfo(asset.uuid,asset)
+        this._checkRecordResMemInfo(asset.uuid??asset._uuid,asset)
 
         // this.checkPushAssetInfo()
     }
@@ -1322,7 +1325,7 @@ let _runtimeSocket:RunTimeSocket = null
 function _initOnce() {
     _data = new _RuntimeData();
     _runtimeSocket = new RunTimeSocket();
-    _runtimeSocket.initSocket(`ws://localhost:${plugin_server_port}`);
+    _runtimeSocket.initSocket(plugin_server_address);
 
     _data.initAssetForPush()
     
@@ -1392,4 +1395,4 @@ if (!EDITOR) {
     director.once(Director.EVENT_BEFORE_SCENE_LAUNCH,_initOnce)
 }
 
-var plugin_server_port = 8085
+var plugin_server_address = `ws://localhost:8085`

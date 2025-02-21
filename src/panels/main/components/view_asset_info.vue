@@ -6,13 +6,29 @@ import { _dataCtx } from '../../../tools/_dataCtx';
 import { eventBus } from '../../../tools/_enentBus';
 
 const assetInfo = defineModel<ResTreeItem>() 
+const isNotInCache = ref(false)
 
 onMounted(()=>{
-    
+    console.log("assetInfo",assetInfo.value.assetType,assetInfo.value.refCount)
+    if(assetInfo.value==null){
+        return
+    }
+    if(!assetInfo.value.isDirectory&&assetInfo.value.refCount==null){
+        isNotInCache.value = true
+    }else{
+        isNotInCache.value = false
+    }
 })
 
 watch(assetInfo,(newVal,oldVal)=>{
-    console.log("assetInfo变化",assetInfo.value)
+    if(assetInfo.value==null){
+        return
+    }
+    if(!assetInfo.value.isDirectory&&assetInfo.value.refCount==null){
+        isNotInCache.value = true
+    }else{
+        isNotInCache.value = false
+    }
 })
 
 const originalWidth = computed(()=>{
@@ -146,9 +162,13 @@ function onClickUuid(uuid){
                 <label class="orange">asset类型:</label>
                 <label class="break-word">{{ assetInfo.assetType }}</label>
             </div>
-            <div class="row">
+            <div class="row" v-if="!isNotInCache">
                 <label class="orange">引用计数:</label>
                 <label>{{ assetInfo.refCount??"没有调用过addRef，疑似没有做内存管理" }}</label>
+            </div>
+            <div class="row" v-if="isNotInCache">
+                <label class="yellow">⚠️此资源不在assetManager.assets缓存中</label>
+
             </div>
             <div class="row" v-if="assetInfo.textureUuid">
                 <label class="orange">依赖的Texture2D:</label>
@@ -162,13 +182,13 @@ function onClickUuid(uuid){
                 <div class="image" :style="{width:_width,height:_height}" >
                     <ui-image :value="assetInfo.imgSrc??assetInfo.uuid" :style="{width:_width,height:_height}" />
                 </div>
-                <div class="row" style="gap: 5px; margin-top: 10px;">
+                <div class="row" style="gap: 5px; margin-top: 10px;" v-if="!isNotInCache">
                     <label class="orange">size:</label>
                     <label>{{ originalWidth }}</label>
                     <label>x</label>
                     <label>{{ originalHeight }}</label>
                 </div>
-                <div class="row" v-if="assetInfo.assetType=='cc.ImageAsset'">
+                <div class="row" v-if="assetInfo.assetType=='cc.ImageAsset' && !isNotInCache">
                     <ui-label class="orange" tooltip="根据纹理图片的宽高计算的，仅是预估值，不完全准确">预估内存:</ui-label>
                     <label class="break-word" >{{ (assetInfo.memory/1024/1024).toFixed(2) }}M</label>
                 </div>
@@ -215,6 +235,11 @@ function onClickUuid(uuid){
 
 .orange{
     color: orange;
+    font-size: 15px;
+}
+
+.yellow{
+    color: rgb(238, 255, 0);
     font-size: 15px;
 }
 

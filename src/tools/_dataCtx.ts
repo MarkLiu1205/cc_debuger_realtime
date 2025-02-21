@@ -134,8 +134,8 @@ class _DataContext{
                         continue
                     }
                 }
-                if(resObj.classname=="cc.SpriteFrame"){
-                    console.log("SpriteFrame,info",resObj)
+                if(resObj.classname=="cc.ImageAsset"){
+                    console.log("ImageAsset,info",resObj)
                 }
                 // console.log("info",info)
                 let _url = info.url
@@ -245,7 +245,6 @@ class _DataContext{
         }
         if(isDirectory  && (info.type=="cc.Texture2D"||info.type=="cc.SpriteFrame")){
             let _data = await _funcs.getAssetInfoByUuid(_url)
-            console.log("xxxx",_data,resObj?.isAutoPackImg)
             if(_data?.type=="cc.ImageAsset"||_data?.type=="cc.SpriteAtlas"){
                 if(resObj?.isAutoPackImg){//是已经打包到自动图集中的原imageAsset路径，这里就不是ImageAsset了，而是仅作为文件夹使用
                     obj.isDirectory = isDirectory = true
