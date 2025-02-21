@@ -159,6 +159,19 @@ async function testXX(){
     // _funcs.saveUnit8ArrayPng(unit8arr,obj.width,obj.height,savePath)
 }
 
+async function openDynamicPanel(){
+    const panelId = _funcs.getPluginName()+".dynamicTexture_panel"
+    
+    if(await Editor.Panel.has(panelId)){
+        Editor.Panel.focus(panelId);
+    }else{
+        const _callback = _pluginSocket.evalJsInRuntime.bind(_pluginSocket)
+        console.log("panelId 2",panelId,_callback)
+        await Editor.Panel.open(panelId,"aaaaaa",111);
+        console.log("打开了吗2")
+    }
+}
+
 function testLogPanel(){
     Editor.Panel.open(_funcs.getPluginName()+".log_panel")
 }
@@ -192,7 +205,7 @@ function testLogPanel(){
                     <div v-else style="display: flex;flex-direction: column; gap: 10px;margin: 10px;">
                         <div class="button-grid" >
                             <el-button  @click="openEvalPanel">执行JS</el-button>
-                            <el-button  @click="testXX">测试</el-button>
+                            <el-button  @click="openDynamicPanel">动态图集</el-button>
                             <el-button  @click="testLogPanel">日志</el-button>
                         </div>
                         <comp_deviceInfo/>

@@ -29,6 +29,8 @@ export default Editor.Panel.define({
                 let _func = inst[funcName] as Function
                 if(_func){
                     return _func.apply(inst,args)
+                }else{
+                    console.error(`${instStr}不存在方法${funcName}`)
                 }
             }
         }

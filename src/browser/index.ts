@@ -22,6 +22,7 @@ export const methods = {
         const otherPanels = {
             [packageJSON.name+".eval_panel"] : false,
             [packageJSON.name+".log_panel"] : false,
+            [packageJSON.name+".dynamicTexture_panel"] : false,
         }
         for(let k in otherPanels){
             otherPanels[k] = await Editor.Panel.has(k)

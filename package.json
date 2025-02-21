@@ -120,8 +120,8 @@
             "main": "./dist/dynamicTexture_panel.cjs",
             "size": {
                 "min-width": 800,
-                "min-height": 600,
-                "width": 1000,
+                "min-height": 800,
+                "width": 800,
                 "height": 800
             }
         }

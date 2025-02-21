@@ -360,7 +360,7 @@ class PluginSocket {
         return this._gameEnvObj
     }
 
-    async requestShowFPS(bool:boolean|string=""){
+    async requestShowFPS(bool:boolean|string=""):Promise<boolean>{
         await this.waitForRuntimeIsInline()
         if(bool===true){
             bool = "true"
@@ -372,15 +372,21 @@ class PluginSocket {
         return this._sendRequest("requestShowFPS",bool)
     }
 
+    async requestDynamicAtlasEnable(bool:boolean|string=""):Promise<boolean>{
+        await this.waitForRuntimeIsInline()
+        if(bool===true){
+            bool = "true"
+        }else if(bool===false){
+            bool = "false"
+        }else{
+            bool = ""
+        }
+        return this._sendRequest("requestDynamicAtlasEnable",bool)
+    } 
+
     async getDynamicAtlasCount(){
         await this.waitForRuntimeIsInline()
-        let str = await this.evalJsInRuntime("return cc.DynamicAtlasManager.instance.atlasCount") as string
-        let num = parseInt(str)
-        if(isNaN(num)){
-            return num 
-        }else{
-            return 0
-        }
+        return this._sendRequest("getDynamicAtlasCount")
     }
 
     async getDynamicTextureData(index:number=0):Promise<{width:number,height:number,base64Data:string}>{

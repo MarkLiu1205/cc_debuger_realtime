@@ -182,6 +182,9 @@ class RunTimeSocket {
                     profiler.hideStats()
                 }
                 data = profiler.isShowingStats()
+            } else if (msg.action === 'getDynamicAtlasCount') {
+                const index = msg.data
+                data = DynamicAtlasManager.instance.atlasCount
             } else if (msg.action === 'getDynamicTextureData') {
                 const index = msg.data
                 data = getDynamicTextureData(index)
@@ -517,7 +520,6 @@ class _RuntimeData{
             CC_PREVIEW: PREVIEW,
             CC_JSB: JSB,
             CC_SUPPORT_JIT: SUPPORT_JIT,
-            DynamicTextureEnabled : DynamicAtlasManager.instance.enabled
         }
         return obj
     }

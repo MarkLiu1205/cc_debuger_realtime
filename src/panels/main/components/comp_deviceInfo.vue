@@ -7,6 +7,8 @@ const curInfo = ref<OnlineInfo>(null)
 const nameArr = ref<Array<string>>([])
 const gameEnvObj = ref<GameEnvParam>(null)
 
+const dynamicTextureEnabled = ref(false)
+
 onMounted(()=>{
     _pluginSocket.listenRuntimeOnlineInfo((info:OnlineInfo)=>{
         // console.log("在线刷新----",info.bIsOnline)
@@ -26,6 +28,10 @@ onMounted(()=>{
 
     _pluginSocket.getGameEnv().then((obj)=>{
         gameEnvObj.value = obj
+    })
+
+    _pluginSocket.requestDynamicAtlasEnable("").then((enabled:boolean)=>{
+        dynamicTextureEnabled.value = enabled
     })
 })
 
@@ -69,6 +75,10 @@ function onSelect(event){
                 <label class="blue">{{ gameEnvObj.isMobile }}</label>
                 <label>isBrowser:</label>
                 <label class="blue">{{ gameEnvObj.isBrowser }}</label>
+            </div>
+            <div class="row">
+                <label>dynamicTextureEnabled:</label>
+                <label class="blue">{{ dynamicTextureEnabled }}</label>
             </div>
         </div>
     </div>

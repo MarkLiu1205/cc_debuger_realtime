@@ -1,7 +1,7 @@
 const path =  require('path');
 const net =  require('net');
 const { exec,spawn } = require('child_process');
-const { pathExists, pathExistsSync, readFileSync,writeFileSync } = require('fs-extra');
+const fs = require('fs-extra');
 const os = require('os');
 const {PNG} = require('pngjs');
 
@@ -397,8 +397,30 @@ export function saveUnit8ArrayPng(uint8Array:Uint8Array,width:number,height:numb
 
     // 保存为 PNG 文件
     const buffer = PNG.sync.write(png);
-    writeFileSync(savePath, buffer);
+    fs.writeFileSync(savePath, buffer);
     console.log('文件保存成功: ',savePath);
+}
+
+export function ensureFloderExist(dirPath:string){
+    return new Promise((resolve,reject)=>{
+        fs.access(dirPath, fs.constants.F_OK, (err) => {
+            if (err) {
+                // 文件夹不存在，创建文件夹
+                fs.mkdir(dirPath, { recursive: true }, (err) => {
+                    if (err) {
+                        resolve(null)
+                        return console.error(`创建文件夹时出错: ${err.message}`);
+                    }
+                    console.log('文件夹已创建!');
+                    resolve(dirPath)
+                });
+            } else {
+                // 文件夹存在
+                console.log('文件夹已存在!');
+                resolve(dirPath)
+            }
+        });
+    })
 }
 
 }
