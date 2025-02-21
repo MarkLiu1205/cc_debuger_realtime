@@ -259,7 +259,7 @@ class PluginSocket {
     }
 
     /**发送一个需要返回的socket请求，异步返回结果 */
-    private async _sendRequest<T>(action:string, data:any = null, type:string = 'request') {
+    private async _sendRequest<T>(action:string, data:any = null, type:string = 'request',timeout=5000) {
         if (!this.m_socket || this.m_socket.readyState !== WebSocket.OPEN) {
             return Promise.reject(new Error('WebSocket is not connected'));
         }
@@ -278,7 +278,7 @@ class PluginSocket {
                     this.m_pendingRequests.delete(requestId);
                     reject(new Error(`Request timed out:  ${JSON.stringify(payload)}`));
                 }
-            }, 5000); // 5 秒超时
+            }, timeout); // 5 秒超时
             
         });
     }
@@ -370,6 +370,31 @@ class PluginSocket {
             bool = ""
         }
         return this._sendRequest("requestShowFPS",bool)
+    }
+
+    async getDynamicAtlasCount(){
+        await this.waitForRuntimeIsInline()
+        let str = await this.evalJsInRuntime("return cc.DynamicAtlasManager.instance.atlasCount") as string
+        let num = parseInt(str)
+        if(isNaN(num)){
+            return num 
+        }else{
+            return 0
+        }
+    }
+
+    async getDynamicTextureData(index:number=0):Promise<{width:number,height:number,base64Data:string}>{
+        await this.waitForRuntimeIsInline()
+        const time_1 = Date.now()
+        let ret = await this._sendRequest("getDynamicTextureData",index,"request",60*1000) as any
+        const time_2 = Date.now()
+        if(ret==null){
+            console.error("getDynamicTextureData 错误")
+        }else{
+            console.log("getDynamicTextureData 耗时",time_2-time_1)
+        }
+        
+        return ret
     }
 
     clear(){

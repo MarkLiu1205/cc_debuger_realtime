@@ -149,7 +149,14 @@ async function testXX(){
         console.log("打开了吗2")
     }
 
-    Editor.Message.request(_funcs.getPluginName(), 'testMsg',"return 'aa12'",123, false);
+    // Editor.Message.request(_funcs.getPluginName(), 'testMsg',"return 'aa12'",123, false);
+
+    // const index = 0
+    // let obj = await _pluginSocket.getDynamicTextureData(index)
+    // const unit8arr = _funcs.base64ToUint8Array(obj.base64Data)
+    
+    // const savePath = _funcs.getCurPluginPath()+`/dynamic_texture_${index}.png`
+    // _funcs.saveUnit8ArrayPng(unit8arr,obj.width,obj.height,savePath)
 }
 
 function testLogPanel(){

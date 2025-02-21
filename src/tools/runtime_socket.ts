@@ -15,6 +15,9 @@ import { Rect } from 'cc';
 import { Size } from 'cc';
 import { EventHandler } from 'cc';
 import { profiler } from 'cc';
+import { gfx } from 'cc';
+import { macro } from 'cc';
+import { DynamicAtlasManager } from 'cc';
 import { native } from 'cc';
 import { log } from 'cc';
 import { CCClass } from 'cc';
@@ -179,6 +182,9 @@ class RunTimeSocket {
                     profiler.hideStats()
                 }
                 data = profiler.isShowingStats()
+            } else if (msg.action === 'getDynamicTextureData') {
+                const index = msg.data
+                data = getDynamicTextureData(index)
             }
     
             responseData.data = data
@@ -511,6 +517,7 @@ class _RuntimeData{
             CC_PREVIEW: PREVIEW,
             CC_JSB: JSB,
             CC_SUPPORT_JIT: SUPPORT_JIT,
+            DynamicTextureEnabled : DynamicAtlasManager.instance.enabled
         }
         return obj
     }
@@ -1135,6 +1142,64 @@ function _getResMemory(asset:Asset){
         return _memoryCaculator.getImageAssetMemorySize(asset)
     }
     return 0
+}
+
+function getDynamicTextureData(index:number){
+    if(!DynamicAtlasManager.instance.enabled){
+        return null
+    }
+    //@ts-ignore
+    const _atlases = DynamicAtlasManager.instance._atlases
+    if(_atlases.length==0){
+        return null;
+    }
+    const _tex = _atlases[0]._texture;
+    if(_tex==null){
+        return null
+    }
+    
+    const arr = readPixels(_tex,false)
+    const base64String = uint8ArrayToBase64(arr)
+    return {width:_tex.width,height:_tex.height,base64Data:base64String}
+}
+
+function readPixels(texture: Texture2D, flipY = true): Uint8Array {
+    const { width, height } = texture;
+    const gfxTexture = texture.getGFXTexture();
+    const gfxDevice = texture['_getGFXDevice']();
+    const bufferViews = [];
+    const region = new gfx.BufferTextureCopy;
+    const buffer = new Uint8Array(width * height * 4);
+    region.texExtent.width = width;
+    region.texExtent.height = height;
+    bufferViews.push(buffer);
+    gfxDevice?.copyTextureToBuffers(gfxTexture, bufferViews, [region]);
+    if (flipY) {
+        let i = 0, len1 = height / 2, len2 = width * 4, j: number, idx0: number, idx1: number;
+        while (i < len1) {
+            j = 0;
+            while (j < len2) {
+                idx0 = i * len2 + j;
+                idx1 = (height - i - 1) * len2 + j++;
+                [buffer[idx0], buffer[idx1]] = [buffer[idx1], buffer[idx0]];
+            }
+            i++;
+        }
+    }
+    
+    return buffer;
+}
+
+function uint8ArrayToBase64(uint8Array: Uint8Array): string {
+    const chunkSize = 0x8000; // 每次处理 32768 个字节
+    let result = '';
+
+    for (let i = 0; i < uint8Array.length; i += chunkSize) {
+        const chunk = uint8Array.subarray(i, i + chunkSize);
+        result += String.fromCharCode.apply(null, chunk as unknown as number[]);
+    }
+
+    return btoa(result);
 }
 
 namespace _memoryCaculator{

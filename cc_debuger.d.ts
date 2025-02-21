@@ -385,6 +385,7 @@ interface GameEnvParam{
     CC_PREVIEW: boolean,
     CC_JSB: boolean,
     CC_SUPPORT_JIT: boolean,
+    DynamicTextureEnabled: boolean,
 }
 
 /**
