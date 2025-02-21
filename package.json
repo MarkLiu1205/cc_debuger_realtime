@@ -14,6 +14,7 @@
         "element-plus": "^2.8.6",
         "fs-extra": "^11.2.0",
         "mitt": "^3.0.1",
+        "pngjs": "^7.0.0",
         "vue": "^3.4.37",
         "ws": "^8.18.0"
     },
@@ -71,7 +72,8 @@
             },
             "onRuntimeOnlineState": {
                 "methods": [
-                    "log_panel.onRuntimeOnlineState"
+                    "log_panel.onRuntimeOnlineState",
+                    "dynamicTexture_panel.onRuntimeOnlineState"
                 ]
             },
             "onBeforeBuild": {
@@ -112,6 +114,15 @@
                 "min-height": 300,
                 "width": 800,
                 "height": 600
+            }
+        },
+        "dynamicTexture_panel": {
+            "main": "./dist/dynamicTexture_panel.cjs",
+            "size": {
+                "min-width": 800,
+                "min-height": 600,
+                "width": 1000,
+                "height": 800
             }
         }
     }

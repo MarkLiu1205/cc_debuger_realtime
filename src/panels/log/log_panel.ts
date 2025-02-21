@@ -25,20 +25,20 @@ export default Editor.Panel.define({
 
                 }
             }
-            console.log("收到日志",obj)
+            // console.log("收到日志",obj)
             if(this.$.logAppInstance?.addLog){
                 this.$.logAppInstance.addLog(obj.message,obj.level,obj.timestamp)
             }
         },
         onRuntimeOnlineState(bIsOnline:boolean){
-            console.log("在线信息",bIsOnline)
+            // console.log("在线信息",bIsOnline)
             if(this.$.logAppInstance?.checkOnlineInfo!=null){
                 this.$.logAppInstance.checkOnlineInfo(bIsOnline)
             }
         }
     },
     ready() {
-        console.log("eval——panel ready")
+        // console.log("eval——panel ready")
         if (!this.$.root) return;
 
         const app = createApp(LogApp);

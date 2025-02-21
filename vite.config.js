@@ -24,6 +24,7 @@ export default defineConfig(({ mode }) => {
                     main_panel: './src/panels/main/main_panel.ts',
                     eval_panel: './src/panels/eval/eval_panel.ts',
                     log_panel: './src/panels/log/log_panel.ts',
+                    dynamicTexture_panel: './src/panels/log/dynamicTexture_panel.ts',
                 },
                 formats: ['cjs'],
                 fileName: (format, entryName) => `${entryName}.cjs`,
