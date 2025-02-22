@@ -26,13 +26,13 @@ const emit = defineEmits([
 const treeProp_res = computed(()=>{
     if(_isTreeMode.value){
         return {
-            value: 'path',
+            value: 'key',
             label: 'name',
             children: 'children',
         }
     }else{
         return {
-            value: 'path',
+            value: 'key',
             label: 'path',
             children: 'children',
         }
@@ -42,6 +42,18 @@ const treeProp_res = computed(()=>{
 
 const resTree_datas = ref<ResTreeItem[]>([])
 
+function _updateNodeTreeKeys(arr:Array<ResTreeItem>){
+    function traverse(node: ResTreeItem) {
+        node["key"] = node.path+""+node.uuid
+        if (node.children) {
+            node.children.forEach(child => traverse(child));
+        }
+    }
+    for(let node of arr){
+        traverse(node)
+    }
+}
+
 _pluginSocket.listenAssetAdded((arr:Array<ResMemInfo>)=>{
     if(arr==null){
         return
@@ -49,6 +61,7 @@ _pluginSocket.listenAssetAdded((arr:Array<ResMemInfo>)=>{
     // console.log("获取到新增资源",JSON.stringify(arr))
     _dataCtx.mark_using_uuids(arr,() => {
         resTree_datas.value = [..._dataCtx.getResTree_datas()]
+        _updateNodeTreeKeys(resTree_datas.value)
         updateRealAssetsData()
     })
 })
@@ -82,7 +95,7 @@ onUnmounted(() => {
 
 function on_click_in_inspector_asset(uuid: string){
     const info = _dataCtx.getResNodeInfoWithUuid(uuid)
-    const key = info.path
+    const key = info ? info["key"] : null;
 
     if (!key) return;
     shakeTreeItem(key); // 触发抖动动画
@@ -307,6 +320,7 @@ const searchBarHeight = 26;
                 </div>
             </div>
             <el-tree-v2  ref="ref_resTree"
+                :key="_isTreeMode ? 'tree' : 'list'"
                 :data="_realAssetsData"
                 :props="{...treeProp_res,class: customClass_Asset}"
                 :height="height_resTree - searchBarHeight - 5"
@@ -320,7 +334,7 @@ const searchBarHeight = 26;
                     <ui-icon color="red" :value="node.data.icon"></ui-icon>
 
                     <ui-label 
-                        :class="{ 'shake-animation': shakingNodeKey === node.data.path }"
+                        :class="{ 'shake-animation': shakingNodeKey === node.data.key }"
                     >
                         {{ _isTreeMode?node.label:node.data.url }}
                     </ui-label>
