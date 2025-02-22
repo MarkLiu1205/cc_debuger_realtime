@@ -16,7 +16,7 @@ onMounted(()=>{
         if(nameArr.value==null){
             nameArr.value = [info.name]
         }
-        _pluginSocket.getGameEnv().then((obj)=>{
+        _pluginSocket.getGameEnv(true).then((obj)=>{
             // console.log("游戏env",obj)
             gameEnvObj.value = obj
         })

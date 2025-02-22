@@ -169,7 +169,7 @@ async function openLogPanel(){
 async function openLocalCachePanel(){
     const gameEnvObj = await _pluginSocket.getGameEnv()
     if(!gameEnvObj.isNative){
-        ElMessage.error("非原生环境不支持此功能")
+        Editor.Dialog.info("非原生环境不支持此功能",{buttons:["确定"]})
         return
     }
     const panelId = _funcs.getPluginName()+".localCache_panel"
@@ -213,7 +213,7 @@ async function openLocalCachePanel(){
                             <el-button  @click="openDynamicPanel">动态图集</el-button>
                             <el-button  @click="openLogPanel">日志</el-button>
                             <el-button  @click="openLocalCachePanel">可写目录</el-button>
-                            <el-button  @click="test_1">测试</el-button>
+                            <!-- <el-button  @click="test_1">测试</el-button> -->
                         </div>
                         <comp_deviceInfo/>
                         <comp_profiler/>

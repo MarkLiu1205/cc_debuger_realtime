@@ -12,36 +12,38 @@ const imageWidth = ref(0);
 const imageHeight = ref(0);
 const isLoading = ref(true);
 
-async function checkOnlineInfo() {
-    let bIsOnline = await Editor.Message.request(_funcs.getPluginName(), "doWaitForRuntimeIsInline");
+async function checkOnlineInfo(bool?:boolean) {
+    
+    let bIsOnline = bool ?? await Editor.Message.request(_funcs.getPluginName(), "callMainPanelFunc", "_pluginSocket", "waitForRuntimeIsInline");
+    console.log("checkOnlineInfo","自动图集",bIsOnline)
     if(bIsOnline){
-        await getDynamicAtlasEnable()
-    }else {
-        ElMessage.error("未检测到可用运行时");
+        await refresh()
     }
     isRuntimeOffline.value = !bIsOnline;
 }
+defineExpose({
+    checkOnlineInfo,
+});
 
 async function getDynamicAtlasEnable() {
     let bool = await Editor.Message.request(_funcs.getPluginName(),"callMainPanelFunc","_pluginSocket","requestDynamicAtlasEnable","")
-    console.log("结果",bool)
+    // console.log("结果",bool)
     dynamicTextureEnabled.value = bool
     return bool
 }
 
 async function getDynamicAtlasCount() {
-    if (isRuntimeOffline.value) return;
     isLoading.value = true;
     atlasCount.value = await Editor.Message.request(_funcs.getPluginName(), "callMainPanelFunc", "_pluginSocket", "getDynamicAtlasCount");
     isLoading.value = false;
 }
 
 async function getDynamicTextureAndSavePng(index: number) {
-    if (isRuntimeOffline.value || atlasCount.value === 0) return;
+    if ( atlasCount.value === 0) return;
     isLoading.value = true;
     const obj = await Editor.Message.request(_funcs.getPluginName(), "callMainPanelFunc", "_pluginSocket", "getDynamicTextureData", index);
     if (!obj) {
-        ElMessage.error("获取图片失败");
+        Editor.Dialog.error("获取图片内容失败",{buttons:["确定"]})
         isLoading.value = false;
         return;
     }
@@ -85,7 +87,6 @@ async function nextImage() {
 
 onMounted(async () => {
     await checkOnlineInfo();
-    await refresh();
 });
 </script>
 

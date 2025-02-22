@@ -15,16 +15,17 @@ const bIsSyncing = ref(false);
 
 const syncFloderPath = `${_funcs.getCurPluginPath()}/cache/writablePathSync`;
 
-async function checkOnlineInfo() {
-    let bIsOnline = await Editor.Message.request(_funcs.getPluginName(), "doWaitForRuntimeIsInline");
+async function checkOnlineInfo(bool?:boolean) {
+    let bIsOnline = bool ?? await Editor.Message.request(_funcs.getPluginName(), "callMainPanelFunc", "_pluginSocket", "waitForRuntimeIsInline");
     if(bIsOnline){
         let obj = await Editor.Message.request(_funcs.getPluginName(),"callMainPanelFunc","_pluginSocket","getGameEnv")
         gameEnvObj.value = obj
-    }else {
-        ElMessage.error("未检测到可用运行时");
     }
     isRuntimeOffline.value = !bIsOnline;
 }
+defineExpose({
+    checkOnlineInfo,
+});
 onMounted(async () => {
     await checkOnlineInfo();
     

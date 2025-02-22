@@ -14,13 +14,12 @@ export default Editor.Panel.define({
     template: '<div id="app" class="dark"></div>', // 只留一个 div 用于 vue 的挂载
     $: {
         root: '#app',
-        logAppInstance: null as any, // 用于存储 LogApp 实例
+        appInst: null as any,
     },
     methods: {
         onRuntimeOnlineState(bIsOnline:boolean){
-            // console.log("在线信息",bIsOnline)
-            if(this.$.logAppInstance?.checkOnlineInfo!=null){
-                this.$.logAppInstance.checkOnlineInfo(bIsOnline)
+            if(this.$.appInst?.checkOnlineInfo!=null){
+                this.$.appInst.checkOnlineInfo(bIsOnline)
             }
         }
     },
@@ -37,8 +36,8 @@ export default Editor.Panel.define({
             options.appendTo = options.appendTo || this.$.root;
             return ElMessage(options);
         });
-        const logAppInstance = app.mount(this.$.root);
-        this.$.logAppInstance = logAppInstance;
+        const appInst = app.mount(this.$.root);
+        this.$.appInst = appInst;
 
         weakMap.set(this, app);
 

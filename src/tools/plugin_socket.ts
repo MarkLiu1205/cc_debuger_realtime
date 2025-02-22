@@ -351,8 +351,8 @@ class PluginSocket {
     }
     
     private _gameEnvObj:GameEnvParam = null
-    async getGameEnv(){
-        if(this._gameEnvObj){
+    async getGameEnv(bForce=false){
+        if(this._gameEnvObj && !bForce){
             return this._gameEnvObj
         }
         await this.waitForRuntimeIsInline()

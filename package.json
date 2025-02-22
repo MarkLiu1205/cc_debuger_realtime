@@ -55,11 +55,6 @@
                     "default.doEvalJs"
                 ]
             },
-            "doWaitForRuntimeIsInline": {
-                "methods": [
-                    "default.doWaitForRuntimeIsInline"
-                ]
-            },
             "sendRuntimeLog": {
                 "methods": [
                     "log_panel.sendRuntimeLog"
@@ -73,6 +68,8 @@
             "onRuntimeOnlineState": {
                 "methods": [
                     "log_panel.onRuntimeOnlineState",
+                    "eval_panel.onRuntimeOnlineState",
+                    "localCache_panel.onRuntimeOnlineState",
                     "dynamicTexture_panel.onRuntimeOnlineState"
                 ]
             },

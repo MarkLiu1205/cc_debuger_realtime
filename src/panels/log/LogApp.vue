@@ -25,8 +25,7 @@ const gameEnvObj = ref<GameEnvParam>(null)
 const isRuntimeOffline = ref(true)
 
 async function checkOnlineInfo(bool?:boolean){
-    // console.log("checkOnlineInfo",bool)
-    let bIsOnline = bool ?? await Editor.Message.request(_funcs.getPluginName(),"doWaitForRuntimeIsInline")
+    let bIsOnline = bool ?? await Editor.Message.request(_funcs.getPluginName(), "callMainPanelFunc", "_pluginSocket", "waitForRuntimeIsInline");
     isRuntimeOffline.value = !bIsOnline
 
     if(bIsOnline){
