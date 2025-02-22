@@ -27,7 +27,7 @@ const _curSelNodeInfo = ref<InspectorInfo_Node>()
 const _curSelResItem = ref<ResTreeItem>()
 
 _pluginSocket.listenRuntimeOnlineInfo((info)=>{
-    _funcs.log_1("runtime在线吗?",info)
+    // _funcs.log_1("runtime在线吗?",info)
     isRuntimeOffline.value = !info.bIsOnline
     if(!info.bIsOnline){
         _curSelNodeInfo.value = null
@@ -130,8 +130,15 @@ function doOpenRuntimePreview() {
 const scriptExecutorRef = ref(null);
 
 async function openEvalPanel(event: MouseEvent){
-    if(scriptExecutorRef.value!=null){
-        scriptExecutorRef.value.openDialog(`return 'Hello World!'`); // 打开并预填代码
+    // if(scriptExecutorRef.value!=null){
+    //     scriptExecutorRef.value.openDialog(`return 'Hello World!'`); // 打开并预填代码
+    // }
+    const panelId = _funcs.getPluginName()+".eval_panel"
+    
+    if(await Editor.Panel.has(panelId)){
+        Editor.Panel.focus(panelId);
+    }else{
+        await Editor.Panel.open(panelId);
     }
 }
 
@@ -165,10 +172,7 @@ async function openDynamicPanel(){
     if(await Editor.Panel.has(panelId)){
         Editor.Panel.focus(panelId);
     }else{
-        const _callback = _pluginSocket.evalJsInRuntime.bind(_pluginSocket)
-        console.log("panelId 2",panelId,_callback)
-        await Editor.Panel.open(panelId,"aaaaaa",111);
-        console.log("打开了吗2")
+        await Editor.Panel.open(panelId);
     }
 }
 

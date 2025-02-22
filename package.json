@@ -101,9 +101,9 @@
         "eval_panel": {
             "main": "./dist/eval_panel.cjs",
             "size": {
-                "min-width": 400,
-                "min-height": 300,
-                "width": 800,
+                "min-width": 800,
+                "min-height": 600,
+                "width": 1200,
                 "height": 600
             }
         },

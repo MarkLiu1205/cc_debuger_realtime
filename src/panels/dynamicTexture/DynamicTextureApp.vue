@@ -47,7 +47,7 @@ async function getDynamicTextureAndSavePng(index: number) {
     }
 
     const unit8arr = _funcs.base64ToUint8Array(obj.base64Data);
-    const floderPath = `${_funcs.getCurPluginPath()}/dynamic_texture`;
+    const floderPath = `${_funcs.getCurPluginPath()}/cache/dynamic_texture`;
     await _funcs.ensureFloderExist(floderPath);
     const savePath = `${floderPath}/${index}_${Date.now()}.png`;
     _funcs.saveUnit8ArrayPng(unit8arr, obj.width, obj.height, savePath);

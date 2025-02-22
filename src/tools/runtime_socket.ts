@@ -146,14 +146,7 @@ class RunTimeSocket {
         if(msg.type === 'request'){//表示是从插件发来的请求，需要进行回复
             let data:any = null;
             if(msg.action=="eval_js"){
-                const content = js.formatStr("(async function(){%s})()",msg.data)
-                eval(content).then((ret)=>{
-                    const type = typeof ret;
-                    if(type=="object"){
-                        ret = JSON.stringify(ret)
-                    }else{
-                        ret = ret + ""
-                    }
+                evalJsStr(msg.data).then((ret)=>{
                     responseData.data = ret
                     this._send(responseData);
                 })
@@ -182,6 +175,15 @@ class RunTimeSocket {
                     profiler.hideStats()
                 }
                 data = profiler.isShowingStats()
+            } else if (msg.action === 'requestDynamicAtlasEnable') {
+                let bool = msg.data
+                if(bool=="true"){
+                    macro.CLEANUP_IMAGE_CACHE = false;
+                    DynamicAtlasManager.instance.enabled = true
+                }else if(bool=="false"){
+                    DynamicAtlasManager.instance.enabled = false
+                }
+                data = DynamicAtlasManager.instance.enabled
             } else if (msg.action === 'getDynamicAtlasCount') {
                 const index = msg.data
                 data = DynamicAtlasManager.instance.atlasCount
@@ -1202,6 +1204,25 @@ function uint8ArrayToBase64(uint8Array: Uint8Array): string {
     }
 
     return btoa(result);
+}
+
+async function evalJsStr(jsStr:string){
+    try{
+        const content = js.formatStr("(async function(){%s})()",jsStr)
+        let ret = await eval(content)
+        const type = typeof ret;
+        if(type=="object"){
+            ret = JSON.stringify(ret)
+        }else{
+            ret = ret + ""
+        }
+        return ret
+    }catch(e){
+        if(e&&e.message){
+            return e.message
+        }
+        return "error occur"
+    }
 }
 
 namespace _memoryCaculator{

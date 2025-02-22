@@ -134,9 +134,7 @@ class _DataContext{
                         continue
                     }
                 }
-                if(resObj.classname=="cc.ImageAsset"){
-                    console.log("ImageAsset,info",resObj)
-                }
+                
                 // console.log("info",info)
                 let _url = info.url
                 if(resObj.isAutoPackImg){

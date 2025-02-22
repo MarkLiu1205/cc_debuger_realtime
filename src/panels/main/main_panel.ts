@@ -23,7 +23,6 @@ export default Editor.Panel.define({
             return await _pluginSocket.waitForRuntimeIsInline()
         },
         async callMainPanelFunc(instStr:string,funcName:string,...args){
-            console.log("main.callMainPanelFunc",instStr,funcName)
             if(instStr=="_pluginSocket"){
                 let inst = _pluginSocket;
                 let _func = inst[funcName] as Function
