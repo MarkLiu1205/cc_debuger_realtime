@@ -106,7 +106,7 @@ function onPageSizeChange(size) {
                 <el-pagination class="pagination" :current-page="pageIndex" :page-count="pageSize" :pager-count="5" @current-change="onPageIndexChange" @size-change="onPageSizeChange"/>
             </div>
             <div class="btn-bar">
-                <el-button type="primary" @click="do_eval">执行</el-button>
+                <el-button type="primary" @click="do_eval"><ui-icon value="play"></ui-icon>执行</el-button>
                 <div style="">
                     <el-button type="success" @click="saveHistory(pageIndex)" v-if="pageSize > 0">更新本条记录</el-button>
                     <el-button type="success" @click="saveHistory(pageSize+1)">保存为新记录</el-button>

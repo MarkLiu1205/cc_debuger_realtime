@@ -523,6 +523,9 @@ class _RuntimeData{
             CC_JSB: JSB,
             CC_SUPPORT_JIT: SUPPORT_JIT,
         }
+        if(NATIVE){
+            obj.writablePath = native.fileUtils.getWritablePath()
+        }
         return obj
     }
 

@@ -124,6 +124,15 @@
                 "width": 800,
                 "height": 800
             }
+        },
+        "localCache_panel": {
+            "main": "./dist/localCache_panel.cjs",
+            "size": {
+                "min-width": 400,
+                "min-height": 500,
+                "width": 400,
+                "height": 800
+            }
         }
     }
 }

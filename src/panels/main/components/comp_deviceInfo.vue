@@ -80,6 +80,10 @@ function onSelect(event){
                 <label>dynamicTextureEnabled:</label>
                 <label class="blue">{{ dynamicTextureEnabled }}</label>
             </div>
+            <div class="row" v-if="gameEnvObj.CC_JSB">
+                <label>writablePath:</label>
+                <label class="blue">{{ gameEnvObj.writablePath }}</label>
+            </div>
         </div>
     </div>
 </template>

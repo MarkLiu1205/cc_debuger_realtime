@@ -136,30 +136,6 @@ async function openEvalPanel(event: MouseEvent){
     }
 }
 
-async function testXX(){
-    
-
-    const panelId = _funcs.getPluginName()+".eval_panel"
-    
-    if(await Editor.Panel.has(panelId)){
-        Editor.Panel.focus(panelId);
-    }else{
-        const _callback = _pluginSocket.evalJsInRuntime.bind(_pluginSocket)
-        console.log("panelId 2",panelId,_callback)
-        await Editor.Panel.open(panelId,"aaaaaa",111);
-        console.log("打开了吗2")
-    }
-
-    // Editor.Message.request(_funcs.getPluginName(), 'testMsg',"return 'aa12'",123, false);
-
-    // const index = 0
-    // let obj = await _pluginSocket.getDynamicTextureData(index)
-    // const unit8arr = _funcs.base64ToUint8Array(obj.base64Data)
-    
-    // const savePath = _funcs.getCurPluginPath()+`/dynamic_texture_${index}.png`
-    // _funcs.saveUnit8ArrayPng(unit8arr,obj.width,obj.height,savePath)
-}
-
 async function openDynamicPanel(){
     const panelId = _funcs.getPluginName()+".dynamicTexture_panel"
     
@@ -170,8 +146,24 @@ async function openDynamicPanel(){
     }
 }
 
-function testLogPanel(){
-    Editor.Panel.open(_funcs.getPluginName()+".log_panel")
+async function openLogPanel(){
+    const panelId = _funcs.getPluginName()+".log_panel"
+    
+    if(await Editor.Panel.has(panelId)){
+        Editor.Panel.focus(panelId);
+    }else{
+        await Editor.Panel.open(panelId);
+    }
+}
+
+async function openLocalCachePanel(){
+    const panelId = _funcs.getPluginName()+".localCache_panel"
+    
+    if(await Editor.Panel.has(panelId)){
+        Editor.Panel.focus(panelId);
+    }else{
+        await Editor.Panel.open(panelId);
+    }
 }
 
 </script>
@@ -204,7 +196,8 @@ function testLogPanel(){
                         <div class="button-grid" >
                             <el-button  @click="openEvalPanel">执行JS</el-button>
                             <el-button  @click="openDynamicPanel">动态图集</el-button>
-                            <el-button  @click="testLogPanel">日志</el-button>
+                            <el-button  @click="openLogPanel">日志</el-button>
+                            <el-button  @click="openLocalCachePanel">本地缓存</el-button>
                         </div>
                         <comp_deviceInfo/>
                         <comp_profiler/>

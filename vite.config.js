@@ -25,6 +25,7 @@ export default defineConfig(({ mode }) => {
                     eval_panel: './src/panels/eval/eval_panel.ts',
                     log_panel: './src/panels/log/log_panel.ts',
                     dynamicTexture_panel: './src/panels/dynamicTexture/dynamicTexture_panel.ts',
+                    localCache_panel: './src/panels/localCache/localCache_panel.ts',
                 },
                 formats: ['cjs'],
                 fileName: (format, entryName) => `${entryName}.cjs`,
