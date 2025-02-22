@@ -8,7 +8,6 @@ import { ElButton, ElDialog, ElMessage } from 'element-plus';
 import { _funcs } from '../../tools/_funcs';
 import { _dataCtx } from '../../tools/_dataCtx';
 import { _pluginSocket } from '../../tools/plugin_socket';
-import ScriptExecutor from './ScriptExecutor.vue'
 import comp_left_tree_panel from './components/comp_left_tree_panel.vue';
 import { eventBus } from '../../tools/_enentBus';
 import comp_profiler from './components/comp_profiler.vue';
@@ -127,12 +126,7 @@ function doOpenRuntimePreview() {
     _funcs.openWebSiteUrl(runtimePreviewUrl.value)
 }
 
-const scriptExecutorRef = ref(null);
-
 async function openEvalPanel(event: MouseEvent){
-    // if(scriptExecutorRef.value!=null){
-    //     scriptExecutorRef.value.openDialog(`return 'Hello World!'`); // 打开并预填代码
-    // }
     const panelId = _funcs.getPluginName()+".eval_panel"
     
     if(await Editor.Panel.has(panelId)){
@@ -218,7 +212,6 @@ function testLogPanel(){
                     </div>
                 </div>
             </div>
-            <ScriptExecutor ref="scriptExecutorRef" />
         </div>
         
     </div>
