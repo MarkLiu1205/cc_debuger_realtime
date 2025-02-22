@@ -403,6 +403,20 @@ class PluginSocket {
         return ret
     }
 
+    async getWitablePathFilesInfo():Promise<Array<WritableFileInfo>>{
+        await this.waitForRuntimeIsInline()
+        return this._sendRequest("getWitablePathFilesInfo")
+    }
+
+    /**
+     * 获取可写目录下的文件的内容
+     * @returns base64格式的数据
+     **/
+    async getWritableFileData(filePath):Promise<string>{
+        await this.waitForRuntimeIsInline()
+        return this._sendRequest("getWritableFileData",filePath)
+    }
+
     clear(){
         this._gameEnvObj = null
         this._nodeLayers = null

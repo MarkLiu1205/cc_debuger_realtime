@@ -82,7 +82,7 @@ function onSelect(event){
             </div>
             <div class="row" v-if="gameEnvObj.CC_JSB">
                 <label>writablePath:</label>
-                <label class="blue">{{ gameEnvObj.writablePath }}</label>
+                <label class="blue scrollable">{{ gameEnvObj.writablePath }}</label>
             </div>
         </div>
     </div>
@@ -109,5 +109,24 @@ function onSelect(event){
 
 .blue{
     color: rgb(39, 215, 192);
+}
+
+.scrollable {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    white-space: nowrap;
+    user-select: text;
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.scrollable::-webkit-scrollbar {
+    display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+.scrollable {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
 }
 </style>

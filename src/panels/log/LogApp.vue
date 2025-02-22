@@ -31,7 +31,6 @@ async function checkOnlineInfo(bool?:boolean){
 
     if(bIsOnline){
         let obj = await Editor.Message.request(_funcs.getPluginName(),"callMainPanelFunc","_pluginSocket","getGameEnv")
-        console.log("结果",obj)
         gameEnvObj.value = obj
     }
 }
@@ -168,6 +167,7 @@ defineExpose({
     background: #2c2c2c;
     color: #fff;
     border-radius: 8px;
+    user-select: text;
 }
 
 .controls {

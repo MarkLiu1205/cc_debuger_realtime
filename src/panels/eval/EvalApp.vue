@@ -7,7 +7,6 @@ const fs = require('fs-extra');
 
 const maxHistoryNum = 20// 仅保留最近 20 条
 
-const ref_js_input = ref(null);
 const str_input = ref('');
 const str_result = ref('');
 
@@ -107,7 +106,7 @@ function onPageSizeChange(size) {
             </div>
             <div class="btn-bar">
                 <el-button type="primary" @click="do_eval"><ui-icon value="play"></ui-icon>执行</el-button>
-                <div style="">
+                <div>
                     <el-button type="success" @click="saveHistory(pageIndex)" v-if="pageSize > 0">更新本条记录</el-button>
                     <el-button type="success" @click="saveHistory(pageSize+1)">保存为新记录</el-button>
                 </div>

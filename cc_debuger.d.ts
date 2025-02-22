@@ -425,4 +425,12 @@ interface OnlineInfo{
         ip: string, 
         port: number, 
         family: string 
-    }}
+    }
+}
+
+interface WritableFileInfo{
+    name:string,
+    path:string,
+    isFloder:boolean,
+    children?:Array<WritableFileInfo>
+}

@@ -126,6 +126,16 @@ function doOpenRuntimePreview() {
     _funcs.openWebSiteUrl(runtimePreviewUrl.value)
 }
 
+async function test_1() {
+    let isLoggedIn = await Editor.User.isLoggedIn()
+    console.log("是否登录",isLoggedIn)
+    let data:Editor.User.UserData = await Editor.User.getData()
+    console.log("用户数据",data)
+
+    const lists = await _pluginSocket.getWitablePathFilesInfo()
+    console.log("可写目录",JSON.stringify(lists,null,2))
+}
+
 async function openEvalPanel(event: MouseEvent){
     const panelId = _funcs.getPluginName()+".eval_panel"
     
@@ -157,6 +167,11 @@ async function openLogPanel(){
 }
 
 async function openLocalCachePanel(){
+    const gameEnvObj = await _pluginSocket.getGameEnv()
+    if(!gameEnvObj.isNative){
+        ElMessage.error("非原生环境不支持此功能")
+        return
+    }
     const panelId = _funcs.getPluginName()+".localCache_panel"
     
     if(await Editor.Panel.has(panelId)){
@@ -197,7 +212,8 @@ async function openLocalCachePanel(){
                             <el-button  @click="openEvalPanel">执行JS</el-button>
                             <el-button  @click="openDynamicPanel">动态图集</el-button>
                             <el-button  @click="openLogPanel">日志</el-button>
-                            <el-button  @click="openLocalCachePanel">本地缓存</el-button>
+                            <el-button  @click="openLocalCachePanel">可写目录</el-button>
+                            <el-button  @click="test_1">测试</el-button>
                         </div>
                         <comp_deviceInfo/>
                         <comp_profiler/>

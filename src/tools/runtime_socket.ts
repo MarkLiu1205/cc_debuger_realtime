@@ -17,6 +17,7 @@ import { EventHandler } from 'cc';
 import { profiler } from 'cc';
 import { gfx } from 'cc';
 import { macro } from 'cc';
+import { path } from 'cc';
 import { DynamicAtlasManager } from 'cc';
 import { native } from 'cc';
 import { log } from 'cc';
@@ -190,6 +191,11 @@ class RunTimeSocket {
             } else if (msg.action === 'getDynamicTextureData') {
                 const index = msg.data
                 data = getDynamicTextureData(index)
+            } else if (msg.action === 'getWitablePathFilesInfo') {
+                data = getWitablePathFilesInfo()
+            } else if (msg.action === 'getWritableFileData') {
+                const filePath = msg.data
+                data = getWritableFileData(filePath)
             }
     
             responseData.data = data
@@ -622,7 +628,7 @@ class _RuntimeData{
                     obj.height = asset.height
                     if(uuid.length==9){
                         obj.isAutoPackImg = true
-                        obj.imgSrc = _getImactAssetUrl(asset)
+                        obj.imgSrc = _getImageAssetUrl(asset)
                         if(sys.isBrowser){
                             obj.isUrlImg = true
                         }else if(NATIVE){
@@ -635,7 +641,7 @@ class _RuntimeData{
                     obj.imageUuid = asset.image?.uuid??asset.image?._uuid
                     if(uuid.length==15){
                         //@ts-ignore
-                        obj.imgSrc = _getImactAssetUrl(asset.image)
+                        obj.imgSrc = _getImageAssetUrl(asset.image)
                         obj.isAutoPackImg = true
                         if(sys.isBrowser){
                             obj.isUrlImg = true
@@ -1398,7 +1404,7 @@ function interceptLog(){
     
 }
 
-function _getImactAssetUrl(asset:ImageAsset){
+function _getImageAssetUrl(asset:ImageAsset){
     if(sys.isBrowser && asset.nativeUrl){
         const baseUrl = window.location.origin; // http://192.168.1.17:7456
         const fullPath = window.location.pathname; // /web-desktop/web-desktop/index.html
@@ -1410,6 +1416,56 @@ function _getImactAssetUrl(asset:ImageAsset){
         const imgPath = native.fileUtils.fullPathForFilename(asset.url)
         return imgPath
     }
+}
+
+/**获取可写目录下的目录结构 */
+function getWitablePathFilesInfo():Array<WritableFileInfo>{
+    if(!NATIVE){
+        return []
+    }
+    
+    const writablePath = native.fileUtils.getWritablePath()
+    function traverse(floder:string){
+        const files = native.fileUtils.listFiles(floder)
+        const newList = []
+        for(let i=files.length-1;i>=0;i--){
+            const f = files[i]
+            const x = native.fileUtils.fullPathForFilename(f)
+            if(x!=f){
+                continue
+            }
+            
+            let isFloder = native.fileUtils.isDirectoryExist(f)
+            let relativePath = f.replace(writablePath,"")
+            relativePath = path.stripSep(relativePath)
+            const name = path.basename(relativePath)
+            const obj:WritableFileInfo = {
+                name,
+                isFloder,
+                path:relativePath,
+            }
+            if(isFloder){
+                obj.children = traverse(f)
+            }
+            newList.push(obj)
+            
+        }
+        return newList
+    }
+    const arr:Array<WritableFileInfo> = traverse(writablePath)
+    // console.log("getWitablePathFilesInfo",arr)
+    return arr
+}
+
+function getWritableFileData(filePath:string){
+    if(!NATIVE){
+        return null
+    }
+    const arr = native.fileUtils.getDataFromFile(filePath);
+    if (!arr || arr.byteLength <= 0) return null;
+    const u8a = new Uint8Array(arr);
+    const base64Str = uint8ArrayToBase64(u8a)
+    return base64Str
 }
 
 let _runtimeSocket:RunTimeSocket = null
