@@ -101,6 +101,22 @@ function onClickUuid(uuid){
     eventBus.emit("click-asset-in-inspector", uuid);
 }
 
+function onClick_checkUsege_node(){
+    eventBus.emit("check-asset-usege-node", assetInfo.value.uuid);
+}
+
+function onClick_checkUsege_asset(){
+    eventBus.emit("check-asset-usege-asset", assetInfo.value.uuid);
+}
+
+function onClick_checkDepend(){
+    eventBus.emit("check-asset-depend", assetInfo.value.uuid);
+}
+
+function onClick_checkDepend_traverse(){
+    eventBus.emit("check-asset-depend-traverse", assetInfo.value.uuid);
+}
+
 </script>
 
 <template>
@@ -170,27 +186,44 @@ function onClickUuid(uuid){
                 <label class="yellow">⚠️此资源不在assetManager.assets缓存中</label>
 
             </div>
-            <div class="row" v-if="assetInfo.textureUuid">
-                <label class="orange">依赖的Texture2D:</label>
-                <label class="clickable" @click="onClickUuid(assetInfo.textureUuid)">{{ assetInfo.textureUuid }}</label>
-            </div>
-            <div class="row" v-if="assetInfo.imageUuid">
-                <label class="orange">依赖的ImageAsset:</label>
-                <label class="clickable" @click="onClickUuid(assetInfo.imageUuid)">{{ assetInfo.imageUuid }}</label>
-            </div>
-            <div v-if="bIsImage">
-                <div class="image" :style="{width:_width,height:_height}" >
-                    <ui-image :value="assetInfo.imgSrc??assetInfo.uuid" :style="{width:_width,height:_height}" />
+            <div style="margin-top: 10px;">
+                <div class="row" v-if="assetInfo.textureUuid">
+                    <label class="orange">依赖的Texture2D:</label>
+                    <label class="clickable" @click="onClickUuid(assetInfo.textureUuid)">{{ assetInfo.textureUuid }}</label>
                 </div>
-                <div class="row" style="gap: 5px; margin-top: 10px;" v-if="!isNotInCache">
+                <div class="row" v-if="assetInfo.imageUuid">
+                    <label class="orange">依赖的ImageAsset:</label>
+                    <label class="clickable" @click="onClickUuid(assetInfo.imageUuid)">{{ assetInfo.imageUuid }}</label>
+                </div>
+            </div>
+            <div style="margin-top: 10px;">
+                <label class="orange">依赖与引用：</label>
+                <div class="dependusege">
+                    <div class="row">
+                        <ui-button style="padding-top:5px;padding-bottom:5px" @confirm="onClick_checkUsege_node">查看引用此资源的所有节点</ui-button>
+                        <ui-button style="padding-top:5px;padding-bottom:5px" @confirm="onClick_checkUsege_asset">查看引用此资源的所有资源</ui-button>
+                    </div>
+                    <div class="row">
+                        <ui-button style="padding-top:5px;padding-bottom:5px" @confirm="onClick_checkDepend">查看此资源依赖的资源</ui-button>
+                        <ui-button style="padding-top:5px;padding-bottom:5px" @confirm="onClick_checkDepend_traverse">递归查看此资源依赖的资源</ui-button>
+                    </div>
+                </div>
+                
+            </div>
+            <div style="margin-top: 10px;" v-if="bIsImage">
+                
+                <div class="row" v-if="assetInfo.assetType=='cc.ImageAsset' && !isNotInCache">
+                    <ui-label class="orange" tooltip="根据纹理图片的宽高计算的，仅是预估值，不完全准确">预估内存:</ui-label>
+                    <label class="break-word" >{{ (assetInfo.memory/1024/1024).toFixed(2) }}M</label>
+                </div>
+                <div class="row" style="gap: 5px;" v-if="!isNotInCache">
                     <label class="orange">size:</label>
                     <label>{{ originalWidth }}</label>
                     <label>x</label>
                     <label>{{ originalHeight }}</label>
                 </div>
-                <div class="row" v-if="assetInfo.assetType=='cc.ImageAsset' && !isNotInCache">
-                    <ui-label class="orange" tooltip="根据纹理图片的宽高计算的，仅是预估值，不完全准确">预估内存:</ui-label>
-                    <label class="break-word" >{{ (assetInfo.memory/1024/1024).toFixed(2) }}M</label>
+                <div class="image" :style="{width:_width,height:_height}" >
+                    <ui-image :value="assetInfo.imgSrc??assetInfo.uuid" :style="{width:_width,height:_height}" />
                 </div>
             </div>
         </div>
@@ -253,6 +286,14 @@ function onClickUuid(uuid){
 
 .clickable:hover {
     color: rgb(247, 232, 29); /* 设置 hover 颜色 */
+}
+
+.dependusege{
+    display: flex;
+    flex-direction: column; 
+    border: 1px solid rgb(165, 165, 165);
+    gap: 10px;
+    padding: 10px;
 }
 
 </style>

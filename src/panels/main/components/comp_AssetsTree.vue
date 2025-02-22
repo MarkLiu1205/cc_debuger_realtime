@@ -108,12 +108,34 @@ function on_click_in_inspector_asset(uuid: string){
     }, 100);
 }
 
+function on_check_asset_usege_asset(uuid:string){
+    console.log("检查引用此资源的资源列表:",uuid)
+}
+
+function on_check_asset_depend(uuid:string){
+    console.log("检查此资源依赖的资源列表:",uuid)
+}
+
+function on_check_asset_depend_traverse(uuid:string){
+    console.log("检查此资源依赖的资源列表(递归):",uuid)
+}
+
 onMounted(() => {
     eventBus.on("click-asset-in-inspector", on_click_in_inspector_asset);
+
+    eventBus.on("check-asset-usege-asset", on_check_asset_usege_asset);
+
+    eventBus.on("check-asset-depend", on_check_asset_depend);
+    eventBus.on("check-asset-depend-traverse", on_check_asset_depend_traverse);
 });
 
 onUnmounted(() => {
     eventBus.off("click-asset-in-inspector", on_click_in_inspector_asset);
+
+    eventBus.off("check-asset-usege-asset", on_check_asset_usege_asset);
+
+    eventBus.off("check-asset-depend", on_check_asset_depend);
+    eventBus.off("check-asset-depend-traverse", on_check_asset_depend_traverse);
 });
 
 let selectedAssetId: string | null = null

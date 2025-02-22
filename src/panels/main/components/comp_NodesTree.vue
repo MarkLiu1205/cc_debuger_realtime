@@ -254,14 +254,22 @@ async function on_click_in_inspector_component(uuid: string){
     on_click_in_inspector_node(nodeUuid)
 }
 
+function on_check_asset_usege_node(uuid:string){
+    console.log("检查引用此资源的节点:",uuid)
+}
+
 onMounted(() => {
     eventBus.on("click-node-in-inspector", on_click_in_inspector_node);
     eventBus.on("click-component-in-inspector", on_click_in_inspector_component);
+
+    eventBus.on("check-asset-usege-node", on_check_asset_usege_node);
 });
 
 onUnmounted(() => {
     eventBus.off("click-node-in-inspector", on_click_in_inspector_node);
     eventBus.off("click-component-in-inspector", on_click_in_inspector_component);
+
+    eventBus.off("check-asset-usege-node", on_check_asset_usege_node);
 });
 
 const customClass_Node = (nodeData): string => {
@@ -296,12 +304,12 @@ function onRightClick_node( event: MouseEvent, data: NodeTreeItem, node: TreeNod
 
     const menuOptions_node = [
         { 
-            label: '查看资源依赖', 
+            label: '查看此节点依赖的资源', 
             action: () => {
                 console.log("点击1")
             }
         },{ 
-            label: '删除此节点', 
+            label: '递归查看所有依赖的资源（含子节点）', 
             action: () => {
                 console.log("点击2")
             }
