@@ -35,10 +35,14 @@ function onChange(event){
     curSelectUuid.value = assetUuid
 }
 
+const isReadonly = computed(()=>{
+    return props.assetType=="cc.Script"
+})
+
 </script>
 
 <template>
-    <ui-asset :droppable="props.assetType" @click="handleClick" @change="onChange" :value="curSelectUuid"></ui-asset>
+    <ui-asset :droppable="props.assetType" :readonly="isReadonly" @click="handleClick" @change="onChange" :value="curSelectUuid"></ui-asset>
 </template>
 
 <style scoped>

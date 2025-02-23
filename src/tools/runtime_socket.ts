@@ -902,13 +902,14 @@ class _RuntimeData{
      * @returns 
      */
     getRecursiveDependsOfNode(uuid:string){
-        const ret = []
+        let ret = []
         const _node = this.m_nodeUuidMap[uuid]
         ret.push(...this.getDependsOfNode(_node.uuid))
         const preFunc = (node: cc.Node)=>{
             ret.push(...this.getDependsOfNode(node.uuid))
         }
         _node.walk(preFunc)
+        ret = Array.from(new Set(ret))
         return ret
     }
 
@@ -1187,7 +1188,9 @@ function _getAttrInfosOfComponentProrotype(clsPrototype){
     const data = {}
     for(let k of props){
         if(k.startsWith("_")){
-            continue
+            // if(k!=="__scriptAsset"){
+                continue
+            // }
         }
         let visible = _getAttr(attrs,k,"visible")
         if(visible===false){

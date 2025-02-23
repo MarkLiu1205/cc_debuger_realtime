@@ -75,11 +75,15 @@ function onAssetChange(event){
     pModel.value[props.propretyName] = val
 }
 
+onMounted(()=>{
+    console.log("ssss",pModel)
+})
+
 </script>
 
 <template>
     <div class="property">
-        <label>{{propretyName}}:</label>
+        <label>{{attrs?.displayName?? propretyName}}:</label>
 
         <comp_component_selecter class="comp_component_selecter" v-model="pModel[propretyName]" :compType="attrs.ctor" v-if="attrs.type=='cc.Component'"/>
         <comp_node_selecter class="comp_node_selecter" v-model="pModel[propretyName]" v-else-if="attrs.type=='cc.Node'"/>
