@@ -427,6 +427,36 @@ class PluginSocket {
         return this._sendRequest("getAssetUsageInScene",uuid)
     }
 
+    /**
+     * 获取引用某个资源的资源列表
+     * @param uuid 
+     * @returns 
+     */
+    async getAssetUsageInOtherAsset(uuid:string): Promise<Array<string>>{
+        await this.waitForRuntimeIsInline()
+        return this._sendRequest("getAssetUsageInOtherAsset",uuid)
+    }
+
+    /**
+     * 获取某个资源直接依赖的资源列表
+     * @param uuid 
+     * @returns 
+     */
+    async getDependsOfAsset(uuid:string): Promise<Array<string>>{
+        await this.waitForRuntimeIsInline()
+        return this._sendRequest("getDependsOfAsset",uuid)
+    }
+
+    /**
+     * 获取某个资源递归依赖的资源列表
+     * @param uuid 
+     * @returns 
+     */
+    async getRecursiveDependsOfAsset(uuid:string): Promise<Array<string>>{
+        await this.waitForRuntimeIsInline()
+        return this._sendRequest("getRecursiveDependsOfAsset",uuid)
+    }
+
     clear(){
         this._gameEnvObj = null
         this._nodeLayers = null

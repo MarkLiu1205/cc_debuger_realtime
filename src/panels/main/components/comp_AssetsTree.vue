@@ -8,6 +8,12 @@ import { TreeNodeData,TreeNode, TreeOptionProps,Tree } from 'element-plus/es/com
 import ContextMenu from './ContextMenu.vue';
 import { eventBus } from '../../../tools/_enentBus';
 
+const filterCmd_assetUsege = "assetUsege:"
+const filterCmd_assetRefer = "assetRefer:"
+const filterCmd_recursive_assetRefer = "assetRefer_recursive:"
+
+const showToast = inject<ToastParam>("message")
+
 const props = defineProps({
     
     height_resTree: {
@@ -121,16 +127,60 @@ function on_click_in_inspector_asset(uuid: string){
     }, 100);
 }
 
-function on_check_asset_usege_asset(uuid:string){
-    console.log("检查引用此资源的资源列表:",uuid)
+const str_filter = ref("")
+let filteredArr_usege = []
+let filteredArr_refer = []
+let filteredArr_recursive_refer = []
+
+watch(str_filter,async (newVal,oldVal)=>{
+    if (ref_resTree.value) {
+        let arr = null;
+        if(newVal?.startsWith(filterCmd_assetUsege)){
+            const assetUuid = newVal.replace(filterCmd_assetUsege,"")
+            filteredArr_usege = await _pluginSocket.getAssetUsageInOtherAsset(assetUuid)
+            arr = filteredArr_usege
+        }else if(newVal?.startsWith(filterCmd_assetRefer)){
+            const assetUuid = newVal.replace(filterCmd_assetRefer,"")
+            filteredArr_refer = await _pluginSocket.getDependsOfAsset(assetUuid)
+            arr = filteredArr_refer
+        }else if(newVal?.startsWith(filterCmd_recursive_assetRefer)){
+            const assetUuid = newVal.replace(filterCmd_recursive_assetRefer,"")
+            filteredArr_recursive_refer = await _pluginSocket.getRecursiveDependsOfAsset(assetUuid)
+            arr = filteredArr_recursive_refer
+        }
+
+        if(arr!=null){
+            if(arr.length==0){
+                _funcs.log_1("没有资源引用引用此资源")
+                showToast("没有资源引用引用此资源")
+                str_filter.value = null
+            }else{
+                const nodePaths = arr.map((nodeUuid)=>{
+                    return _dataCtx.getResNodeInfoWithUuid(nodeUuid)?.path
+                })
+                _funcs.log_1("相关资源引用",nodePaths)
+                showToast(`找到了${nodePaths.length}个资源`)
+            }
+        }
+        
+        // console.log("开始筛选，输入值:", newVal);
+        ref_resTree.value.filter(newVal);
+    }
+})
+
+async function on_check_asset_usege_asset(uuid:string){
+    
+    str_filter.value = `${filterCmd_assetUsege}${uuid}`
 }
 
 function on_check_asset_depend(uuid:string){
     console.log("检查此资源依赖的资源列表:",uuid)
+    str_filter.value = `${filterCmd_assetRefer}${uuid}`
 }
 
 function on_check_asset_depend_traverse(uuid:string){
     console.log("检查此资源依赖的资源列表(递归):",uuid)
+    str_filter.value = `${filterCmd_recursive_assetRefer}${uuid}`
 }
 
 onMounted(() => {
@@ -238,21 +288,25 @@ const filterMethod = (query:string, data:ResTreeItem,node) => {
     if (!query) return true;
     
     if (!data || !data.path) return false;
-    let bMatch = data.path.toLowerCase().includes(query.toLowerCase());
-    if(!bMatch){
-        if(data.uuid?.indexOf(query)>=0){
-            bMatch = true
+    let bMatch = false
+    if(query.startsWith(filterCmd_assetUsege)){
+        return filteredArr_usege.indexOf(data.uuid)>=0
+    }else if(query.startsWith(filterCmd_assetRefer)){
+        return filteredArr_refer.indexOf(data.uuid)>=0
+    }else if(query.startsWith(filterCmd_recursive_assetRefer)){
+        return filteredArr_recursive_refer.indexOf(data.uuid)>=0
+    }else{
+        bMatch = data.path.toLowerCase().includes(query.toLowerCase());
+        if(!bMatch){
+            if(data.uuid?.indexOf(query)>=0){
+                bMatch = true
+            }
         }
     }
+
     return bMatch;
 };
 
-const onQueryChanged = (event) => {
-    if (ref_resTree.value) {
-        // console.log("开始筛选，输入值:", event.target.value);
-        ref_resTree.value.filter(event.target.value);
-    }
-};
 
 const _isTreeMode = ref(true)
 function changeToListMode(){
@@ -309,7 +363,7 @@ const searchBarHeight = 26;
         </div>
         <div v-else>
             <div class="searchBar" :style="{height:searchBarHeight+'px'}">
-                <ui-input style="flex: 1;" @change="onQueryChanged" placeholder="筛选路径或uuid" type="text"/>
+                <ui-input style="flex: 1;" v-model="str_filter" placeholder="筛选路径或uuid" type="text"/>
                 <div class="searchBar-button-container">
                     <ui-button type="icon" tooltip="切换为列表模式" @confirm="changeToListMode" v-if="_isTreeMode">
                         <ui-icon value="list"></ui-icon>

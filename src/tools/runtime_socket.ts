@@ -155,6 +155,15 @@ class RunTimeSocket {
             } else if (msg.action === 'getAssetUsageInScene') {
                 const uuid = msg.data;
                 data = _data.getAssetUsageInScene(uuid)
+            } else if (msg.action === 'getAssetUsageInOtherAsset') {
+                const uuid = msg.data;
+                data = _data.getAssetUsageInOtherAsset(uuid)
+            } else if (msg.action === 'getDependsOfAsset') {
+                const uuid = msg.data;
+                data = _data.getDependsOfAsset(uuid)
+            } else if (msg.action === 'getRecursiveDependsOfAsset') {
+                const uuid = msg.data;
+                data = _data.getRecursiveDependsOfAsset(uuid)
             }
     
             responseData.data = data
@@ -750,6 +759,38 @@ class _RuntimeData{
         scene.walk(preFunc);
 
         return ret;
+    }
+
+    /**
+     * 获取指定资源正在被多少个其他资源引用
+     * @param uuid 要检查的资源 (例如 cc.SpriteFrame)
+     * @returns 所有引用该资源的其他资源的uuid
+     */
+    getAssetUsageInOtherAsset(uuid:string){
+        let ret = []
+        cc.assetManager.assets.forEach((asset,key)=>{
+            const deps = cc.assetManager.dependUtil.getDeps(key)
+            if(deps.indexOf(uuid)>=0){
+                ret.push(key)
+            }
+        })
+        return ret
+    }
+
+    /**
+     * 获取某个资源直接依赖的资源列表
+     */
+    getDependsOfAsset(uuid:string){
+        const deps = cc.assetManager.dependUtil.getDeps(uuid)
+        return deps
+    }
+
+    /**
+     * 获取某个资源递归依赖的资源列表
+     */
+    getRecursiveDependsOfAsset(uuid:string){
+        const deps = cc.assetManager.dependUtil.getDepsRecursively(uuid)
+        return deps
     }
 
     private _fillNodeTree(treeObj: NodeTreeItem, children: Array<cc.Node>, parentPath: string = '') {

@@ -259,7 +259,7 @@ async function on_click_in_inspector_component(uuid: string){
 }
 
 async function on_check_asset_usege_node(uuid:string){
-    console.log("检查引用此资源的节点:",uuid)
+    // console.log("检查引用此资源的节点:",uuid)
     str_filter.value = `${filterCmd_assetUsege}${uuid}`
 }
 
@@ -367,20 +367,17 @@ watch(str_filter,async (newVal,oldVal)=>{
         if(newVal?.startsWith(filterCmd_assetUsege)){
             const assetUuid = newVal.replace(filterCmd_assetUsege,"")
 
-            const time_0 = Date.now()
             filteredMapByAssetUuid = await _pluginSocket.getAssetUsageInScene(assetUuid)
-            const time_1 = Date.now()
-            console.log("时间",time_1 - time_0)
 
-            const nodeUuids = Object.keys(filteredMapByAssetUuid)
-            if(nodeUuids.length==0){
+            const arr = Object.keys(filteredMapByAssetUuid)
+            if(arr.length==0){
                 // Editor.Dialog.error("没有节点引用引用此资源",{buttons:["确定"]})
                 _funcs.log_1("没有节点引用引用此资源")
                 showToast("没有节点引用引用此资源1")
                 str_filter.value = null
             }else{
-                const nodePaths = nodeUuids.map((nodeUuid)=>{
-                    return _dataCtx.getTreeNodeInfoWithUuid(nodeUuid).path
+                const nodePaths = arr.map((nodeUuid)=>{
+                    return _dataCtx.getTreeNodeInfoWithUuid(nodeUuid)?.path
                 })
                 _funcs.log_1("相关节点引用",nodePaths)
                 showToast(`找到了${nodePaths.length}个节点`)
