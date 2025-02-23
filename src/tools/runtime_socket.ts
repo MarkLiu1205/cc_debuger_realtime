@@ -1,49 +1,5 @@
+import * as cc from "cc"
 
-import { sys } from 'cc';
-import { Asset } from 'cc';
-import { Color } from 'cc';
-import { Button } from 'cc';
-import { Camera } from 'cc';
-import { Graphics } from 'cc';
-import { Mask } from 'cc';
-import { PageView } from 'cc';
-import { ScrollView } from 'cc';
-import { Widget } from 'cc';
-import { Vec2 } from 'cc';
-import { color } from 'cc';
-import { Rect } from 'cc';
-import { Size } from 'cc';
-import { EventHandler } from 'cc';
-import { profiler } from 'cc';
-import { gfx } from 'cc';
-import { macro } from 'cc';
-import { path } from 'cc';
-import { DynamicAtlasManager } from 'cc';
-import { native } from 'cc';
-import { log } from 'cc';
-import { CCClass } from 'cc';
-import { Vec4 } from 'cc';
-import { Quat } from 'cc';
-import { Vec3 } from 'cc';
-import { Canvas } from 'cc';
-import { UIOpacity } from 'cc';
-import { ParticleSystem2D } from 'cc';
-import { UITransform } from 'cc';
-import { Layout } from 'cc';
-import { EditBox } from 'cc';
-import { js } from 'cc';
-import { RichText } from 'cc';
-import { Scene } from 'cc';
-import { Director } from 'cc';
-import { 
-    assetManager, director, Node, 
-    SpriteFrame, Sprite, AnimationClip, Animation, AudioClip, AudioSource, Material, Renderer, Prefab, 
-    Texture2D, MeshRenderer, Mesh, 
-    Skeleton, ParticleAsset, ParticleSystem, 
-    Font, Label, SpriteAtlas, VideoClip, ImageAsset, TextAsset, JsonAsset, EffectAsset, 
-    Component,
-    sp
-} from 'cc';
 
 // @ts-ignore
 import { DEBUG, DEV, EDITOR, JSB, NATIVE, PREVIEW, SUPPORT_JIT } from 'cc/env';
@@ -171,23 +127,23 @@ class RunTimeSocket {
             } else if (msg.action === 'requestShowFPS') {
                 let bool = msg.data
                 if(bool=="true"){
-                    profiler.showStats()
+                    cc.profiler.showStats()
                 }else if(bool=="false"){
-                    profiler.hideStats()
+                    cc.profiler.hideStats()
                 }
-                data = profiler.isShowingStats()
+                data = cc.profiler.isShowingStats()
             } else if (msg.action === 'requestDynamicAtlasEnable') {
                 let bool = msg.data
                 if(bool=="true"){
-                    macro.CLEANUP_IMAGE_CACHE = false;
-                    DynamicAtlasManager.instance.enabled = true
+                    cc.macro.CLEANUP_IMAGE_CACHE = false;
+                    cc.DynamicAtlasManager.instance.enabled = true
                 }else if(bool=="false"){
-                    DynamicAtlasManager.instance.enabled = false
+                    cc.DynamicAtlasManager.instance.enabled = false
                 }
-                data = DynamicAtlasManager.instance.enabled
+                data = cc.DynamicAtlasManager.instance.enabled
             } else if (msg.action === 'getDynamicAtlasCount') {
                 const index = msg.data
-                data = DynamicAtlasManager.instance.atlasCount
+                data = cc.DynamicAtlasManager.instance.atlasCount
             } else if (msg.action === 'getDynamicTextureData') {
                 const index = msg.data
                 data = getDynamicTextureData(index)
@@ -196,6 +152,9 @@ class RunTimeSocket {
             } else if (msg.action === 'getWritableFileData') {
                 const filePath = msg.data
                 data = getWritableFileData(filePath)
+            } else if (msg.action === 'getAssetUsageInScene') {
+                const uuid = msg.data;
+                data = _data.getAssetUsageInScene(uuid)
             }
     
             responseData.data = data
@@ -296,19 +255,19 @@ class RunTimeSocket {
         return this._sendPush( 'onAssetRefCountChanged', obj);
     }
 
-    /**资源添加进 assetManager.assets */
+    /**资源添加进 cc.assetManager.assets */
     sendPush_resAdded(obj){
         return this._sendPush( 'onAssetAdded', obj);
     }
 
-    /**资源从 assetManager.assets 移出 */
+    /**资源从 cc.assetManager.assets 移出 */
     sendPush_resRemoveed(obj){
         return this._sendPush( 'onAssetRemoved', obj);
     }
 
     /**发送drawcall等信息 */
     sendPush_profile(){
-        let stats = profiler._stats
+        let stats = cc.profiler._stats
         if(stats){
             const keys = [
                 'fps',
@@ -353,21 +312,21 @@ class _RuntimeData{
     /**当前场景 */
     public m_curSceneName:string = ""
     /**记录当前节点的uuid映射 */
-    public m_nodeUuidMap:Record<string,Node> = {}
+    public m_nodeUuidMap:Record<string,cc.Node> = {}
     /**记录当前所有组件实例的uuid映射 */
-    public m_compUuidMap:Record<string,Component> = {}
+    public m_compUuidMap:Record<string,cc.Component> = {}
 
     /**记录已经发送过的组件属性（用于inspectorUI显示），避免重复发送 */
     public m_hasSendCompAttrsMap:Record<string,boolean> = {}
 
     constructor(){
-        director.on(Director.EVENT_AFTER_SCENE_LAUNCH,this._onSceneChange,this)
+        cc.director.on(cc.Director.EVENT_AFTER_SCENE_LAUNCH,this._onSceneChange,this)
     }
 
     doModifyNodeInfo(obj:ChangedNodeInfo){
         const _node = this.m_nodeUuidMap[obj.uuid]
         if(_node==null){
-            return js.formatStr("[ERROR] node is error,uuid:%s",obj.uuid)
+            return cc.js.formatStr("[ERROR] node is error,uuid:%s",obj.uuid)
         }
         try{
             let map:NodeInfo = obj.nodeChange as any
@@ -399,7 +358,7 @@ class _RuntimeData{
             
 
         //@ts-ignore
-        const components:Component[] = _node._components;
+        const components:cc.Component[] = _node._components;
         try{
             for(let compUuid in obj.compChanges){
                 const _comp = components.find(item => item.uuid==compUuid)
@@ -417,7 +376,7 @@ class _RuntimeData{
         return ""
     }
 
-    async applyCompChange(_comp:Component,map:Record<string,any>){
+    async applyCompChange(_comp:cc.Component,map:Record<string,any>){
         for(let key in map){
             const oldV = _comp[key]
             let newV = map[key]
@@ -431,8 +390,8 @@ class _RuntimeData{
                 }else{
                     //0bbc4349-d0e6-4676-b353-6a0d4108b6dd
                     if(newV[8]=="-"&&newV[13]=="-"&&newV[18]=="-"&&newV[23]=="-"){
-                        let asset = await new Promise<Asset>((resolve)=>{
-                            assetManager.loadAny({uuid:newV},(err,asset)=>{
+                        let asset = await new Promise<cc.Asset>((resolve)=>{
+                            cc.assetManager.loadAny({uuid:newV},(err,asset)=>{
                                 resolve(asset)
                             })
                         })
@@ -447,22 +406,22 @@ class _RuntimeData{
                 _comp[key] = newV
             }else if(typeof oldV === "object"){
                 let _newV = null
-                if(oldV instanceof Node || oldV instanceof Asset || oldV instanceof Component){
+                if(oldV instanceof cc.Node || oldV instanceof cc.Asset || oldV instanceof cc.Component){
                     _comp[key] = null //不为null的情况，上面已经检查过了
                     continue
                 }else {
-                    if(oldV instanceof Color){
-                        _newV = color().fromHEX(newV)
-                    }else if(oldV instanceof Vec2){
-                        _newV = new Vec2(newV.x??oldV.x,newV.y??oldV.y)
-                    }else if(oldV instanceof Vec3){
-                        _newV = new Vec3(newV.x??oldV.x,newV.y??oldV.y,newV.z??oldV.z)
-                    }else if(oldV instanceof Vec4){
-                        _newV = new Vec4(newV.x??oldV.x,newV.y??oldV.y,newV.z??oldV.z,newV.w??oldV.w)
-                    }else if(oldV instanceof Quat){
-                        _newV = new Quat(newV.x??oldV.x,newV.y??oldV.y,newV.z??oldV.z,newV.w??oldV.w)
-                    }else if(oldV instanceof Rect){
-                        _newV = new Rect(newV.x??oldV.x,newV.y??oldV.y,newV.width??oldV.width,newV.height??oldV.height)
+                    if(oldV instanceof cc.Color){
+                        _newV = cc.color().fromHEX(newV)
+                    }else if(oldV instanceof cc.Vec2){
+                        _newV = new cc.Vec2(newV.x??oldV.x,newV.y??oldV.y)
+                    }else if(oldV instanceof cc.Vec3){
+                        _newV = new cc.Vec3(newV.x??oldV.x,newV.y??oldV.y,newV.z??oldV.z)
+                    }else if(oldV instanceof cc.Vec4){
+                        _newV = new cc.Vec4(newV.x??oldV.x,newV.y??oldV.y,newV.z??oldV.z,newV.w??oldV.w)
+                    }else if(oldV instanceof cc.Quat){
+                        _newV = new cc.Quat(newV.x??oldV.x,newV.y??oldV.y,newV.z??oldV.z,newV.w??oldV.w)
+                    }else if(oldV instanceof cc.Rect){
+                        _newV = new cc.Rect(newV.x??oldV.x,newV.y??oldV.y,newV.width??oldV.width,newV.height??oldV.height)
                     }
                 }
 
@@ -485,7 +444,7 @@ class _RuntimeData{
             return -1
         }
         //@ts-ignore
-        const components:Component[] = _node._components;
+        const components:cc.Component[] = _node._components;
         for(let compUuid in obj){
             const _comp = components.find(item => item.uuid==compUuid)
 
@@ -520,9 +479,9 @@ class _RuntimeData{
 
     getGameEnv(){
         let obj:GameEnvParam = {
-            isNative:sys.isNative,
-            isBrowser:sys.isBrowser,
-            isMobile:sys.isMobile,
+            isNative:cc.sys.isNative,
+            isBrowser:cc.sys.isBrowser,
+            isMobile:cc.sys.isMobile,
             CC_DEV: DEV,
             CC_DEBUG: DEBUG,
             CC_PREVIEW: PREVIEW,
@@ -530,7 +489,7 @@ class _RuntimeData{
             CC_SUPPORT_JIT: SUPPORT_JIT,
         }
         if(NATIVE){
-            obj.writablePath = native.fileUtils.getWritablePath()
+            obj.writablePath = cc.native.fileUtils.getWritablePath()
         }
         return obj
     }
@@ -550,12 +509,12 @@ class _RuntimeData{
     public initAssetForPush(){
         this.m_waitForPushResArr = []
 
-        assetManager.assets.forEach((asset,uuid)=>{
+        cc.assetManager.assets.forEach((asset,uuid)=>{
             this.m_waitForPushResArr.push(uuid)
         })
     }
 
-    private _onSceneChange(sceneNode:Scene){
+    private _onSceneChange(sceneNode:cc.Scene){
         this.m_curSceneName = sceneNode.name
 
     }
@@ -565,14 +524,14 @@ class _RuntimeData{
      * @param uuid 
      */
     getRefCount(uuid:string){
-        const asset = assetManager.assets.get(uuid);
+        const asset = cc.assetManager.assets.get(uuid);
         if(asset){
             return asset.refCount
         }
         return -1
     }
 
-    private _checkRecordResMemInfo(uuid:string,asset?:Asset){
+    private _checkRecordResMemInfo(uuid:string,asset?:cc.Asset){
         // if(uuid.length==9||uuid.length==15){
         //     //@ts-ignore
         //     const _name = asset?.__proto__?.__classname__
@@ -586,15 +545,15 @@ class _RuntimeData{
     }
 
     /**
-     * 资源被添加进 assetManager.assets
+     * 资源被添加进 cc.assetManager.assets
      */
-    onAsset_added(key:string,asset:Asset){
+    onAsset_added(key:string,asset:cc.Asset){
         this._checkRecordResMemInfo(key,asset)
 
         // this.checkPushAssetInfo()
     }
     /**
-     * 资源被添加进 assetManager.assets
+     * 资源被添加进 cc.assetManager.assets
      */
     onAsset_removed(key:string){
         this.m_hasDestroyedResArr.push(key)
@@ -609,7 +568,7 @@ class _RuntimeData{
             let arr = []
             let fails = []
             for(let uuid of this.m_waitForPushResArr){
-                const asset = assetManager.assets.get(uuid)
+                const asset = cc.assetManager.assets.get(uuid)
                 if(asset==null){
                     fails.push(uuid)
                     continue
@@ -623,19 +582,19 @@ class _RuntimeData{
                     memory : _getResMemory(asset),
                 }
                 
-                if(asset instanceof ImageAsset){
+                if(asset instanceof cc.ImageAsset){
                     obj.width = asset.width
                     obj.height = asset.height
                     if(uuid.length==9){
                         obj.isAutoPackImg = true
                         obj.imgSrc = _getImageAssetUrl(asset)
-                        if(sys.isBrowser){
+                        if(cc.sys.isBrowser){
                             obj.isUrlImg = true
                         }else if(NATIVE){
                             obj.isNativeImg = true
                         }
                     }
-                }else if(asset instanceof Texture2D){
+                }else if(asset instanceof cc.Texture2D){
                     obj.width = asset.width
                     obj.height = asset.height
                     obj.imageUuid = asset.image?.uuid??asset.image?._uuid
@@ -643,13 +602,13 @@ class _RuntimeData{
                         //@ts-ignore
                         obj.imgSrc = _getImageAssetUrl(asset.image)
                         obj.isAutoPackImg = true
-                        if(sys.isBrowser){
+                        if(cc.sys.isBrowser){
                             obj.isUrlImg = true
                         }else if(NATIVE){
                             obj.isNativeImg = true
                         }
                     }
-                }else if(asset instanceof SpriteFrame){
+                }else if(asset instanceof cc.SpriteFrame){
                     if(asset.texture){
                         obj.width = asset.originalSize.width
                         obj.height = asset.originalSize.height
@@ -668,155 +627,132 @@ class _RuntimeData{
         }
     }
 
-    onRes_addRef(asset:Asset){
+    onRes_addRef(asset:cc.Asset){
         this._checkRecordResMemInfo(asset.uuid??asset._uuid,asset)
 
         // this.checkPushAssetInfo()
     }
 
-    onRes_decRef(asset:Asset){
+    onRes_decRef(asset:cc.Asset){
         this._checkRecordResMemInfo(asset.uuid??asset._uuid,asset)
 
         // this.checkPushAssetInfo()
     }
 
-    onRes_destroy(asset:Asset){
+    onRes_destroy(asset:cc.Asset){
         
     }
 
     /**
      * 获取指定资源正在被多少个节点的相关组件使用
-     * @param uuid 要检查的资源 (例如 SpriteFrame)
-     * @returns 所有引用该资源的组件的uuid的列表
+     * @param uuid 要检查的资源 (例如 cc.SpriteFrame)
+     * @returns 所有引用该资源的节点和组件的uuid
      */
-    getAssetUsageInScene(uuid: string): string[] {
-        const asset = assetManager.assets.get(uuid);
+    getAssetUsageInScene(uuid: string): Record<string,Array<string>> {
+        const _asset = cc.assetManager.assets.get(uuid);
 
-        if (asset == null) {
-            console.error(`Asset with UUID ${uuid} not found.`);
-            return [];
+        if (_asset == null) {
+            console.error(`cc.Asset with UUID ${uuid} not found.`);
+            return {};
         }
 
-        const scene = director.getScene(); // 获取当前场景
+        const scene = cc.director.getScene(); // 获取当前场景
         if (!scene) {
             console.error('No active scene found.');
-            return [];
+            return {};
         }
 
-        const ret: string[] = [];
+        const ret: Record<string,Array<string>> = {};//key为node.uuid，值为 comps.uuid[]
 
         // 遍历场景中的所有节点
-        scene.walk((node: Node) => {
-            // 检查 SpriteFrame
-            if (asset instanceof SpriteFrame) {
-                const _comp = node.getComponent(Sprite);
-                if (_comp && _comp.spriteFrame === asset) {
-                    ret.push(_comp.uuid);
+        const preFunc = (node: cc.Node) => {
+            let uuidsOfComp:Array<string> = []
+            const _comps = node.components
+            for(let comp of _comps){
+                if(comp instanceof cc.UIRenderer){
+                    if(comp.customMaterial==_asset){
+                        uuidsOfComp.push(comp.uuid)
+                    }
                 }
-            }
-            // 检查 AnimationClip
-            else if (asset instanceof AnimationClip) {
-                const _comp = node.getComponent(Animation);
-                if (_comp && _comp.clips.includes(asset)) {
-                    ret.push(_comp.uuid);
+                if(comp instanceof cc.Sprite){
+                    if(comp.spriteFrame==_asset||comp.spriteAtlas==_asset){
+                        uuidsOfComp.push(comp.uuid)
+                    }
+                }else if(comp instanceof cc.Label){
+                    if(comp.font==_asset){
+                        uuidsOfComp.push(comp.uuid)
+                    }
+                }else if(comp instanceof cc.EditBox){
+                    if(comp.backgroundImage==_asset){
+                        uuidsOfComp.push(comp.uuid)
+                    }
+                }else if(comp instanceof cc.Mask){
+                    if(comp.spriteFrame==_asset){
+                        uuidsOfComp.push(comp.uuid)
+                    }
+                }else if(comp instanceof cc.Camera){
+                    if(comp.targetTexture==_asset){
+                        uuidsOfComp.push(comp.uuid)
+                    }
+                }else if(comp instanceof cc.ParticleSystem2D){
+                    if(comp.file==_asset||comp.spriteFrame==_asset){
+                        uuidsOfComp.push(comp.uuid)
+                    }
+                }else if(comp instanceof cc.sp.Skeleton){
+                    if(comp.skeletonData==_asset){
+                        uuidsOfComp.push(comp.uuid)
+                    }
+                }else if(comp instanceof cc.dragonBones.ArmatureDisplay){
+                    if(comp.dragonAsset==_asset||comp.dragonAtlasAsset==_asset){
+                        uuidsOfComp.push(comp.uuid)
+                    }
+                }else if(comp instanceof cc.RichText){
+                    if(comp.imageAtlas==_asset){
+                        uuidsOfComp.push(comp.uuid)
+                    }
+                }else if(comp instanceof cc.TiledMap){
+                    if(comp.tmxAsset==_asset){
+                        uuidsOfComp.push(comp.uuid)
+                    }
+                }else if(comp instanceof cc.VideoPlayer){
+                    if(comp.clip==_asset){
+                        uuidsOfComp.push(comp.uuid)
+                    }
+                }else if(comp instanceof cc.AudioSource){
+                    if(comp.clip==_asset){
+                        uuidsOfComp.push(comp.uuid)
+                    }
+                }else{
+                    //这些是确定不会引用任何资源的组件，直接跳过
+                    if(comp instanceof cc.Widget||comp instanceof cc.Layout||comp instanceof cc.UIOpacity||comp instanceof cc.Button
+                        ||comp instanceof cc.PageView||comp instanceof cc.ScrollView||comp instanceof cc.ProgressBar||comp instanceof cc.Graphics
+                        ||comp instanceof cc.ScrollBar||comp instanceof cc.Slider||comp instanceof cc.ToggleContainer||comp instanceof cc.Toggle
+                        ||comp instanceof cc.ViewGroup||comp instanceof cc.SafeArea||comp instanceof cc.BlockInputEvents||comp instanceof cc.LabelOutline
+                        ||comp instanceof cc.LabelShadow||comp instanceof cc.LabelShadow
+                    ){
+                        continue
+                    }else{
+                        const _keys = Object.keys(comp)
+                        for(let k of _keys){
+                            if(comp[k]==_asset){
+                                uuidsOfComp.push(comp.uuid)
+                                break
+                            }
+                        }
+                    }
                 }
+                
             }
-            // 检查 AudioClip
-            else if (asset instanceof AudioClip) {
-                const _comp = node.getComponent(AudioSource);
-                if (_comp && _comp.clip === asset) {
-                    ret.push(_comp.uuid);
-                }
+            if(uuidsOfComp.length>0){
+                ret[node.uuid] = uuidsOfComp
             }
-            // 检查 Material
-            else if (asset instanceof Material) {
-                const _comp = node.getComponent(Renderer);
-                if (_comp && _comp.materials.includes(asset as any)) {
-                    ret.push(_comp.uuid);
-                }
-            }
-            // 检查 Prefab
-            else if (asset instanceof Prefab) {
-                // @ts-ignore
-                if (node.prefabInfo?.asset === asset) {
-                    ret.push(node.uuid);
-                }
-            }
-            // 检查 Texture2D
-            else if (asset instanceof Texture2D) {
-                const spriteComp = node.getComponent(Sprite);
-                if (spriteComp && spriteComp.spriteFrame?.texture === asset) {
-                    ret.push(spriteComp.uuid);
-                }
-                const rendererComp = node.getComponent(Renderer);
-                if (rendererComp && rendererComp.materials.some(mat => mat?.getProperty('mainTexture') === asset)) {
-                    ret.push(rendererComp.uuid);
-                }
-            }
-            else if (asset instanceof sp.SkeletonData) {
-                const spComp = node.getComponent(sp.Skeleton);
-                if (spComp && spComp.skeletonData === asset) {
-                    ret.push(spComp.uuid);
-                }
-            }
-            // 检查 Mesh
-            else if (asset instanceof Mesh) {
-                const meshRendererComp = node.getComponent(MeshRenderer);
-                if (meshRendererComp && meshRendererComp.mesh === asset) {
-                    ret.push(meshRendererComp.uuid);
-                }
-            }
-            // 检查 ParticleAsset
-            else if (asset instanceof ParticleAsset) {
-                const particleComp = node.getComponent(ParticleSystem);
-                // @ts-ignore
-                if (particleComp && particleComp.file === asset) {
-                    ret.push(particleComp.uuid);
-                }
-            }
-            // 检查 Font
-            else if (asset instanceof Font) {
-                const labelComp = node.getComponent(Label);
-                if (labelComp && labelComp.font === asset) {
-                    ret.push(labelComp.uuid);
-                }
-            }
-            // 检查 SpriteAtlas
-            else if (asset instanceof SpriteAtlas) {
-                const spriteComp = node.getComponent(Sprite);
-                if (spriteComp && asset.getSpriteFrame(spriteComp.spriteFrame?.name || '') === spriteComp.spriteFrame) {
-                    ret.push(spriteComp.uuid);
-                }
-            }
-            // 检查 VideoClip
-            else if (asset instanceof VideoClip) {
-                // Add logic if applicable, since VideoPlayer component may reference this
-            }
-            // 检查 ImageAsset
-            else if (asset instanceof ImageAsset) {
-                // Add logic if this is directly used or referenced
-            }
-            // 检查 TextAsset
-            else if (asset instanceof TextAsset) {
-                // Add logic if this is directly used or referenced
-            }
-            // 检查 JsonAsset
-            else if (asset instanceof JsonAsset) {
-                // Add logic if this is directly used or referenced
-            }
-            // 检查 EffectAsset
-            else if (asset instanceof EffectAsset) {
-                const rendererComp = node.getComponent(Renderer);
-                if (rendererComp && rendererComp.materials.some(mat => mat?.effectAsset === asset)) {
-                    ret.push(rendererComp.uuid);
-                }
-            }
-        });
+        }
+        scene.walk(preFunc);
 
         return ret;
     }
 
-    private _fillNodeTree(treeObj: NodeTreeItem, children: Array<Node>, parentPath: string = '') {
+    private _fillNodeTree(treeObj: NodeTreeItem, children: Array<cc.Node>, parentPath: string = '') {
         for (let i = 0; i < children.length; i++) {
             const child = children[i];
             const childPath = parentPath?`${parentPath}/${child.name}`:child.name;
@@ -863,7 +799,7 @@ class _RuntimeData{
         this.m_compUuidMap = {}
 
         const lastSceneTree = this.m_sceneTree;
-        const sceneNode: Scene = director.getScene();
+        const sceneNode: cc.Scene = cc.director.getScene();
         this.m_sceneTree = {
             name: sceneNode.name,
             uuid: sceneNode?.uuid??"",
@@ -899,7 +835,7 @@ class _RuntimeData{
         return nodeInfo
     }
 
-    private _getComponentsInfo(node: Node) {
+    private _getComponentsInfo(node: cc.Node) {
         const componentsInfo:Array<CompInfo_Base> = [];
         const components = node.components;
 
@@ -911,24 +847,66 @@ class _RuntimeData{
         return componentsInfo;
     }
 
-    private _getComponentProperties(component: Component):CompInfo_Base {
+    private _getComponentProperties(component: cc.Component):CompInfo_Base {
         const clsPrototype = component["__proto__"]
         const clsName = clsPrototype.__classname__
+        if(clsName=="cc.MeshRenderer"){
+            let g = 0;
+        }
         let map = getAttrInfosOfComponentInst(component)
         let data = {}
         for(let k in map){
-            
-            data[k] = component[k]
-            if(map[k].type=="Node"||map[k].type=="Component"||map[k].type=="Asset"){
-                data[k] = data[k]?.uuid??""
-            }else if(map[k].type=="Color"){
-                data[k] = data[k].toHEX()
-            }else if(map[k].ctor=="cc.ClickEvent"){
-                data[k] = component[k].map((item:EventHandler)=>JSON.stringify({node:item?.target?.uuid,comp:item?._componentId,handler:item?.handler}))
+            const obj = map[k]
+            let val = component[k]
+            if(obj.type=="cc.Node"||obj.type=="cc.Component"||obj.type=="cc.Asset"){
+                val = val?.uuid??""
+            }else if(obj.type=="cc.Color"){
+                val = val.toHEX()
+            }else if(obj.type=="cc.Size"){
+                val = {
+                    width:val.width,
+                    height:val.height,
+                }
+            }else if(obj.type=="cc.Vec2"||obj.type=="cc.Vec3"||obj.type=="cc.Vec4"){
+                val = {
+                    x:val.x,
+                    y:val.y,
+                    z:val.z,
+                    w:val.w,
+                }
+            }else if(obj.type=="cc.Rect"){
+                val = {
+                    x:val.x,
+                    y:val.y,
+                    width:val.width,
+                    height:val.height,
+                }
+            }else if(obj.ctor=="cc.ClickEvent"){
+                val = component[k].map((item:cc.EventHandler)=>JSON.stringify({node:item?.target?.uuid,comp:item?._componentId,handler:item?.handler}))
+            }else{
+                if(obj.ctor=="cc.ModelBakeSettings"){
+                    let g = 0;
+                }
+                
+                if(typeof val=="object"){
+                    let newVal = {} as any
+                    Object.keys(val).forEach((kk)=>{
+                        const _t = typeof val[kk]
+                        if(_t=="object"){
+                            //避免
+                        }else if(_t=="function"){
+
+                        }else{
+                            newVal[kk] = val[kk]
+                        }
+                    })
+                    val = newVal
+                }
             }
+            data[k] = val
         }
         if(clsName === "cc.UITransform"){//因为UITransform比较特殊，contentSize和anchorPoint都是readonly的，实际是通过width、height/anchorX、anchorY修改的
-            const comp = component as UITransform
+            const comp = component as cc.UITransform
             data = {
                 anchorX:comp.anchorX,
                 anchorY:comp.anchorY,
@@ -962,7 +940,7 @@ class _RuntimeData{
 /**
  * 对 _getAttrInfosOfComponentProrotype 的补充
  */
-function getAttrInfosOfComponentInst(compInst:Component){
+function getAttrInfosOfComponentInst(compInst:cc.Component){
     const clsPrototype = compInst["__proto__"]
     let map = _getAttrInfosOfComponentProrotype(clsPrototype)
     for(let k in map){
@@ -978,24 +956,24 @@ function getAttrInfosOfComponentInst(compInst:Component){
             }else if(_instType=="number"){
                 attrType = "number"
             }else if(_instType=="object"){
-                if(_instVal instanceof Color){
-                    attrType = "Color"
-                }else if(_instVal instanceof Vec2){
-                    attrType = "Vec2"
-                }else if(_instVal instanceof Vec3){
-                    attrType = "Vec3"
-                }else if(_instVal instanceof Vec4){
-                    attrType = "Vec4"
-                }else if(_instVal instanceof Rect){
-                    attrType = "Rect"
-                }else if(_instVal instanceof Size){
-                    attrType = "Size"
-                }else if(_instVal instanceof Node){
-                    attrType = "Node"
-                }else if(_instVal instanceof Component){
-                    attrType = "Component"
-                }else if(_instVal instanceof Asset){
-                    attrType = "Asset"
+                if(_instVal instanceof cc.Color){
+                    attrType = "cc.Color"
+                }else if(_instVal instanceof cc.Vec2){
+                    attrType = "cc.Vec2"
+                }else if(_instVal instanceof cc.Vec3){
+                    attrType = "cc.Vec3"
+                }else if(_instVal instanceof cc.Vec4){
+                    attrType = "cc.Vec4"
+                }else if(_instVal instanceof cc.Rect){
+                    attrType = "cc.Rect"
+                }else if(_instVal instanceof cc.Size){
+                    attrType = "cc.Size"
+                }else if(_instVal instanceof cc.Node){
+                    attrType = "cc.Node"
+                }else if(_instVal instanceof cc.Component){
+                    attrType = "cc.Component"
+                }else if(_instVal instanceof cc.Asset){
+                    attrType = "cc.Asset"
                 }
             }
             map[k].type = attrType
@@ -1027,7 +1005,7 @@ function _getAttrInfosOfComponentProrotype(clsPrototype){
         //     if(_getAttr(attrs,name,"hasGetter")){
         //         v = _getAttr(attrs,`_${name}`,p)
         //         if(v==null){
-        //             if(clsName=="cc.Camera"){//camera有bug,手动修复
+        //             if(clsName=="Camera"){//camera有bug,手动修复
         //                 if(name=="clearColor"){
         //                     v = _getAttr(attrs,`_color`,p)
         //                 }else if(name=="clearDepth"){
@@ -1044,7 +1022,7 @@ function _getAttrInfosOfComponentProrotype(clsPrototype){
     
     const _ctor = clsPrototype.constructor
     const props:Array<string> = _ctor.__props__
-    const attrs = CCClass.Attr.getClassAttrs(_ctor)
+    const attrs = cc.CCClass.Attr.getClassAttrs(_ctor)
 
     const data = {}
     for(let k of props){
@@ -1065,15 +1043,13 @@ function _getAttrInfosOfComponentProrotype(clsPrototype){
         }else if(visible===true){
             visible = null
         }
-        type PType = "string"|"boolean"|"number"|
-        "Enum"|"Object"|
-        "Node"|"Component"|"Asset"|"Color"|"Vec2"|"Vec3"|"Vec4"|"Rect"|"Size"
+        
         const pCtor = _getAttr(attrs,k,"ctor")
         const pCtorClassname = pCtor?.prototype?.__classname__
         const param = {
             displayOrder : _getAttr(attrs,k,"displayOrder") as number,
             displayName : _getAttr(attrs,k,"displayName") as string,
-            type : _getAttr(attrs,k,"type") as PType,
+            type : _getAttr(attrs,k,"type"),
             ctor : pCtorClassname??null,
             default : _getAttr(attrs,k,"default"),
             tooltip : _getAttr(attrs,k,"tooltip") as string,
@@ -1103,17 +1079,17 @@ function _getAttrInfosOfComponentProrotype(clsPrototype){
             }else if(_type=="number"){
                 param.type = "number"
             }else if(_type=="object"){
-                if(param.default instanceof Color){
+                if(param.default instanceof cc.Color){
                     param.type = "Color"
-                }else if(param.default instanceof Vec2){
+                }else if(param.default instanceof cc.Vec2){
                     param.type = "Vec2"
-                }else if(param.default instanceof Vec3){
+                }else if(param.default instanceof cc.Vec3){
                     param.type = "Vec3"
-                }else if(param.default instanceof Vec4){
+                }else if(param.default instanceof cc.Vec4){
                     param.type = "Vec4"
-                }else if(param.default instanceof Rect){
+                }else if(param.default instanceof cc.Rect){
                     param.type = "Rect"
-                }else if(param.default instanceof Size){
+                }else if(param.default instanceof cc.Size){
                     param.type = "Size"
                 }
             }
@@ -1125,17 +1101,31 @@ function _getAttrInfosOfComponentProrotype(clsPrototype){
             // }else{
 
             // }
-            const isNode = Node.prototype==pCtor.prototype || Node.prototype.isPrototypeOf(pCtor.prototype)
-            const isComponent = Component.prototype==pCtor.prototype || Component.prototype.isPrototypeOf(pCtor.prototype)
-            const isAsset = Asset.prototype==pCtor.prototype || Asset.prototype.isPrototypeOf(pCtor.prototype)
+            const isNode = cc.Node.prototype==pCtor.prototype || cc.Node.prototype.isPrototypeOf(pCtor.prototype)
+            const isComponent = cc.Component.prototype==pCtor.prototype || cc.Component.prototype.isPrototypeOf(pCtor.prototype)
+            const isAsset = cc.Asset.prototype==pCtor.prototype || cc.Asset.prototype.isPrototypeOf(pCtor.prototype)
             if(isNode){
-                param.type = "Node"
+                param.type = "cc.Node"
             }else if(isComponent){
-                param.type = "Component"
+                param.type = "cc.Component"
             }else if(isAsset){
-                param.type = "Asset"
+                param.type = "cc.Asset"
             }else if(param.ctor=="cc.ClickEvent"){
                 let g = 0 
+            }
+        }else if(typeof param.type=="object"){
+            if(param.type.name=="Float"||param.type.name=="double"){
+                param.type = "number"
+            }else if(param.type.name=="String"){
+                param.type = "string"
+            }
+        }
+        if(param.ctor==null && param.default!=null && (typeof param.default)=="object"){
+            param.ctor = param.default?.__proto__?.__classname__
+            if(param.ctor!=null){
+                if(param.type==null){
+                    param.type = "Object"
+                }
             }
         }
         for(let k of Object.keys(param)){
@@ -1150,19 +1140,19 @@ function _getAttrInfosOfComponentProrotype(clsPrototype){
     return data
 }
 
-function _getResMemory(asset:Asset){
-    if(asset instanceof ImageAsset){
+function _getResMemory(asset:cc.Asset){
+    if(asset instanceof cc.ImageAsset){
         return _memoryCaculator.getImageAssetMemorySize(asset)
     }
     return 0
 }
 
 function getDynamicTextureData(index:number){
-    if(!DynamicAtlasManager.instance.enabled){
+    if(!cc.DynamicAtlasManager.instance.enabled){
         return null
     }
     //@ts-ignore
-    const _atlases = DynamicAtlasManager.instance._atlases
+    const _atlases = cc.DynamicAtlasManager.instance._atlases
     if(_atlases.length==0){
         return null;
     }
@@ -1176,12 +1166,12 @@ function getDynamicTextureData(index:number){
     return {width:_tex.width,height:_tex.height,base64Data:base64String}
 }
 
-function readPixels(texture: Texture2D, flipY = true): Uint8Array {
+function readPixels(texture: cc.Texture2D, flipY = true): Uint8Array {
     const { width, height } = texture;
     const gfxTexture = texture.getGFXTexture();
     const gfxDevice = texture['_getGFXDevice']();
     const bufferViews = [];
-    const region = new gfx.BufferTextureCopy;
+    const region = new cc.gfx.BufferTextureCopy;
     const buffer = new Uint8Array(width * height * 4);
     region.texExtent.width = width;
     region.texExtent.height = height;
@@ -1217,7 +1207,7 @@ function uint8ArrayToBase64(uint8Array: Uint8Array): string {
 
 async function evalJsStr(jsStr:string){
     try{
-        const content = js.formatStr("(async function(){%s})()",jsStr)
+        const content = cc.js.formatStr("(async function(){%s})()",jsStr)
         let ret = await eval(content)
         const type = typeof ret;
         if(type=="object"){
@@ -1235,7 +1225,7 @@ async function evalJsStr(jsStr:string){
 }
 
 namespace _memoryCaculator{
-    export function getImageAssetMemorySize(imageAsset: ImageAsset): number {
+    export function getImageAssetMemorySize(imageAsset: cc.ImageAsset): number {
         const width = imageAsset.width;
         const height = imageAsset.height;
         const format = imageAsset.format; // 像素格式
@@ -1243,17 +1233,17 @@ namespace _memoryCaculator{
         let bytesPerPixel = 4; // 默认 RGBA8888 格式，每个像素 4 字节
     
         switch (format) {
-            case Texture2D.PixelFormat.RGBA8888:
+            case cc.Texture2D.PixelFormat.RGBA8888:
                 bytesPerPixel = 4;
                 break;
-            case Texture2D.PixelFormat.RGB888:
+            case cc.Texture2D.PixelFormat.RGB888:
                 bytesPerPixel = 3;
                 break;
-            case Texture2D.PixelFormat.RGBA4444:
-            case Texture2D.PixelFormat.RGB565:
+            case cc.Texture2D.PixelFormat.RGBA4444:
+            case cc.Texture2D.PixelFormat.RGB565:
                 bytesPerPixel = 2;
                 break;
-            case Texture2D.PixelFormat.A8:
+            case cc.Texture2D.PixelFormat.A8:
                 bytesPerPixel = 1;
                 break;
             // 其他格式根据需要添加
@@ -1268,89 +1258,89 @@ namespace _memoryCaculator{
 function _getSelfModelName() {
     let model = "";
 
-    if (sys.isNative) {
-        if (sys.os === sys.OS.ANDROID) {
+    if (cc.sys.isNative) {
+        if (cc.sys.os === cc.sys.OS.ANDROID) {
             model = "native_android";
-        } else if (sys.os === sys.OS.IOS) {
+        } else if (cc.sys.os === cc.sys.OS.IOS) {
             model = "native_ios";
-        } else if (sys.os === sys.OS.WINDOWS) {
+        } else if (cc.sys.os === cc.sys.OS.WINDOWS) {
             model = "native_windows";
-        } else if (sys.os === sys.OS.OSX) {
+        } else if (cc.sys.os === cc.sys.OS.OSX) {
             model = "native_osx";
-        } else if (sys.os === sys.OS.OHOS) {
+        } else if (cc.sys.os === cc.sys.OS.OHOS) {
             model = "native_ohos";
-        } else if (sys.os === sys.OS.LINUX) {
+        } else if (cc.sys.os === cc.sys.OS.LINUX) {
             model = "native_linux";
         } else {
             model = "native_unknown";
         }
     } else {
-        if (sys.platform === sys.Platform.ALIPAY_MINI_GAME) {
+        if (cc.sys.platform === cc.sys.Platform.ALIPAY_MINI_GAME) {
             model = "alipay_mini_game";
-        } else if (sys.platform === sys.Platform.WECHAT_GAME) {
+        } else if (cc.sys.platform === cc.sys.Platform.WECHAT_GAME) {
             model = "wechat_game";
-        } else if (sys.platform === sys.Platform.QTT_MINI_GAME) {
+        } else if (cc.sys.platform === cc.sys.Platform.QTT_MINI_GAME) {
             model = "qq_play";
-        } else if (sys.platform === sys.Platform.BYTEDANCE_MINI_GAME) {
+        } else if (cc.sys.platform === cc.sys.Platform.BYTEDANCE_MINI_GAME) {
             model = "bytedance_mini_game";
-        } else if (sys.platform === sys.Platform.BAIDU_MINI_GAME) {
+        } else if (cc.sys.platform === cc.sys.Platform.BAIDU_MINI_GAME) {
             model = "baidu_mini_game";
-        } else if (sys.platform === sys.Platform.XIAOMI_QUICK_GAME) {
+        } else if (cc.sys.platform === cc.sys.Platform.XIAOMI_QUICK_GAME) {
             model = "xiaomi_quick_game";
-        } else if (sys.platform === sys.Platform.OPPO_MINI_GAME) {
+        } else if (cc.sys.platform === cc.sys.Platform.OPPO_MINI_GAME) {
             model = "oppo_mini_game";
-        } else if (sys.platform === sys.Platform.VIVO_MINI_GAME) {
+        } else if (cc.sys.platform === cc.sys.Platform.VIVO_MINI_GAME) {
             model = "vivo_mini_game";
-        } else if (sys.platform === sys.Platform.TAOBAO_CREATIVE_APP) {
+        } else if (cc.sys.platform === cc.sys.Platform.TAOBAO_CREATIVE_APP) {
             model = "taobao_creative_app";
-        } else if (sys.platform === sys.Platform.TAOBAO_MINI_GAME) {
+        } else if (cc.sys.platform === cc.sys.Platform.TAOBAO_MINI_GAME) {
             model = "taobao_mini_game";
-        } else if (sys.platform === sys.Platform.COCOSPLAY) {
+        } else if (cc.sys.platform === cc.sys.Platform.COCOSPLAY) {
             model = "cocosplay";
-        } else if (sys.platform === sys.Platform.LINKSURE_MINI_GAME) {
+        } else if (cc.sys.platform === cc.sys.Platform.LINKSURE_MINI_GAME) {
             model = "linksure_mini_game";
-        } else if (sys.platform === sys.Platform.HUAWEI_QUICK_GAME) {
+        } else if (cc.sys.platform === cc.sys.Platform.HUAWEI_QUICK_GAME) {
             model = "huawei_quick_game";
-        } else if (sys.browserType === sys.BrowserType.CHROME) {
+        } else if (cc.sys.browserType === cc.sys.BrowserType.CHROME) {
             model = "browser_chrome";
-        } else if (sys.browserType === sys.BrowserType.FIREFOX) {
+        } else if (cc.sys.browserType === cc.sys.BrowserType.FIREFOX) {
             model = "browser_firefox";
-        } else if (sys.browserType === sys.BrowserType.SAFARI) {
+        } else if (cc.sys.browserType === cc.sys.BrowserType.SAFARI) {
             model = "browser_safari";
-        } else if (sys.browserType === sys.BrowserType.EDGE) {
+        } else if (cc.sys.browserType === cc.sys.BrowserType.EDGE) {
             model = "browser_edge";
-        } else if (sys.browserType === sys.BrowserType.IE) {
+        } else if (cc.sys.browserType === cc.sys.BrowserType.IE) {
             model = "browser_ie";
-        } else if (sys.browserType === sys.BrowserType.OPERA) {
+        } else if (cc.sys.browserType === cc.sys.BrowserType.OPERA) {
             model = "browser_opera";
-        } else if (sys.browserType === sys.BrowserType.MIUI) {
+        } else if (cc.sys.browserType === cc.sys.BrowserType.MIUI) {
             model = "browser_miui";
-        } else if (sys.browserType === sys.BrowserType.UC) {
+        } else if (cc.sys.browserType === cc.sys.BrowserType.UC) {
             model = "browser_uc";
-        } else if (sys.browserType === sys.BrowserType.QQ) {
+        } else if (cc.sys.browserType === cc.sys.BrowserType.QQ) {
             model = "browser_qq";
-        } else if (sys.browserType === sys.BrowserType.BAIDU) {
+        } else if (cc.sys.browserType === cc.sys.BrowserType.BAIDU) {
             model = "browser_baidu";
         } else {
             model = "unknown";
         }
 
-        if (sys.os === sys.OS.ANDROID) {
+        if (cc.sys.os === cc.sys.OS.ANDROID) {
             model = "android" + "_" +model;
-        } else if (sys.os === sys.OS.IOS) {
+        } else if (cc.sys.os === cc.sys.OS.IOS) {
             model = "ios" + "_" +model;
-        } else if (sys.os === sys.OS.WINDOWS) {
+        } else if (cc.sys.os === cc.sys.OS.WINDOWS) {
             model = "windows" + "_" +model;
-        } else if (sys.os === sys.OS.OSX) {
+        } else if (cc.sys.os === cc.sys.OS.OSX) {
             model = "osx" + "_" +model;
-        } else if (sys.os === sys.OS.OHOS) {
+        } else if (cc.sys.os === cc.sys.OS.OHOS) {
             model = "ohos" + "_" +model;
-        } else if (sys.os === sys.OS.LINUX) {
+        } else if (cc.sys.os === cc.sys.OS.LINUX) {
             model = "linux" + "_" +model;
         }
     }
 
-    if(sys.isXR){
+    if(cc.sys.isXR){
         model += "_isXR"
     }
 
@@ -1404,8 +1394,8 @@ function interceptLog(){
     
 }
 
-function _getImageAssetUrl(asset:ImageAsset){
-    if(sys.isBrowser && asset.nativeUrl){
+function _getImageAssetUrl(asset:cc.ImageAsset){
+    if(cc.sys.isBrowser && asset.nativeUrl){
         const baseUrl = window.location.origin; // http://192.168.1.17:7456
         const fullPath = window.location.pathname; // /web-desktop/web-desktop/index.html
         const subPath = fullPath.substring(0, fullPath.lastIndexOf('/') + 1); // /web-desktop/web-desktop/
@@ -1413,7 +1403,7 @@ function _getImageAssetUrl(asset:ImageAsset){
         const imgSrc = `${baseUrl}${subPath}${asset.nativeUrl}`;
         return imgSrc
     }else if(NATIVE && asset.url){
-        const imgPath = native.fileUtils.fullPathForFilename(asset.url)
+        const imgPath = cc.native.fileUtils.fullPathForFilename(asset.url)
         return imgPath
     }
 }
@@ -1424,21 +1414,21 @@ function getWitablePathFilesInfo():Array<WritableFileInfo>{
         return []
     }
     
-    const writablePath = native.fileUtils.getWritablePath()
+    const writablePath = cc.native.fileUtils.getWritablePath()
     function traverse(floder:string){
-        const files = native.fileUtils.listFiles(floder)
+        const files = cc.native.fileUtils.listFiles(floder)
         const newList = []
         for(let i=files.length-1;i>=0;i--){
             const f = files[i]
-            const x = native.fileUtils.fullPathForFilename(f)
+            const x = cc.native.fileUtils.fullPathForFilename(f)
             if(x!=f){
                 continue
             }
             
-            let isFloder = native.fileUtils.isDirectoryExist(f)
+            let isFloder = cc.native.fileUtils.isDirectoryExist(f)
             let relativePath = f.replace(writablePath,"")
-            relativePath = path.stripSep(relativePath)
-            const name = path.basename(relativePath)
+            relativePath = cc.path.stripSep(relativePath)
+            const name = cc.path.basename(relativePath)
             const obj:WritableFileInfo = {
                 name,
                 isFloder,
@@ -1461,7 +1451,7 @@ function getWritableFileData(filePath:string){
     if(!NATIVE){
         return null
     }
-    const arr = native.fileUtils.getDataFromFile(filePath);
+    const arr = cc.native.fileUtils.getDataFromFile(filePath);
     if (!arr || arr.byteLength <= 0) return null;
     const u8a = new Uint8Array(arr);
     const base64Str = uint8ArrayToBase64(u8a)
@@ -1476,47 +1466,47 @@ function _initOnce() {
 
     _data.initAssetForPush()
     
-    const _addRef = Asset.prototype.addRef
-    const _decRef = Asset.prototype.decRef
-    const _destroy = Asset.prototype.destroy
+    const _addRef = cc.Asset.prototype.addRef
+    const _decRef = cc.Asset.prototype.decRef
+    const _destroy = cc.Asset.prototype.destroy
 
     //@ts-ignore
-    const cls_Cache = assetManager.assets.__proto__
+    const cls_Cache = cc.assetManager.assets.__proto__
     const _add = cls_Cache?.add;
     const _remove = cls_Cache?.remove;
     if(_add){
-        assetManager.assets.add = function(key,val){
+        cc.assetManager.assets.add = function(key,val){
             // console.log("add key",key)
             
-            let ret = _add.call(assetManager.assets,key,val)
+            let ret = _add.call(cc.assetManager.assets,key,val)
             _data.onAsset_added(key,val)
             return ret
         }
     }
     if(_remove){
-        assetManager.assets.remove = function(key){
+        cc.assetManager.assets.remove = function(key){
             // console.log("remove key",key)
             
-            let ret = _remove.call(assetManager.assets,key)
+            let ret = _remove.call(cc.assetManager.assets,key)
             _data.onAsset_removed(key)
             return ret
         }
     }
 
-    Asset.prototype.addRef = function(){
+    cc.Asset.prototype.addRef = function(){
         let ret = _addRef.call(this)
 
         _data.onRes_addRef(this)
         return ret
     }
-    Asset.prototype.decRef = function(autoRelease?: boolean){
+    cc.Asset.prototype.decRef = function(autoRelease?: boolean){
         let ret = _decRef.call(this,autoRelease)
 
         _data.onRes_decRef(this)
         return ret
     }
 
-    Asset.prototype.destroy = function(autoRelease?: boolean){
+    cc.Asset.prototype.destroy = function(autoRelease?: boolean){
         let ret = _destroy.call(this,autoRelease)
 
         _data.onRes_destroy(this)
@@ -1529,7 +1519,7 @@ function _initOnce() {
     }, duration);
 
     
-    director.on(Director.EVENT_AFTER_SCENE_LAUNCH, () => {
+    cc.director.on(cc.Director.EVENT_AFTER_SCENE_LAUNCH, () => {
         _runtimeSocket.sendPush_sceneLaunched()
         _runtimeSocket.sendPush_checkUpdateSceneTree()
     })
@@ -1539,7 +1529,7 @@ function _initOnce() {
 
 if (!EDITOR) {
 
-    director.once(Director.EVENT_BEFORE_SCENE_LAUNCH,_initOnce)
+    cc.director.once(cc.Director.EVENT_BEFORE_SCENE_LAUNCH,_initOnce)
 }
 
 var plugin_server_address = `ws://localhost:8085`

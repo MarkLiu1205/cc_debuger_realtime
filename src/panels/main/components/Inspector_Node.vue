@@ -38,6 +38,7 @@ function updateInfo(index, newInfo) {
     border-right: 1px solid #ccc;
     
     padding: 5px;
+    user-select: text;
 }
 
 </style>

@@ -81,17 +81,17 @@ function onAssetChange(event){
     <div class="property">
         <label>{{propretyName}}:</label>
 
-        <comp_component_selecter class="comp_component_selecter" v-model="pModel[propretyName]" :compType="attrs.ctor" v-if="attrs.type=='Component'"/>
-        <comp_node_selecter class="comp_node_selecter" v-model="pModel[propretyName]" v-else-if="attrs.type=='Node'"/>
-        <comp_selecter_asset :assetType="attrs.ctor"  v-model="pModel[propretyName]" v-else-if="attrs.type=='Asset'"/>
-        <ui-color :value="pModel[propretyName]" @confirm="onConfirmColor" v-else-if="attrs.type=='Color'" />
+        <comp_component_selecter class="comp_component_selecter" v-model="pModel[propretyName]" :compType="attrs.ctor" v-if="attrs.type=='cc.Component'"/>
+        <comp_node_selecter class="comp_node_selecter" v-model="pModel[propretyName]" v-else-if="attrs.type=='cc.Node'"/>
+        <comp_selecter_asset :assetType="attrs.ctor"  v-model="pModel[propretyName]" v-else-if="attrs.type=='cc.Asset'"/>
+        <ui-color :value="pModel[propretyName]" @confirm="onConfirmColor" v-else-if="attrs.type=='cc.Color'" />
 
-        <div class="vectorInput"  v-else-if="attrs.type=='Vec2'||attrs.type=='Vec3'||attrs.type=='Vec4'||attrs.type=='Rect'">
+        <div class="vectorInput"  v-else-if="attrs.type=='cc.Vec2'||attrs.type=='cc.Vec3'||attrs.type=='cc.Vec4'||attrs.type=='cc.Rect'">
             <ui-num-input class="shortInput" @change="onNumChange($event,'x')" :value="pModel[propretyName].x"  step="0.01" unit="x"></ui-num-input>
             <ui-num-input class="shortInput" @change="onNumChange($event,'y')":value="pModel[propretyName].y"  step="0.01" unit="y"></ui-num-input>
         </div>
 
-        <div class="vectorInput"  v-else-if="attrs.type=='Size'">
+        <div class="vectorInput"  v-else-if="attrs.type=='cc.Size'">
             <ui-num-input class="shortInput" @change="onNumChange($event,'width')" :value="pModel[propretyName].width"  step="0.01" unit="width"></ui-num-input>
             <ui-num-input class="shortInput" @change="onNumChange($event,'height')":value="pModel[propretyName].height"  step="0.01" unit="height"></ui-num-input>
         </div>
@@ -106,14 +106,14 @@ function onAssetChange(event){
         <ui-checkbox :value="pModel[propretyName]" @change="onToggle" v-else-if="attrs.type=='boolean'" />
         
     </div>
-    <div class="property" style="margin-top: 5px;" v-if="attrs.type=='Vec3'||attrs.type=='Vec4'">
+    <div class="property" style="margin-top: 5px;" v-if="attrs.type=='cc.Vec3'||attrs.type=='cc.Vec4'">
         <label></label>
         <div class="vectorInput">
             <ui-num-input class="shortInput" @change="onNumChange($event,'z')" :value="pModel[propretyName].x"  step="0.01" unit="z"></ui-num-input>
-            <ui-num-input class="shortInput" @change="onNumChange($event,'w')" :value="pModel[propretyName].y"  step="0.01" unit="w" v-if="attrs.type=='Vec4'"></ui-num-input>
+            <ui-num-input class="shortInput" @change="onNumChange($event,'w')" :value="pModel[propretyName].y"  step="0.01" unit="w" v-if="attrs.type=='cc.Vec4'"></ui-num-input>
         </div>
     </div>
-    <div class="property" style="margin-top: 5px;" v-if="attrs.type=='Rect'">
+    <div class="property" style="margin-top: 5px;" v-if="attrs.type=='cc.Rect'">
         <label></label>
         <div class="vectorInput">
             <ui-num-input class="shortInput" @change="onNumChange($event,'width')" :value="pModel[propretyName].width"  step="0.01" unit="width"></ui-num-input>
