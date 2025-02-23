@@ -362,7 +362,7 @@ const filterMethod = (query:string, data:ResTreeItem,node) => {
 const str_filter = ref("")
 let filteredMapByAssetUuid = {}
 
-watch(str_filter,async (newVal,oldVal)=>{
+async function onFilterStrChange(newVal:string,oldVal?:string){
     if (ref_nodeTree.value) {
         if(newVal?.startsWith(filterCmd_assetUsege)){
             const assetUuid = newVal.replace(filterCmd_assetUsege,"")
@@ -374,7 +374,7 @@ watch(str_filter,async (newVal,oldVal)=>{
                 // Editor.Dialog.error("没有节点引用引用此资源",{buttons:["确定"]})
                 _funcs.log_1("没有节点引用引用此资源")
                 showToast("没有节点引用引用此资源1")
-                str_filter.value = null
+                
             }else{
                 const nodePaths = arr.map((nodeUuid)=>{
                     return _dataCtx.getTreeNodeInfoWithUuid(nodeUuid)?.path
@@ -387,6 +387,10 @@ watch(str_filter,async (newVal,oldVal)=>{
         console.log("开始筛选，输入值:", newVal);
         ref_nodeTree.value.filter(newVal);
     }
+}
+
+watch(str_filter,async (newVal,oldVal)=>{
+    onFilterStrChange(newVal,oldVal)
 })
 
 const isCollapsed = ref(true)
@@ -407,6 +411,12 @@ function doCollapseAll() {
 
 const searchBarHeight = 26;
 
+const isHover = ref(false);
+
+const clearFilterStr = () => {
+    str_filter.value = ""
+};
+
 </script>
 
 <template>
@@ -419,7 +429,24 @@ const searchBarHeight = 26;
 
         </div>
             <div class="searchBar" :style="{height:searchBarHeight+'px'}">
-                <ui-input style="flex: 1;" v-model="str_filter" placeholder="筛选路径或uuid" type="text"/>
+                <div
+                    class="input-container"
+                    @mouseover="isHover = true"
+                    @mouseleave="isHover = false"
+                >
+                    <ui-input
+                        style="flex: 1;"
+                        v-model="str_filter"
+                        placeholder="筛选路径或uuid"
+                        type="text"
+                    />
+                    <ui-icon
+                        v-if="isHover&&str_filter.length>0"
+                        class="delete-btn"
+                        value="close"
+                        @click="clearFilterStr"
+                    ></ui-icon>
+                </div>
                 <div class="searchBar-button-container">
                     <ui-button type="icon" tooltip="展开全部" @confirm="doExpandAll" v-if="isCollapsed">
                         <ui-icon value="expand"></ui-icon>
@@ -521,5 +548,17 @@ const searchBarHeight = 26;
     animation: shakeEffect 0.8s ease-in-out;
 }
 
+.input-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    flex: 1;
+}
 
+.delete-btn {
+    position: absolute; /* 绝对定位 */
+    right: 5px; /* 距离右侧 8px */
+    cursor: pointer;
+    z-index: 1; /* 确保图标在输入框上方 */
+}
 </style>

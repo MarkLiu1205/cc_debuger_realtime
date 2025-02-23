@@ -132,7 +132,7 @@ let filteredArr_usege = []
 let filteredArr_refer = []
 let filteredArr_recursive_refer = []
 
-watch(str_filter,async (newVal,oldVal)=>{
+async function onFilterStrChange(newVal:string,oldVal?:string){
     if (ref_resTree.value) {
         let arr = null;
         if(newVal?.startsWith(filterCmd_assetUsege)){
@@ -153,7 +153,7 @@ watch(str_filter,async (newVal,oldVal)=>{
             if(arr.length==0){
                 _funcs.log_1("没有资源引用引用此资源")
                 showToast("没有资源引用引用此资源")
-                str_filter.value = null
+                
             }else{
                 const nodePaths = arr.map((nodeUuid)=>{
                     return _dataCtx.getResNodeInfoWithUuid(nodeUuid)?.path
@@ -166,21 +166,28 @@ watch(str_filter,async (newVal,oldVal)=>{
         // console.log("开始筛选，输入值:", newVal);
         ref_resTree.value.filter(newVal);
     }
+}
+
+watch(str_filter,async (newVal,oldVal)=>{
+    onFilterStrChange(newVal,oldVal)
 })
 
 async function on_check_asset_usege_asset(uuid:string){
-    
+    _isTreeMode.value = false
     str_filter.value = `${filterCmd_assetUsege}${uuid}`
+    onFilterStrChange(str_filter.value)
 }
 
 function on_check_asset_depend(uuid:string){
-    console.log("检查此资源依赖的资源列表:",uuid)
+    _isTreeMode.value = false
     str_filter.value = `${filterCmd_assetRefer}${uuid}`
+    onFilterStrChange(str_filter.value)
 }
 
 function on_check_asset_depend_traverse(uuid:string){
-    console.log("检查此资源依赖的资源列表(递归):",uuid)
+    _isTreeMode.value = false
     str_filter.value = `${filterCmd_recursive_assetRefer}${uuid}`
+    onFilterStrChange(str_filter.value)
 }
 
 onMounted(() => {
@@ -309,13 +316,19 @@ const filterMethod = (query:string, data:ResTreeItem,node) => {
 
 
 const _isTreeMode = ref(true)
+
+watch(_isTreeMode,(newVal,oldVal)=>{
+    updateRealAssetsData()
+})
+
 function changeToListMode(){
     _isTreeMode.value = false
-    updateRealAssetsData()
+    
+    str_filter.value = ""
 }
 function changeToTreeMode(){
     _isTreeMode.value = true
-    updateRealAssetsData()
+    str_filter.value = ""
 }
 
 function flattenTree(arr: ResTreeItem[]) {
@@ -353,6 +366,12 @@ function updateRealAssetsData(){
 
 const searchBarHeight = 26;
 
+const isHover = ref(false);
+
+const clearFilterStr = () => {
+    str_filter.value = ""
+};
+
 </script>
 
 <template>
@@ -363,7 +382,25 @@ const searchBarHeight = 26;
         </div>
         <div v-else>
             <div class="searchBar" :style="{height:searchBarHeight+'px'}">
-                <ui-input style="flex: 1;" v-model="str_filter" placeholder="筛选路径或uuid" type="text"/>
+                <div
+                    class="input-container"
+                    @mouseover="isHover = true"
+                    @mouseleave="isHover = false"
+                >
+                    <ui-input
+                        style="flex: 1;"
+                        v-model="str_filter"
+                        placeholder="筛选路径或uuid"
+                        type="text"
+                    />
+                    <ui-icon
+                        v-if="isHover&&str_filter.length>0"
+                        class="delete-btn"
+                        value="close"
+                        @click="clearFilterStr"
+                    ></ui-icon>
+                </div>
+                
                 <div class="searchBar-button-container">
                     <ui-button type="icon" tooltip="切换为列表模式" @confirm="changeToListMode" v-if="_isTreeMode">
                         <ui-icon value="list"></ui-icon>
@@ -461,5 +498,17 @@ const searchBarHeight = 26;
     animation: shakeEffect 0.8s ease-in-out;
 }
 
+.input-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    flex: 1;
+}
 
+.delete-btn {
+    position: absolute; /* 绝对定位 */
+    right: 5px; /* 距离右侧 8px */
+    cursor: pointer;
+    z-index: 1; /* 确保图标在输入框上方 */
+}
 </style>
