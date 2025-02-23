@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, onMounted, inject } from "vue";
 import { ElButton, ElImage, ElMessage, ElInput } from "element-plus";
 import { _funcs } from "../../tools/_funcs";
+
+const showToast = inject<ToastParam>("message")
 
 const isRuntimeOffline = ref(true);
 const dynamicTextureEnabled = ref(false)
@@ -43,7 +45,7 @@ async function getDynamicTextureAndSavePng(index: number) {
     isLoading.value = true;
     const obj = await Editor.Message.request(_funcs.getPluginName(), "callMainPanelFunc", "_pluginSocket", "getDynamicTextureData", index);
     if (!obj) {
-        Editor.Dialog.error("获取图片内容失败",{buttons:["确定"]})
+        showToast("获取图片内容失败")
         isLoading.value = false;
         return;
     }

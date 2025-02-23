@@ -434,3 +434,5 @@ interface WritableFileInfo{
     isFloder:boolean,
     children?:Array<WritableFileInfo>
 }
+
+type ToastParam = (param:string|MessageParams,type?:"error" | "success" | "warning" | "info")=>void

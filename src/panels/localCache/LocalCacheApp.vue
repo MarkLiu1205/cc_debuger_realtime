@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from "vue";
+import { ref, onMounted, computed, inject } from "vue";
 import { ElButton, ElImage, ElMessage, ElInput } from "element-plus";
 import { _funcs } from "../../tools/_funcs";
 const fs = require('fs-extra');
 import { _pluginSocket } from "../../tools/plugin_socket";
 const path =  require('path');
+
+const showToast = inject<ToastParam>("message")
 
 const isRuntimeOffline = ref(true);
 const gameEnvObj = ref<GameEnvParam>(null)
@@ -53,14 +55,14 @@ async function syncSelectFile(){
     bIsSyncing.value = true
     // console.log("同步选中文件到本地",curSelItem.value.path)
     if(curSelItem.value.isFloder){
-        Editor.Dialog.error("不能同步文件夹",{buttons:["确定"]})
+        showToast("不能同步文件夹")
         bIsSyncing.value = false
         return
     }
     
     const u8a = await getWritableFileData(curSelItem.value.path)
     if(u8a==null){
-        Editor.Dialog.error("获取文件数据失败",{buttons:["确定"]})
+        showToast("获取文件数据失败")
         bIsSyncing.value = false
         return
     }
@@ -69,10 +71,10 @@ async function syncSelectFile(){
     try{
         fs.writeFileSync(savePath,u8a)
         // console.log("保存文件",savePath,result,u8a.length)
-        Editor.Dialog.info("保存文件成功",{buttons:["确定"]})
+        showToast("保存文件成功")
     }catch(e){
         // console.error("保存文件失败",e)
-        Editor.Dialog.error("保存文件失败",{buttons:["确定"]})
+        showToast("保存文件失败")
     }
     bIsSyncing.value = false
 }

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, inject, onMounted, onUnmounted, reactive, ref, defineProps, nextTick, watch, Ref} from 'vue';
-import { ElMessage } from 'element-plus';
+import { ElMessage, MessageParams } from 'element-plus';
 import { _funcs } from '../../../tools/_funcs';
 import { _dataCtx } from '../../../tools/_dataCtx';
 import { _pluginSocket } from '../../../tools/plugin_socket';
@@ -8,13 +8,17 @@ import { TreeNodeData,TreeNode, TreeOptionProps,Tree } from 'element-plus/es/com
 import ContextMenu from './ContextMenu.vue';
 import { eventBus } from '../../../tools/_enentBus';
 
+const filterCmd_assetUsege = "assetUsege:"
+
+
+const showToast = inject<ToastParam>("message")
+
 const props = defineProps({
     height_nodeTree: {
         type: Number,
         
     }
 })
-
 
 const emit = defineEmits([
     'onSel_node',
@@ -254,8 +258,9 @@ async function on_click_in_inspector_component(uuid: string){
     on_click_in_inspector_node(nodeUuid)
 }
 
-function on_check_asset_usege_node(uuid:string){
+async function on_check_asset_usege_node(uuid:string){
     console.log("检查引用此资源的节点:",uuid)
+    str_filter.value = `${filterCmd_assetUsege}${uuid}`
 }
 
 onMounted(() => {
@@ -339,21 +344,53 @@ const filterMethod = (query:string, data:ResTreeItem,node) => {
     if (!query) return true;
     
     if (!data || !data.path) return false;
-    let bMatch = data.path.toLowerCase().includes(query.toLowerCase());
-    if(!bMatch){
-        if(data.uuid?.indexOf(query)>=0){
-            bMatch = true
+    let bMatch = false
+    if(query.startsWith(filterCmd_assetUsege)){
+        return filteredMapByAssetUuid[data.uuid]!=null
+    }else{
+        bMatch = data.path.toLowerCase().includes(query.toLowerCase());
+        if(!bMatch){
+            if(data.uuid?.indexOf(query)>=0){
+                bMatch = true
+            }
         }
     }
+    
     return bMatch;
 };
 
-const onQueryChanged = (event) => {
+const str_filter = ref("")
+let filteredMapByAssetUuid = {}
+
+watch(str_filter,async (newVal,oldVal)=>{
     if (ref_nodeTree.value) {
-        // console.log("开始筛选，输入值:", event.target.value);
-        ref_nodeTree.value.filter(event.target.value);
+        if(newVal?.startsWith(filterCmd_assetUsege)){
+            const assetUuid = newVal.replace(filterCmd_assetUsege,"")
+
+            const time_0 = Date.now()
+            filteredMapByAssetUuid = await _pluginSocket.getAssetUsageInScene(assetUuid)
+            const time_1 = Date.now()
+            console.log("时间",time_1 - time_0)
+
+            const nodeUuids = Object.keys(filteredMapByAssetUuid)
+            if(nodeUuids.length==0){
+                // Editor.Dialog.error("没有节点引用引用此资源",{buttons:["确定"]})
+                _funcs.log_1("没有节点引用引用此资源")
+                showToast("没有节点引用引用此资源1")
+                str_filter.value = null
+            }else{
+                const nodePaths = nodeUuids.map((nodeUuid)=>{
+                    return _dataCtx.getTreeNodeInfoWithUuid(nodeUuid).path
+                })
+                _funcs.log_1("相关节点引用",nodePaths)
+                showToast(`找到了${nodePaths.length}个节点`)
+            }
+        }
+        
+        console.log("开始筛选，输入值:", newVal);
+        ref_nodeTree.value.filter(newVal);
     }
-};
+})
 
 const isCollapsed = ref(true)
 function doExpandAll() {
@@ -385,7 +422,7 @@ const searchBarHeight = 26;
 
         </div>
             <div class="searchBar" :style="{height:searchBarHeight+'px'}">
-                <ui-input style="flex: 1;" @change="onQueryChanged" placeholder="筛选路径或uuid" type="text"/>
+                <ui-input style="flex: 1;" v-model="str_filter" placeholder="筛选路径或uuid" type="text"/>
                 <div class="searchBar-button-container">
                     <ui-button type="icon" tooltip="展开全部" @confirm="doExpandAll" v-if="isCollapsed">
                         <ui-icon value="expand"></ui-icon>

@@ -15,6 +15,8 @@ import comp_md_info from './components/comp_md_info.vue';
 import comp_deviceInfo from './components/comp_deviceInfo.vue';
 import view_asset_info from './components/view_asset_info.vue';
 
+const showToast = inject<ToastParam>("message")
+
 /**客户端是否在线 */
 const isRuntimeOffline = ref(true)
 /**本地预览的地址 */
@@ -169,7 +171,7 @@ async function openLogPanel(){
 async function openLocalCachePanel(){
     const gameEnvObj = await _pluginSocket.getGameEnv()
     if(!gameEnvObj.isNative){
-        Editor.Dialog.info("非原生环境不支持此功能",{buttons:["确定"]})
+        showToast("非原生环境不支持此功能")
         return
     }
     const panelId = _funcs.getPluginName()+".localCache_panel"

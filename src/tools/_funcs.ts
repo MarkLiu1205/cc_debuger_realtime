@@ -5,7 +5,9 @@ const fs = require('fs-extra');
 const os = require('os');
 const {PNG} = require('pngjs');
 
+import { MessageParams } from 'element-plus';
 import packageJSON from '../../package.json';
+import { inject } from 'vue';
 
 export namespace _funcs{
 

@@ -417,6 +417,16 @@ class PluginSocket {
         return this._sendRequest("getWritableFileData",filePath)
     }
 
+    /**
+     * 获取引用某个资源的节点列表
+     * @param uuid 
+     * @returns 
+     */
+    async getAssetUsageInScene(uuid:string): Promise<Record<string,Array<string>>>{
+        await this.waitForRuntimeIsInline()
+        return this._sendRequest("getAssetUsageInScene",uuid)
+    }
+
     clear(){
         this._gameEnvObj = null
         this._nodeLayers = null

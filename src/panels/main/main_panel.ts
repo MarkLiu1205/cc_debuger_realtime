@@ -36,9 +36,12 @@ export default Editor.Panel.define({
 
         const app = createApp(MainApp);
         app.provide('appRoot', this.$.root);
-        app.provide('message', (options) => {
+        app.provide('message', (options,type?:"error" | "success" | "warning" | "info") => {
             if (typeof options === 'string') {
-                options = { message: options+"  jjjj99" };
+                options = { message: options };
+            }
+            if(type){
+                options.type = type
             }
             options.appendTo = options.appendTo || this.$.root;
             return ElMessage(options);

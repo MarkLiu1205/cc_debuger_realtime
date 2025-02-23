@@ -734,7 +734,7 @@ class _RuntimeData{
                     }else{
                         const _keys = Object.keys(comp)
                         for(let k of _keys){
-                            if(comp[k]==_asset){
+                            if(comp[k]===_asset){
                                 uuidsOfComp.push(comp.uuid)
                                 break
                             }
