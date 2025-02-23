@@ -4,6 +4,7 @@ const { exec,spawn } = require('child_process');
 const fs = require('fs-extra');
 const os = require('os');
 const {PNG} = require('pngjs');
+const https = require('https');
 
 import { MessageParams } from 'element-plus';
 import packageJSON from '../../package.json';
@@ -423,6 +424,20 @@ export function ensureFloderExist(dirPath:string){
             }
         });
     })
+}
+
+// 获取本地 IP
+export function getLocalIP():string {
+    const interfaces = os.networkInterfaces();
+    for (const interfaceName in interfaces) {
+        const interfaceDetails = interfaces[interfaceName];
+        for (const detail of interfaceDetails) {
+            if (detail.family === 'IPv4' && !detail.internal) {
+                return detail.address;
+            }
+        }
+    }
+    return '未找到 IP 地址';
 }
 
 }

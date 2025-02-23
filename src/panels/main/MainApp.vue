@@ -129,13 +129,15 @@ function doOpenRuntimePreview() {
 }
 
 async function test_1() {
-    let isLoggedIn = await Editor.User.isLoggedIn()
-    console.log("是否登录",isLoggedIn)
-    let data:Editor.User.UserData = await Editor.User.getData()
-    console.log("用户数据",data)
+    // let isLoggedIn = await Editor.User.isLoggedIn()
+    // console.log("是否登录",isLoggedIn)
+    // let data:Editor.User.UserData = await Editor.User.getData()
+    // console.log("用户数据",data)
 
-    const lists = await _pluginSocket.getWitablePathFilesInfo()
-    console.log("可写目录",JSON.stringify(lists,null,2))
+    // const lists = await _pluginSocket.getWitablePathFilesInfo()
+    // console.log("可写目录",JSON.stringify(lists,null,2))
+    const localIp = _funcs.getLocalIP()
+    console.log("localIp",localIp)
 }
 
 async function openEvalPanel(event: MouseEvent){
@@ -215,7 +217,7 @@ async function openLocalCachePanel(){
                             <el-button  @click="openDynamicPanel">动态图集</el-button>
                             <el-button  @click="openLogPanel">日志</el-button>
                             <el-button  @click="openLocalCachePanel">可写目录</el-button>
-                            <!-- <el-button  @click="test_1">测试</el-button> -->
+                            <el-button  @click="test_1">测试</el-button>
                         </div>
                         <comp_deviceInfo/>
                         <comp_profiler/>
