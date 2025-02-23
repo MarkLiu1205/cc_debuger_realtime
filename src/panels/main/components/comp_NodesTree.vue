@@ -311,12 +311,14 @@ function onRightClick_node( event: MouseEvent, data: NodeTreeItem, node: TreeNod
         { 
             label: '查看此节点依赖的资源', 
             action: () => {
-                console.log("点击1")
+                console.log("点击1",data.uuid,data.path)
+                eventBus.emit("check-node-depends-asset", data.uuid);
             }
         },{ 
             label: '递归查看所有依赖的资源（含子节点）', 
             action: () => {
-                console.log("点击2")
+                console.log("点击2",data.uuid,data.path)
+                eventBus.emit("check-node-traverse-depends-asset", data.uuid);
             }
         }
     ];

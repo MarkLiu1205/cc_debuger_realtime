@@ -14,14 +14,12 @@ _pluginSocket.listenProfileInfo((arr)=>{
 
 onMounted(()=>{
     _pluginSocket.requestShowFPS().then((bool:boolean)=>{
-        console.log("bool",bool,typeof bool)
         bShow.value = bool
     })
 })
 
 function onToggle(event){
     const bool = event.target.value
-    console.log("bool",bool)
     bShow.value = bool
 
     isLoading.value = true

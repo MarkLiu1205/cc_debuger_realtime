@@ -121,7 +121,7 @@ export function getIconOfResType(type:string){
         return "video"
     }else if(type==="cc.Mesh"){
         return "mesh"
-    }else if(type==="cc.Skeleton"){
+    }else if(type==="sp.SkeletonData"){
         return "spine-data"
     }else if(type==="cc.AnimationClip"){
         return "animation-clip"

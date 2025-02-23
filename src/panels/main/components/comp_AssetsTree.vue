@@ -12,6 +12,9 @@ const filterCmd_assetUsege = "assetUsege:"
 const filterCmd_assetRefer = "assetRefer:"
 const filterCmd_recursive_assetRefer = "assetRefer_recursive:"
 
+const filterCmd_nodeDepends = "nodeDepends:"
+const filterCmd_recursive_nodeDepends = "recursive_nodeDepends:"
+
 const showToast = inject<ToastParam>("message")
 
 const props = defineProps({
@@ -147,6 +150,14 @@ async function onFilterStrChange(newVal:string,oldVal?:string){
             const assetUuid = newVal.replace(filterCmd_recursive_assetRefer,"")
             filteredArr_recursive_refer = await _pluginSocket.getRecursiveDependsOfAsset(assetUuid)
             arr = filteredArr_recursive_refer
+        }else if(newVal?.startsWith(filterCmd_nodeDepends)){
+            const assetUuid = newVal.replace(filterCmd_nodeDepends,"")
+            filteredArr_recursive_refer = await _pluginSocket.getDependsOfNode(assetUuid)
+            arr = filteredArr_recursive_refer
+        }else if(newVal?.startsWith(filterCmd_recursive_nodeDepends)){
+            const assetUuid = newVal.replace(filterCmd_recursive_nodeDepends,"")
+            filteredArr_recursive_refer = await _pluginSocket.getRecursiveDependsOfNode(assetUuid)
+            arr = filteredArr_recursive_refer
         }
 
         if(arr!=null){
@@ -190,6 +201,26 @@ function on_check_asset_depend_traverse(uuid:string){
     onFilterStrChange(str_filter.value)
 }
 
+/**
+ * 获取指定节点直接依赖的资源列表
+ * @param nodeUuid 
+ */
+function on_check_node_depends_asset(nodeUuid:string){
+    _isTreeMode.value = false
+    str_filter.value = `${filterCmd_nodeDepends}${nodeUuid}`
+    onFilterStrChange(str_filter.value)
+}
+
+/**
+ * 获取指定节点递归依赖（即包含子节点）的资源列表
+ * @param nodeUuid 
+ */
+ function on_check_node_traverse_depends_asset(nodeUuid:string){
+    _isTreeMode.value = false
+    str_filter.value = `${filterCmd_recursive_nodeDepends}${nodeUuid}`
+    onFilterStrChange(str_filter.value)
+}
+
 onMounted(() => {
     eventBus.on("click-asset-in-inspector", on_click_in_inspector_asset);
 
@@ -197,6 +228,9 @@ onMounted(() => {
 
     eventBus.on("check-asset-depend", on_check_asset_depend);
     eventBus.on("check-asset-depend-traverse", on_check_asset_depend_traverse);
+
+    eventBus.on("check-node-depends-asset", on_check_node_depends_asset);
+    eventBus.on("check-node-traverse-depends-asset", on_check_node_traverse_depends_asset);
 });
 
 onUnmounted(() => {
@@ -206,6 +240,9 @@ onUnmounted(() => {
 
     eventBus.off("check-asset-depend", on_check_asset_depend);
     eventBus.off("check-asset-depend-traverse", on_check_asset_depend_traverse);
+
+    eventBus.on("check-node-depends-asset", on_check_node_depends_asset);
+    eventBus.on("check-node-traverse-depends-asset", on_check_node_traverse_depends_asset);
 });
 
 let selectedAssetId: string | null = null
@@ -239,22 +276,22 @@ function onRightClick_asset( event: MouseEvent, data: ResTreeItem, node: TreeNod
     selectedAssetId = null
     onClick_asset(data,node,event)
 
-    const menuOptions_asset = [
-        { 
-            label: '列举相关节点', 
-            action: () => {
-                console.log("点击1")
-            }
-        },{ 
-            label: '监控引用计数', 
-            action: () => {
-                console.log("点击2")
-            }
-        }
-    ];
-    nextTick(()=>{
-        contextMenuRef.value.showContextMenu(event, menuOptions_asset);
-    })
+    // const menuOptions_asset = [
+    //     { 
+    //         label: '列举相关节点', 
+    //         action: () => {
+    //             console.log("点击1")
+    //         }
+    //     },{ 
+    //         label: '监控引用计数', 
+    //         action: () => {
+    //             console.log("点击2")
+    //         }
+    //     }
+    // ];
+    // nextTick(()=>{
+    //     contextMenuRef.value.showContextMenu(event, menuOptions_asset);
+    // })
     
     // console.log("右键点击资源",data)
 }
@@ -301,6 +338,10 @@ const filterMethod = (query:string, data:ResTreeItem,node) => {
     }else if(query.startsWith(filterCmd_assetRefer)){
         return filteredArr_refer.indexOf(data.uuid)>=0
     }else if(query.startsWith(filterCmd_recursive_assetRefer)){
+        return filteredArr_recursive_refer.indexOf(data.uuid)>=0
+    }else if(query.startsWith(filterCmd_nodeDepends)){
+        return filteredArr_recursive_refer.indexOf(data.uuid)>=0
+    }else if(query.startsWith(filterCmd_recursive_nodeDepends)){
         return filteredArr_recursive_refer.indexOf(data.uuid)>=0
     }else{
         bMatch = data.path.toLowerCase().includes(query.toLowerCase());

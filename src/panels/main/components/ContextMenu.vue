@@ -62,13 +62,14 @@ const handlerClickGlobal = (e: MouseEvent) => {
     }
 };
 
-function handleClick(option:Option) {
+function handleClick(option:Option,event:MouseEvent) {
     hideContextMenu();
-    setTimeout(() => {
+    event.stopPropagation()
+    // setTimeout(() => {
         if (typeof option.action === 'function') {
             option.action();
         }
-    }, 0);
+    // }, 0);
 
 }
 
@@ -106,7 +107,7 @@ defineExpose({
             <li
                 v-for="(option, index) in menuOptions"
                 :key="index"
-                @click="!option.isDivider && handleClick(option)"
+                @click="!option.isDivider && handleClick(option,$event)"
                 class="menu-item"
                 :class="{ 'divider': option.isDivider }"
             >

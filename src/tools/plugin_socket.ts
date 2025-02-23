@@ -457,6 +457,26 @@ class PluginSocket {
         return this._sendRequest("getRecursiveDependsOfAsset",uuid)
     }
 
+    /**
+     * 获取某个节点直接依赖的资源列表
+     * @param uuid 
+     * @returns 
+     */
+    async getDependsOfNode(uuid:string): Promise<Array<string>>{
+        await this.waitForRuntimeIsInline()
+        return this._sendRequest("getDependsOfNode",uuid)
+    }
+
+    /**
+     * 获取某个节点递归依赖的资源列表
+     * @param uuid 
+     * @returns 
+     */
+    async getRecursiveDependsOfNode(uuid:string): Promise<Array<string>>{
+        await this.waitForRuntimeIsInline()
+        return this._sendRequest("getRecursiveDependsOfNode",uuid)
+    }
+
     clear(){
         this._gameEnvObj = null
         this._nodeLayers = null

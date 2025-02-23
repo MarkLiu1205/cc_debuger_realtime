@@ -9,7 +9,7 @@ const assetInfo = defineModel<ResTreeItem>()
 const isNotInCache = ref(false)
 
 onMounted(()=>{
-    console.log("assetInfo",assetInfo.value.assetType,assetInfo.value.refCount)
+    // console.log("assetInfo",assetInfo.value.assetType,assetInfo.value.refCount)
     if(assetInfo.value==null){
         return
     }

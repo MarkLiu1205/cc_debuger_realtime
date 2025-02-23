@@ -164,6 +164,12 @@ class RunTimeSocket {
             } else if (msg.action === 'getRecursiveDependsOfAsset') {
                 const uuid = msg.data;
                 data = _data.getRecursiveDependsOfAsset(uuid)
+            } else if (msg.action === 'getDependsOfNode') {
+                const uuid = msg.data;
+                data = _data.getDependsOfNode(uuid)
+            } else if (msg.action === 'getRecursiveDependsOfNode') {
+                const uuid = msg.data;
+                data = _data.getRecursiveDependsOfNode(uuid)
             }
     
             responseData.data = data
@@ -743,7 +749,7 @@ class _RuntimeData{
                     }else{
                         const _keys = Object.keys(comp)
                         for(let k of _keys){
-                            if(comp[k]===_asset){
+                            if(typeof comp[k]=="object" && comp[k]===_asset){
                                 uuidsOfComp.push(comp.uuid)
                                 break
                             }
@@ -791,6 +797,119 @@ class _RuntimeData{
     getRecursiveDependsOfAsset(uuid:string){
         const deps = cc.assetManager.dependUtil.getDepsRecursively(uuid)
         return deps
+    }
+
+    /**
+     * 获取某个节点直接依赖的资源列表
+     * @param uuid 
+     * @returns 
+     */
+    getDependsOfNode(uuid:string){
+        const _node = this.m_nodeUuidMap[uuid]
+        const _comps = _node.components
+
+        const _uuids = []
+        for(let comp of _comps){
+            if(comp instanceof cc.UIRenderer){
+                if(comp.customMaterial){
+                    _uuids.push(comp.customMaterial.uuid)
+                }
+            }
+            if(comp instanceof cc.Sprite){
+                if(comp.spriteAtlas){
+                    _uuids.push(comp.spriteAtlas.uuid)
+                }
+                if(comp.spriteFrame){
+                    _uuids.push(comp.spriteFrame.uuid)
+                }
+            }else if(comp instanceof cc.Label){
+                if(comp.font){
+                    _uuids.push(comp.font.uuid)
+                }
+            }else if(comp instanceof cc.EditBox){
+                if(comp.backgroundImage){
+                    _uuids.push(comp.backgroundImage.uuid)
+                }
+            }else if(comp instanceof cc.Mask){
+                if(comp.spriteFrame){
+                    _uuids.push(comp.spriteFrame.uuid)
+                }
+            }else if(comp instanceof cc.Camera){
+                if(comp.targetTexture){
+                    _uuids.push(comp.targetTexture.uuid)
+                }
+            }else if(comp instanceof cc.ParticleSystem2D){
+                if(comp.file){
+                    _uuids.push(comp.file.uuid)
+                }
+                if(comp.spriteFrame){
+                    _uuids.push(comp.spriteFrame.uuid)
+                }
+            }else if(comp instanceof cc.sp.Skeleton){
+                if(comp.skeletonData){
+                    _uuids.push(comp.skeletonData.uuid)
+                }
+            }else if(comp instanceof cc.dragonBones.ArmatureDisplay){
+                if(comp.dragonAsset){
+                    _uuids.push(comp.dragonAsset.uuid)
+                }
+                if(comp.dragonAtlasAsset){
+                    _uuids.push(comp.dragonAtlasAsset.uuid)
+                }
+            }else if(comp instanceof cc.RichText){
+                if(comp.imageAtlas){
+                    _uuids.push(comp.imageAtlas.uuid)
+                }
+            }else if(comp instanceof cc.TiledMap){
+                if(comp.tmxAsset){
+                    _uuids.push(comp.tmxAsset.uuid)
+                }
+            }else if(comp instanceof cc.VideoPlayer){
+                if(comp.clip){
+                    _uuids.push(comp.clip.uuid)
+                }
+            }else if(comp instanceof cc.AudioSource){
+                if(comp.clip){
+                    _uuids.push(comp.clip.uuid)
+                }
+            }else{
+                //这些是确定不会引用任何资源的组件，直接跳过
+                if(comp instanceof cc.Widget||comp instanceof cc.Layout||comp instanceof cc.UIOpacity||comp instanceof cc.Button
+                    ||comp instanceof cc.PageView||comp instanceof cc.ScrollView||comp instanceof cc.ProgressBar||comp instanceof cc.Graphics
+                    ||comp instanceof cc.ScrollBar||comp instanceof cc.Slider||comp instanceof cc.ToggleContainer||comp instanceof cc.Toggle
+                    ||comp instanceof cc.ViewGroup||comp instanceof cc.SafeArea||comp instanceof cc.BlockInputEvents||comp instanceof cc.LabelOutline
+                    ||comp instanceof cc.LabelShadow||comp instanceof cc.LabelShadow
+                ){
+                    continue
+                }else{
+                    const _keys = Object.keys(comp)
+                    for(let k of _keys){
+                        if(typeof comp[k]=="object" && comp[k] instanceof cc.Asset){
+                            _uuids.push(comp[k].uuid)
+                        }
+                    }
+                }
+            }
+            
+        }
+
+        return _uuids
+    }
+
+    /**
+     * 获取某个节点递归依赖的资源列表
+     * @param uuid 
+     * @returns 
+     */
+    getRecursiveDependsOfNode(uuid:string){
+        const ret = []
+        const _node = this.m_nodeUuidMap[uuid]
+        ret.push(...this.getDependsOfNode(_node.uuid))
+        const preFunc = (node: cc.Node)=>{
+            ret.push(...this.getDependsOfNode(node.uuid))
+        }
+        _node.walk(preFunc)
+        return ret
     }
 
     private _fillNodeTree(treeObj: NodeTreeItem, children: Array<cc.Node>, parentPath: string = '') {

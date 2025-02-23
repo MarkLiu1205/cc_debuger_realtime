@@ -85,7 +85,7 @@ function onSelect(event) {
         </div>
         <div class="property">
             <label>Skeleton Data:</label>
-            <comp_selecter_asset assetType="cc.SkeletonData"  v-model="compModel.skeletonData"/>
+            <comp_selecter_asset assetType="cc.sp.SkeletonData"  v-model="compModel.skeletonData"/>
         </div>
         <div class="property">
             <label>Default Skin:</label>
