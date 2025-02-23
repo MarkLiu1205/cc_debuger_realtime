@@ -76,11 +76,15 @@ _pluginSocket.listenAssetAdded((arr:Array<ResMemInfo>)=>{
 })
 
 const ref_container_resTree = ref(null);
+const ref_searchBar = ref(null);
 const ref_resTree = ref(null);
 
 
 function handleClickOutside(event) {
     if(_funcs.checkMouseIsInElemen(ref_container_resTree.value, event)){
+        if(_funcs.checkMouseIsInElemen(ref_searchBar.value, event)){
+            return
+        }
         if(selectedAssetId){
             selectedAssetId = null
             ref_resTree.value.setCurrentKey(null)
@@ -184,21 +188,30 @@ watch(str_filter,async (newVal,oldVal)=>{
 })
 
 async function on_check_asset_usege_asset(uuid:string){
-    _isTreeMode.value = false
+    // _isTreeMode.value = false
+    const old = str_filter.value
     str_filter.value = `${filterCmd_assetUsege}${uuid}`
-    onFilterStrChange(str_filter.value)
+    if(old==str_filter.value){
+        onFilterStrChange(str_filter.value,old)
+    }
 }
 
 function on_check_asset_depend(uuid:string){
-    _isTreeMode.value = false
+    // _isTreeMode.value = false
+    const old = str_filter.value
     str_filter.value = `${filterCmd_assetRefer}${uuid}`
-    onFilterStrChange(str_filter.value)
+    if(old==str_filter.value){
+        onFilterStrChange(str_filter.value,old)
+    }
 }
 
 function on_check_asset_depend_traverse(uuid:string){
-    _isTreeMode.value = false
+    // _isTreeMode.value = false
+    const old = str_filter.value
     str_filter.value = `${filterCmd_recursive_assetRefer}${uuid}`
-    onFilterStrChange(str_filter.value)
+    if(old==str_filter.value){
+        onFilterStrChange(str_filter.value,old)
+    }
 }
 
 /**
@@ -276,22 +289,41 @@ function onRightClick_asset( event: MouseEvent, data: ResTreeItem, node: TreeNod
     selectedAssetId = null
     onClick_asset(data,node,event)
 
-    // const menuOptions_asset = [
-    //     { 
-    //         label: '列举相关节点', 
-    //         action: () => {
-    //             console.log("点击1")
-    //         }
-    //     },{ 
-    //         label: '监控引用计数', 
-    //         action: () => {
-    //             console.log("点击2")
-    //         }
-    //     }
-    // ];
-    // nextTick(()=>{
-    //     contextMenuRef.value.showContextMenu(event, menuOptions_asset);
-    // })
+    if(data.isDirectory){
+       return 
+    }
+    const menuOptions_asset = [
+        { 
+            label: '复制并打印UUID', 
+            action: () => {
+                _funcs.log_1("UUID(已复制)",data.uuid)
+                navigator.clipboard.writeText(data.uuid)
+            }
+        },{ 
+            label: '查看引用此资源的所有节点', 
+            action: () => {
+                eventBus.emit("check-asset-usege-node", data.uuid);
+            }
+        },{ 
+            label: '查看引用此资源的所有资源', 
+            action: () => {
+                eventBus.emit("check-asset-usege-asset", data.uuid);
+            }
+        },{ 
+            label: '查看此资源依赖的资源', 
+            action: () => {
+                eventBus.emit("check-asset-depend", data.uuid);
+            }
+        },{ 
+            label: '递归查看此资源依赖的资源', 
+            action: () => {
+                eventBus.emit("check-asset-depend-traverse", data.uuid);
+            }
+        }
+    ];
+    nextTick(()=>{
+        contextMenuRef.value.showContextMenu(event, menuOptions_asset);
+    })
     
     // console.log("右键点击资源",data)
 }
@@ -365,11 +397,11 @@ watch(_isTreeMode,(newVal,oldVal)=>{
 function changeToListMode(){
     _isTreeMode.value = false
     
-    str_filter.value = ""
+    // str_filter.value = ""
 }
 function changeToTreeMode(){
     _isTreeMode.value = true
-    str_filter.value = ""
+    // str_filter.value = ""
 }
 
 function flattenTree(arr: ResTreeItem[]) {
@@ -422,7 +454,7 @@ const clearFilterStr = () => {
             <span style="margin-left: 10px;">正在加载资源列表</span>
         </div>
         <div v-else>
-            <div class="searchBar" :style="{height:searchBarHeight+'px'}">
+            <div ref="ref_searchBar" class="searchBar" :style="{height:searchBarHeight+'px'}">
                 <div
                     class="input-container"
                     @mouseover="isHover = true"

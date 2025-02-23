@@ -200,11 +200,15 @@ function applyChange(oldoObj,changeMap:Record<string,any>){
 }
 
 const ref_container_nodeTree = ref(null);
+const ref_searchBar = ref(null);
 const ref_nodeTree = ref(null);
 
 
 function handleClickOutside(event) {
     if(_funcs.checkMouseIsInElemen(ref_container_nodeTree.value, event)){
+        if(_funcs.checkMouseIsInElemen(ref_searchBar.value, event)){
+            return
+        }
         if(_curSelNodeInfo.value){
             _curSelNodeInfo.value = null
             ref_nodeTree.value.setCurrentKey(null)   
@@ -260,7 +264,11 @@ async function on_click_in_inspector_component(uuid: string){
 
 async function on_check_asset_usege_node(uuid:string){
     // console.log("检查引用此资源的节点:",uuid)
+    const old = str_filter.value
     str_filter.value = `${filterCmd_assetUsege}${uuid}`
+    if(old==str_filter.value){
+        onFilterStrChange(str_filter.value,old)
+    }
 }
 
 onMounted(() => {
@@ -309,6 +317,13 @@ function onRightClick_node( event: MouseEvent, data: NodeTreeItem, node: TreeNod
 
     const menuOptions_node = [
         { 
+            label: '复制并打印UUID', 
+            action: () => {
+                _funcs.log_1("Path",data.path)
+                _funcs.log_1("UUID(已被复制)",data.uuid)
+                navigator.clipboard.writeText(data.uuid)
+            }
+        },{ 
             label: '查看此节点依赖的资源', 
             action: () => {
                 console.log("点击1",data.uuid,data.path)
@@ -386,7 +401,7 @@ async function onFilterStrChange(newVal:string,oldVal?:string){
             }
         }
         
-        console.log("开始筛选，输入值:", newVal);
+        // console.log("开始筛选，输入值:", newVal);
         ref_nodeTree.value.filter(newVal);
     }
 }
@@ -430,7 +445,7 @@ const clearFilterStr = () => {
         <div v-else>
 
         </div>
-            <div class="searchBar" :style="{height:searchBarHeight+'px'}">
+            <div ref="ref_searchBar" class="searchBar" :style="{height:searchBarHeight+'px'}">
                 <div
                     class="input-container"
                     @mouseover="isHover = true"

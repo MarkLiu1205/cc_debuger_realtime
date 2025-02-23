@@ -112,7 +112,7 @@ const filterMethod = (query, data,node) => {
 
 const onQueryChanged = (event) => {
     if (treeRef.value) {
-        console.log("开始筛选，输入值:", event.target.value);
+        // console.log("开始筛选，输入值:", event.target.value);
         treeRef.value.filter(event.target.value);
     }
 };
