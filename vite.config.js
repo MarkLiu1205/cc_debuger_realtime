@@ -1,19 +1,13 @@
-import { defineConfig } from 'vite';
+import { defineConfig } from 'vite'; // 确保引入 defineConfig
 import { nodeExternals } from 'rollup-plugin-node-externals';
 import vue from '@vitejs/plugin-vue';
 import { cocosPanelConfig, cocosPanelCss } from '@cocos-fe/vite-plugin-cocos-panel';
 import AutoImport from 'unplugin-auto-import/vite';
 import Components from 'unplugin-vue-components/vite';
 import { ElementPlusResolver } from 'unplugin-vue-components/resolvers';
+import { viteObfuscateFile } from 'vite-plugin-obfuscator'; // 导入正确的函数
 
 export default defineConfig(({ mode }) => {
-    /**
-     *  注意事项:
-     *  vite 在构建 lib 模式的时候，是没有 dev 服务的，dev 主要用于 web 应用
-     *  所以在 package.json 的 scripts 里 dev 和 build 都是执行 vite build
-     *  只是在 dev 的脚本里，手动指定了 "--mode development" https://cn.vitejs.dev/guide/env-and-mode.html
-     *  然后在 development 模式下，我们配置 watch 的配置
-     */
     const isDev = mode === 'development';
 
     return {
@@ -32,13 +26,26 @@ export default defineConfig(({ mode }) => {
             },
             watch: isDev
                 ? {
-                      include: ['./src/**/*.js','./src/**/*.ts', './src/**/*.vue', './src/**/*.css'],
+                      include: ['./src/**/*.js', './src/**/*.ts', './src/**/*.vue', './src/**/*.css'],
                   }
                 : null,
             target: 'modules',
-            minify: false,
+            minify: isDev ? false : "terser", // 使用 Terser 压缩
+            terserOptions: {
+                compress: true,
+                mangle: true, // 混淆变量名
+            },
         },
         plugins: [
+            viteObfuscateFile({
+                // 混淆选项
+                compact: true, // 压缩代码
+                controlFlowFlattening: true, // 控制流扁平化
+                deadCodeInjection: true, // 注入无用代码
+                stringArray: true, // 加密字符串
+                order: 'post',  // 使用新的 order 配置
+                handler: 'transform', // 使用新的 handler 配置
+            }),
             vue({
                 template: {
                     compilerOptions: {

@@ -160,7 +160,7 @@ const onQueryChanged = (event) => {
 
 ui-input {
     margin: 6px;
-    width:calc(100%-12px);
+    width:calc(100% - 12px);
     height: 20px;
 }
 
