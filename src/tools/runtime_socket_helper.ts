@@ -5,6 +5,9 @@ const path = require("path")
 import { _funcs } from './_funcs';
 
 const runtimeScriptName = 'runtime_socket.ts';
+
+const sourceScriptPath = path.join(_funcs.getCurPluginPath(), "runtime/", runtimeScriptName);
+
 const runtimeScriptPath = path.join(Editor.Project.path, 'assets', runtimeScriptName);
 const runtimeMetaPath = runtimeScriptPath + '.meta';
 
@@ -66,7 +69,7 @@ export const load_ts_to_runtime = async () => {
     try {
         console.log(`[${_funcs.getPluginName()}] Injecting runtime script...`);
 
-        const sourceScriptPath = path.join(_funcs.getCurPluginPath(), "src/tools/", runtimeScriptName);
+        
         const sourceScriptContent = fs.readFileSync(sourceScriptPath, 'utf-8');
 
         let shouldWriteFile = true;

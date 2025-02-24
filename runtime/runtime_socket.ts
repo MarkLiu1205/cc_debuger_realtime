@@ -503,7 +503,7 @@ class _RuntimeData{
             CC_JSB: JSB,
             CC_SUPPORT_JIT: SUPPORT_JIT,
         }
-        if(NATIVE){
+        if(cc.sys.isNative){
             obj.writablePath = cc.native.fileUtils.getWritablePath()
         }
         return obj
@@ -605,7 +605,7 @@ class _RuntimeData{
                         obj.imgSrc = _getImageAssetUrl(asset)
                         if(cc.sys.isBrowser){
                             obj.isUrlImg = true
-                        }else if(NATIVE){
+                        }else if(cc.sys.isNative){
                             obj.isNativeImg = true
                         }
                     }
@@ -619,7 +619,7 @@ class _RuntimeData{
                         obj.isAutoPackImg = true
                         if(cc.sys.isBrowser){
                             obj.isUrlImg = true
-                        }else if(NATIVE){
+                        }else if(cc.sys.isNative){
                             obj.isNativeImg = true
                         }
                     }
@@ -1565,7 +1565,7 @@ function _getImageAssetUrl(asset:cc.ImageAsset){
 
         const imgSrc = `${baseUrl}${subPath}${asset.nativeUrl}`;
         return imgSrc
-    }else if(NATIVE && asset.url){
+    }else if(cc.sys.isNative && asset.url){
         const imgPath = cc.native.fileUtils.fullPathForFilename(asset.url)
         return imgPath
     }
@@ -1573,7 +1573,7 @@ function _getImageAssetUrl(asset:cc.ImageAsset){
 
 /**获取可写目录下的目录结构 */
 function getWitablePathFilesInfo():Array<WritableFileInfo>{
-    if(!NATIVE){
+    if(!cc.sys.isNative){
         return []
     }
     
@@ -1611,7 +1611,7 @@ function getWitablePathFilesInfo():Array<WritableFileInfo>{
 }
 
 function getWritableFileData(filePath:string){
-    if(!NATIVE){
+    if(!cc.sys.isNative){
         return null
     }
     const arr = cc.native.fileUtils.getDataFromFile(filePath);

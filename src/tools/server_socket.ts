@@ -8,7 +8,7 @@ class ServerSocket {
     private process: any = null;
 
     start(port:string) {
-        const serverScript = path.join(_funcs.getCurPluginPath(), 'src/tools/server.js');
+        const serverScript = path.join(_funcs.getCurPluginPath(), 'server/server.js');
         console.log('serverScript', serverScript);
 
         // 使用 spawn 启动子进程
