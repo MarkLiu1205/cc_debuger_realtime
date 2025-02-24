@@ -8,6 +8,60 @@ const runtimeScriptName = 'runtime_socket.ts';
 const runtimeScriptPath = path.join(Editor.Project.path, 'assets', runtimeScriptName);
 const runtimeMetaPath = runtimeScriptPath + '.meta';
 
+let _oldContent_ts:string;
+let _oldContent_meta:string;
+
+export const applyBuildParamBefore = async (cfg:SelfBuildParam)=>{
+    const cut_plugin_from_runtime = cfg?.cut_plugin_from_runtime
+    const bAutoStarPlugin = cfg?.bAutoStarPlugin
+    const serverAddress = cfg?.serverAddress
+    // console.log("cut_plugin_from_runtime",cut_plugin_from_runtime)
+    // console.log("bAutoStarPlugin",bAutoStarPlugin)
+    // console.log("serverAddress",serverAddress)
+    if (!fs.existsSync(runtimeScriptPath)) {
+        return
+    }
+    _oldContent_ts = fs.readFileSync(runtimeScriptPath, 'utf-8');
+    _oldContent_meta = fs.readFileSync(runtimeMetaPath, 'utf-8');
+    if(cut_plugin_from_runtime){
+        await unload_ts_from_runtime()
+    }else{
+        const sourceScriptContent = fs.readFileSync(runtimeScriptPath, 'utf-8');
+        let newStr = sourceScriptContent.replace(
+            /bAutoStart\s*=\s*(true|false)/, 
+            `bAutoStart = ${bAutoStarPlugin}`
+        );
+        newStr = newStr.replace(
+            /plugin_server_address\s*=\s*([`"'])(.*?)\1/,
+            `plugin_server_address = \`${serverAddress}\``
+        );
+        fs.writeFileSync(runtimeScriptPath, newStr, 'utf-8');
+
+        // 刷新资源
+        const refreshResult = await Editor.Message.request(
+            "asset-db",
+            "refresh-asset",
+            `db://assets/${runtimeScriptName}`
+        );
+    }
+    return 0
+}
+
+export const applyBuildParamAfter = async(cfg:SelfBuildParam)=>{
+    console.log("结束构建",_oldContent_meta?.length)
+    if(_oldContent_ts){
+        fs.writeFileSync(runtimeScriptPath, _oldContent_ts, 'utf-8');
+    }
+    if(_oldContent_meta){
+        fs.writeFileSync(runtimeMetaPath, _oldContent_meta, 'utf-8');
+    }
+    await Editor.Message.request(
+        "asset-db",
+        "refresh-asset",
+        `db://assets/${runtimeScriptName}`
+    );
+}
+
 export const load_ts_to_runtime = async () => {
     try {
         console.log(`[${_funcs.getPluginName()}] Injecting runtime script...`);

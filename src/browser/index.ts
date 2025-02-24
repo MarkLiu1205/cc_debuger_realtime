@@ -2,7 +2,7 @@ import { IBuildPaths, IBuildTaskOption } from '../../@types/packages/builder/@ty
 import packageJSON from '../../package.json'
 import { _funcs } from '../tools/_funcs';
 import { _pluginSocket } from '../tools/plugin_socket';
-import { load_ts_to_runtime, unload_ts_from_runtime } from '../tools/runtime_socket_helper';
+import { applyBuildParamAfter, applyBuildParamBefore, load_ts_to_runtime, unload_ts_from_runtime } from '../tools/runtime_socket_helper';
 const { pathExistsSync, writeFileSync, readFileSync } = require('fs-extra');
 
 console.log("packageJSON",packageJSON)
@@ -46,24 +46,30 @@ export const methods = {
             }
         },2000)
     },
-    async onBeforeBuild(){
-        console.error(`----------onBeforeBuild`)
+    async onBeforeBuild(options:IBuildTaskOption){
+        // console.error(`----------onBeforeBuild:${JSON.stringify(options,null,2)}`)
+        const cfg = options?.packages?.cc_debuger_realtime as SelfBuildParam
+        // console.log(`构建配置:${JSON.stringify(cfg,null,2)}`)
+        return await applyBuildParamBefore(cfg)
     },
     async onAfterBuild(options:IBuildTaskOption,dest:string,paths){
         const app_js_path = paths?.cache?.applicationJS
-        console.log(`----------onAfterBuild,${dest}`)
+        // console.log(`----------onAfterBuild,${dest}`)
         
-        console.log(`options:${JSON.stringify(options,null,2)}`)
-        console.log(`paths:${JSON.stringify(paths,null,2)}`)
+        // console.log(`options:${JSON.stringify(options,null,2)}`)
+        // console.log(`paths:${JSON.stringify(paths,null,2)}`)
 
         const bExist = await pathExistsSync(app_js_path)
-        console.log(`indexjs:${app_js_path},bExist:${bExist}`)
+        // console.log(`indexjs:${app_js_path},bExist:${bExist}`)
         if(bExist){
             let str = readFileSync(app_js_path);
             // // console.warn(`str:${str}`)
             str = str + "\n" + log_intercept_str;
             writeFileSync(app_js_path, str);
         }
+        const cfg = options?.packages?.cc_debuger_realtime as SelfBuildParam
+
+        return applyBuildParamAfter(cfg)
     }
 };
 

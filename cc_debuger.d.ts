@@ -436,3 +436,12 @@ interface WritableFileInfo{
 }
 
 type ToastParam = (param:string|MessageParams,type?:"error" | "success" | "warning" | "info")=>void
+
+interface SelfBuildParam{
+    /**是否剔除cc_debuger,(构建时从assets中剔除相关插件代码) */
+    cut_plugin_from_runtime:boolean,
+    /**是否自动连接插件 */
+    bAutoStarPlugin:boolean,
+    /**中转websocket服务器地址 */
+    serverAddress:boolean
+}

@@ -1621,8 +1621,18 @@ function getWritableFileData(filePath:string){
     return base64Str
 }
 
+let bInited = false
 let _runtimeSocket:RunTimeSocket = null
+//是否启动app后自动连接服务器
+let bAutoStart
+//中转服务器地址
+let plugin_server_address;
+
 function _initOnce() {
+    if(bInited){
+        return
+    }
+    bInited = true
     _data = new _RuntimeData();
     _runtimeSocket = new RunTimeSocket();
     _runtimeSocket.initSocket(plugin_server_address);
@@ -1690,9 +1700,15 @@ function _initOnce() {
     interceptLog()
 }
 
-if (!EDITOR) {
+window["_init_cc_debuger"] = _initOnce
 
-    cc.director.once(cc.Director.EVENT_BEFORE_SCENE_LAUNCH,_initOnce)
+//是否启动app后自动连接服务器
+bAutoStart = true;
+//中转服务器地址
+plugin_server_address = `ws://192.168.1.17:8085`;
+
+if (!EDITOR&&bAutoStart) {
+    cc.director.once(cc.Director.EVENT_BEFORE_SCENE_LAUNCH,()=>{
+        _initOnce()
+    })
 }
-
-var plugin_server_address = `ws://localhost:8085`

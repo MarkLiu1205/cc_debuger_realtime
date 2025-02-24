@@ -66,15 +66,28 @@ export default Editor.Panel.define({
 
 
 async function startServer() {
+    const ip = _funcs.getLocalIP()
     const debugPort = await _funcs.findAvailablePort(8085)
     if(_pluginSocket.checkIsConnect()){
         return
     }
-    _funcs.log_1("本机端口号",debugPort)
+    const wsAddress = `ws://${ip}:${debugPort}`
+    const floderPath = `${_funcs.getCurPluginPath()}/cache`;
+    await _funcs.ensureFloderExist(floderPath);
+    const jsonCfgPath = `${floderPath}/localServer.json`
+    const obj = {
+        port:debugPort,
+        ip,
+        ws:wsAddress,
+    }
+    const _fs = _funcs.getFs()
+    _fs.writeFileSync(jsonCfgPath,JSON.stringify(obj,null,4))
+
+    // _funcs.log_1("本机端口号",debugPort)
     _serverSocket.start(`${debugPort}`)
    
     setTimeout(() => {
-        _pluginSocket.connectToServer(`ws://localhost:${debugPort}`)
+        _pluginSocket.connectToServer(wsAddress)
 
         listenForLog()
     }, 1000);

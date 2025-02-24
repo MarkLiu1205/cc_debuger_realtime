@@ -440,4 +440,8 @@ export function getLocalIP():string {
     return '未找到 IP 地址';
 }
 
+export function getFs(){
+    return fs
+}
+
 }
