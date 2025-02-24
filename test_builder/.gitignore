@@ -1,0 +1,4 @@
+# Logs
+@types/
+dist/
+node_modules/
