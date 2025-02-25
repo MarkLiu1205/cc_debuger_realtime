@@ -136,7 +136,7 @@ async function test_1() {
 
     // const lists = await _pluginSocket.getWitablePathFilesInfo()
     // console.log("可写目录",JSON.stringify(lists,null,2))
-    const localIp = _funcs.getLocalIP()
+    const localIp = _funcs.getLocalIpv4IP()
     console.log("localIp",localIp)
 }
 
@@ -184,6 +184,74 @@ async function openLocalCachePanel(){
         await Editor.Panel.open(panelId);
     }
 }
+const serverAddress_connected = ref("")
+const serverAddress_connecting = ref("")
+
+/**是否正在连接插件服务器 */
+const isConnecting = ref(false)
+
+const bAddressEditFocus = ref(false);
+const addressInputRef = ref<HTMLInputElement | null>(null);
+
+function setSocketAddress(url){
+    serverAddress_connecting.value = url
+}
+
+defineExpose({
+    setSocketAddress,
+});
+
+onMounted(()=>{
+    isConnecting.value = !_pluginSocket.checkIsConnect()
+    _pluginSocket.waitSocketOpen().then(()=>{
+        serverAddress_connected.value = _pluginSocket.getSocketUrl()
+        isConnecting.value = false
+    })
+})
+
+const onFocusEditAddress = () => {
+  bAddressEditFocus.value = !bAddressEditFocus.value;
+  if (bAddressEditFocus.value) {
+    nextTick(() => {
+      addressInputRef.value?.focus();
+    });
+  }
+};
+
+const handleNameBlur = () => {
+    bAddressEditFocus.value = false;
+};
+
+async function onEditConfirmAddress(event){
+    const url = event.target.value as string
+    
+    if(url==serverAddress_connected.value){
+        bAddressEditFocus.value = false;
+        return
+    }
+    if(url.length==0){
+        showToast("服务器地址不可为空")
+        return
+    }else if(!url.startsWith("ws://")&&!url.startsWith("wss://")){
+        showToast("websocket服务器地址不合法")
+        return
+    }
+    serverAddress_connecting.value = url
+    isConnecting.value = false
+
+    const config: any = {
+        // title: 'buttons',
+        detail: `是否确定连接新的插件服务器：${url}`,
+        buttons: ['确定并重启', '取消'],
+    };
+    const result = await Editor.Dialog.info('提示', config);
+    if(result.response==0){
+        _funcs.saveCustomServerAddress(url)
+        Editor.Message.send(_funcs.getPluginName(),"restart-self")
+    }else{
+        bAddressEditFocus.value = false;
+    }
+}
 
 </script>
 
@@ -194,9 +262,56 @@ async function openLocalCachePanel(){
     <div style="width: 100vw; height: 100vh; ">  
         <div style=" width: calc(100% - 10px);height: calc(100% - 35px);">
             <div class="center-align" style="flex-direction: column;" v-if="isRuntimeOffline">
-                <h2>没有检测到可用运行时</h2>
-                <p>推荐打开预览：{{runtimePreviewUrl}}</p>
-                <ui-button type="default"  @confirm="doOpenRuntimePreview">点击打开预览 {{runtimePreviewUrl}}</ui-button>
+                <div v-if="isConnecting" style="display: flex;flex-direction: column;">
+                    <div style="display: flex; flex-direction: row; margin-bottom: 5px;align-items: center;justify-content: center;">
+                        <h2>正在连接插件服务器</h2>
+                        <ui-loading style="margin-left: 10px;"></ui-loading>
+                    </div>
+                    <div style="display: flex; flex-direction: row; margin-bottom: 20px;align-items: center;justify-content: center;height: 30px;">
+                        <h3>地址：</h3>
+                        <div v-if="!bAddressEditFocus" style="min-width: 60px;height: 22px;">
+                            <label style="font-size: 15px;">{{ serverAddress_connecting }}</label>
+                        </div>
+                        <div v-else style="min-width: 60px;height: 22px;">
+                            <ui-input ref="addressInputRef"
+                                style="font-size: 15px;"
+                                :value="serverAddress_connecting" 
+                                type="text" 
+                                @blur="handleNameBlur" 
+                                @keydown.enter="onEditConfirmAddress" 
+                            />
+                        </div>
+                        
+                        <ui-button v-if="!bAddressEditFocus" style="padding-top: 5px;padding-bottom: 5px;margin-left: 10px;" @click="onFocusEditAddress">切换</ui-button>
+                    </div>
+                </div>
+                <div v-else-if="serverAddress_connected" style="display: flex;flex-direction: column;">
+                    <div style="display: flex; flex-direction: row; margin-bottom: 20px;align-items: center;justify-content: center;height: 30px;">
+                        <h3>已连接插件服务器：</h3>
+                        <div v-if="!bAddressEditFocus"  style="min-width: 60px;">
+                            <label style="font-size: 15px;">{{ serverAddress_connected }}</label>
+                        </div>
+                        <ui-input ref="addressInputRef" style="font-size: 15px;"
+                            v-else 
+                            :value="serverAddress_connected"
+                            type="text" 
+                            @blur="handleNameBlur" 
+                            @keydown.enter="onEditConfirmAddress" 
+                        />
+                        <ui-button v-if="!bAddressEditFocus" style="padding-top: 5px;padding-bottom: 5px;margin-left: 10px;" @click="onFocusEditAddress">切换</ui-button>
+                    </div>
+                    <div style="display: flex; flex-direction: row;align-items: center;justify-content: center;">
+                        <h2>但暂检测到可用运行时</h2>
+                    </div>
+                    <div style="display: flex; flex-direction: row;align-items: center;justify-content: center;">
+                        <ui-button type="default" style="margin-top: 5px; padding-top: 5px;padding-bottom: 5px;" @confirm="doOpenRuntimePreview">推荐点击打开本地预览 {{runtimePreviewUrl}}</ui-button>
+                    </div>
+                    
+                </div>
+                <div v-else>
+                    <h2>未连接插件服务器，请按F5重启</h2>
+                </div>
+                <comp_md_info style="margin-top: 20px;"/>
             </div>
             <div id="eid_view_main" class="cls_view_main" v-else>
                 <div id="eid_view_asset_list" class="left-panel" :style="{ width: width_left_panel + 'px' }">
@@ -217,7 +332,7 @@ async function openLocalCachePanel(){
                             <el-button  @click="openDynamicPanel">动态图集</el-button>
                             <el-button  @click="openLogPanel">日志</el-button>
                             <el-button  @click="openLocalCachePanel">可写目录</el-button>
-                            <el-button  @click="test_1">测试</el-button>
+                            <!-- <el-button  @click="test_1">测试</el-button> -->
                         </div>
                         <comp_deviceInfo/>
                         <comp_profiler/>

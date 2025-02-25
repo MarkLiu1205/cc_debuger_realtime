@@ -9,11 +9,23 @@ export const load: BuildPlugin.load = function() {
 
     const jsonCfgPath = Editor.Package.getPath(PACKAGE_NAME)+"/cache/localServer.json"
     if(fs.existsSync(jsonCfgPath)){
-        let obj = fs.readJSONSync(jsonCfgPath)
+        let obj = null
+        try{
+            obj = fs.readJSONSync(jsonCfgPath)
+        }catch(e){
+            
+        }
+        if(obj==null){
+            return
+        }
         let _opts = configs as any;
         _opts = _opts["*"]?.options
         
-        if(obj.ws){
+        let addressUrl = null
+        if(obj?.ip&&obj?.port){//默认连接本机服务器
+            addressUrl = `ws://${obj.ip}:${obj.port}`
+        }
+        if(addressUrl){
             _wsDefault = obj.ws
             if(_opts?.serverAddress){
                 _opts.serverAddress.default = obj.ws

@@ -14,6 +14,7 @@ export default Editor.Panel.define({
     template: '<div id="app" class="dark"></div>', // 只留一个 div 用于 vue 的挂载
     $: {
         root: '#app',
+        appInst: null as any,
     },
     methods: {
         async doEvalJs(str) {
@@ -46,11 +47,12 @@ export default Editor.Panel.define({
             options.appendTo = options.appendTo || this.$.root;
             return ElMessage(options);
         });
-        app.mount(this.$.root);
+        const appInst = app.mount(this.$.root);
+        this.$.appInst = appInst;
 
         weakMap.set(this, app);
 
-        startServer()
+        startServer(appInst)
 
         _funcs.registerF5()
 
@@ -65,30 +67,45 @@ export default Editor.Panel.define({
 });
 
 
-async function startServer() {
-    const ip = _funcs.getLocalIP()
-    const debugPort = await _funcs.findAvailablePort(8085)
+async function startServer(appInst) {
+    const _fs = _funcs.getFs()
+    const ip = _funcs.getLocalIpv4IP()
+    const port = await _funcs.findAvailablePort(8085)
     if(_pluginSocket.checkIsConnect()){
         return
     }
-    const wsAddress = `ws://${ip}:${debugPort}`
-    const floderPath = `${_funcs.getCurPluginPath()}/cache`;
-    await _funcs.ensureFloderExist(floderPath);
-    const jsonCfgPath = `${floderPath}/localServer.json`
-    const obj = {
-        port:debugPort,
-        ip,
-        ws:wsAddress,
+    let wsAddress = `ws://${ip}:${port}`
+    const jsonCfgPath = await _funcs.getLocalServerJsonPath()
+    let obj = null
+    try{
+        obj = _fs.readJSONSync(jsonCfgPath)
+    }catch(e){
+        
     }
-    const _fs = _funcs.getFs()
+    obj = {
+        ip,
+        port,
+        ws:obj?.ws
+    }
+        
+    if(obj.ws){
+        wsAddress = obj.ws;//用户手动选择的websocket服务器地址
+    }else{
+        delete obj.ws
+    }
+    
     _fs.writeFileSync(jsonCfgPath,JSON.stringify(obj,null,4))
 
-    // _funcs.log_1("本机端口号",debugPort)
-    _serverSocket.start(`${debugPort}`)
+    // _funcs.log_1("本机端口号",port)
+    _serverSocket.start(`${port}`)
+
+    if(appInst?.setSocketAddress!=null){
+        appInst.setSocketAddress(wsAddress)
+    }
    
     setTimeout(() => {
         _pluginSocket.connectToServer(wsAddress)
-
+        
         listenForLog()
     }, 1000);
 }

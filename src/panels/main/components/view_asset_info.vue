@@ -4,9 +4,17 @@ import { computed, onMounted, ref, watch } from 'vue';
 import { _pluginSocket } from '../../../tools/plugin_socket';
 import { _dataCtx } from '../../../tools/_dataCtx';
 import { eventBus } from '../../../tools/_enentBus';
+import { _funcs } from '../../../tools/_funcs';
 
 const assetInfo = defineModel<ResTreeItem>() 
 const isNotInCache = ref(false)
+
+const curOnlineInfo = ref<OnlineInfo>(null)
+//当前运行时是不是在本机运行
+const bRuntimeIsLocalhost = ref(true)
+
+//临时预览地址（即在asset-db中查询不到，必须实时下载的）
+const tempPreviewPath = ref("")
 
 onMounted(()=>{
     // console.log("assetInfo",assetInfo.value.assetType,assetInfo.value.refCount)
@@ -18,6 +26,21 @@ onMounted(()=>{
     }else{
         isNotInCache.value = false
     }
+
+    const localIps = _funcs.getLocalIPs();
+    _pluginSocket.listenRuntimeOnlineInfo(async (info:OnlineInfo)=>{
+        const ip = info.info.ip;
+        if(ip=="localhost"||ip=="::1"||ip=="127.0.0.1"||localIps.includes(ip)){
+            const gameEnvObj = await _pluginSocket.getGameEnv()
+            if(!gameEnvObj.isMobile){//表是不是模拟器
+                bRuntimeIsLocalhost.value = true
+            }
+        }else{
+            bRuntimeIsLocalhost.value = false
+        }
+        console.log("bRuntimeIsLocalhost",bRuntimeIsLocalhost.value)
+        curOnlineInfo.value = info
+    })
 })
 
 watch(assetInfo,(newVal,oldVal)=>{
@@ -115,6 +138,11 @@ function onClick_checkDepend(){
 
 function onClick_checkDepend_traverse(){
     eventBus.emit("check-asset-depend-traverse", assetInfo.value.uuid);
+}
+
+function onPreviewImgSrc(){
+    //TODO
+    tempPreviewPath.value = ""
 }
 
 </script>
@@ -223,7 +251,18 @@ function onClick_checkDepend_traverse(){
                     <label>{{ originalHeight }}</label>
                 </div>
                 <div class="image" :style="{width:_width,height:_height}" >
-                    <ui-image :value="assetInfo.imgSrc??assetInfo.uuid" :style="{width:_width,height:_height}" />
+                    <div v-if="bRuntimeIsLocalhost">
+                        <ui-image :value="assetInfo.imgSrc??assetInfo.uuid" :style="{width:_width,height:_height}" />
+                    </div>
+                    <div v-else>
+                        <div v-if="assetInfo.imgSrc">
+                            <ui-button @click="onPreviewImgSrc">预览图片</ui-button>
+                            <ui-image v-if="tempPreviewPath" :value="tempPreviewPath" :style="{width:_width,height:_height}" />
+                        </div>
+                        <div v-else>
+                            <ui-image :value="assetInfo.uuid" :style="{width:_width,height:_height}" />
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

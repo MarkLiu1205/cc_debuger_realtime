@@ -427,7 +427,7 @@ export function ensureFloderExist(dirPath:string){
 }
 
 // 获取本地 IP
-export function getLocalIP():string {
+export function getLocalIpv4IP():string {
     const interfaces = os.networkInterfaces();
     for (const interfaceName in interfaces) {
         const interfaceDetails = interfaces[interfaceName];
@@ -440,8 +440,57 @@ export function getLocalIP():string {
     return '未找到 IP 地址';
 }
 
+export function getLocalIPs() {
+    const nets = os.networkInterfaces();
+    const results: string[] = [];
+
+    for (const name of Object.keys(nets)) {
+        for (const net of nets[name]!) {
+            // Skip over non-IPv4 and internal (i.e. 127.0.0.1) addresses
+            if (net.family === 'IPv4' && !net.internal) {
+                results.push(net.address);
+            }
+            if (net.family === 'IPv6' && !net.internal) {
+                results.push(net.address);
+            }
+        }
+    }
+    return results;
+}
+
 export function getFs(){
     return fs
+}
+
+export async function getLocalServerJsonPath(){
+    const floderPath = `${getCurPluginPath()}/cache`;
+    const jsonCfgPath = `${floderPath}/localServer.json`
+    await ensureFloderExist(floderPath);
+    return jsonCfgPath
+}
+
+//保存自定义中转服务器地址，下次自动连接这个地址的服务器，而非本机
+export async function saveCustomServerAddress(url:string) {
+    const jsonCfgPath = await getLocalServerJsonPath()
+    let obj = null
+    try{
+        obj = fs.readJSONSync(jsonCfgPath)
+    }catch(e){
+        
+    }
+    obj = {
+        ip:obj?.ip,
+        port:obj?.port,
+        ws:url
+    }
+    if(!obj.ip){
+        delete obj.ip
+    }
+    if(!obj.port){
+        delete obj.port
+    }
+
+    fs.writeFileSync(jsonCfgPath,JSON.stringify(obj,null,4))
 }
 
 }
