@@ -1,4 +1,5 @@
 import { _funcs } from "./_funcs";
+import { _utils } from "./_utils";
 
 let _accId = 0;
 function _getAccId(){
@@ -411,6 +412,26 @@ class PluginSocket {
         }
         
         return ret
+    }
+
+    async getDynamicTextureAndSavePng(index: number){
+        let _time = Date.now()
+        const num = await this.getDynamicAtlasCount()
+        if(num==0){
+            return ""
+        }
+        const obj = await this.getDynamicTextureData(index)
+        const unit8arr = _utils.base64ToUint8Array(obj.base64Data);
+        const floderPath = `${_funcs.getCurPluginPath()}/cache/dynamic_texture`;
+        await _funcs.ensureFloderExist(floderPath);
+        let savePath = `${floderPath}/${index}_${Date.now()}.png`;
+        _utils.saveUnit8ArrayPng(unit8arr, obj.width, obj.height, savePath);
+        savePath = savePath.replace(/\\/g, "/");
+        return {
+            savePath,
+            width:obj.width,
+            height:obj.height,
+        }
     }
 
     async getWitablePathFilesInfo():Promise<Array<WritableFileInfo>>{

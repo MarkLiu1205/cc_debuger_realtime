@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, inject } from "vue";
 import { ElButton, ElImage, ElMessage, ElInput } from "element-plus";
+import { _utils } from "../../tools/_utils";
 import { _funcs } from "../../tools/_funcs";
 const fs = require('fs-extra');
 import { _pluginSocket } from "../../tools/plugin_socket";
@@ -85,7 +86,7 @@ async function getWritableFileData(filePath:string){
     if(base64Str==null){
         return null
     }
-    const u8a = _funcs.base64ToUint8Array(base64Str)
+    const u8a = _utils.base64ToUint8Array(base64Str)
     return u8a
 }
 

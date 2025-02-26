@@ -63,15 +63,21 @@ if (fs.existsSync(serverFilePath)) {
 const inputDir = './../dist'; // 这里假设编译后的文件在 `dist` 目录下
 const outputDir = './../dist'; // 输出目录
 
+// 需要忽略的文件列表
+const ignoreFiles = ["_utils.cjs", "example.cjs"]; // 这里添加要忽略的文件名
 
 // 创建输出目录
 if (!fs.existsSync(outputDir)) {
     fs.mkdirSync(outputDir);
 }
 
-
 // 获取目录中的所有文件并混淆 `.cjs` 文件
 fs.readdirSync(inputDir).forEach((file) => {
+    if (ignoreFiles.includes(file)) {
+        console.log(`Skipping: ${file}`);
+        return; // 跳过被忽略的文件
+    }
+
     const filePath = path.join(inputDir, file);
     const fileStat = fs.statSync(filePath);
 

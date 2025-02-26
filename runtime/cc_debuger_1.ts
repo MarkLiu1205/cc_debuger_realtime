@@ -29,7 +29,7 @@ setTimeout(() => {
     //是否启动app后自动连接服务器
     let bAutoStart = true;
     //中转服务器地址
-    let plugin_server_address = `ws://192.168.1.17:8085`;
+    let plugin_server_address = `ws://localhost:8085`;
 
     window["__cc_debuger_wsUrl"] = plugin_server_address;
 

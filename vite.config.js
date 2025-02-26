@@ -15,6 +15,7 @@ export default defineConfig(({ mode }) => {
             lib: {
                 entry: {
                     browser: './src/browser/index.ts',
+                    _utils: './src/tools/_utils.ts',
                     main_panel: './src/panels/main/main_panel.ts',
                     eval_panel: './src/panels/eval/eval_panel.ts',
                     log_panel: './src/panels/log/log_panel.ts',
