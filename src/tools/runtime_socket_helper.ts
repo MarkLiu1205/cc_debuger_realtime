@@ -4,12 +4,17 @@ const path = require("path")
 
 import { _funcs } from './_funcs';
 
-const runtimeScriptName = 'runtime_socket.ts';
+const runtimeScriptName_1 = 'cc_debuger_1.ts';
+const runtimeScriptName_2 = 'cc_debuger_2.js';
 
-const sourceScriptPath = path.join(_funcs.getCurPluginPath(), "runtime/", runtimeScriptName);
+const sourceScriptPath_1 = path.join(_funcs.getCurPluginPath(), "runtime/", runtimeScriptName_1);
+const sourceScriptPath_2 = path.join(_funcs.getCurPluginPath(), "runtime/", runtimeScriptName_2);
 
-const runtimeScriptPath = path.join(Editor.Project.path, 'assets', runtimeScriptName);
-const runtimeMetaPath = runtimeScriptPath + '.meta';
+const runtimeScriptPath_1 = path.join(Editor.Project.path, 'assets', runtimeScriptName_1);
+const runtimeMetaPath_1 = runtimeScriptPath_1 + '.meta';
+
+const runtimeScriptPath_2 = path.join(Editor.Project.path, 'assets', runtimeScriptName_2);
+const runtimeMetaPath_2 = runtimeScriptPath_2 + '.meta';
 
 let _oldContent_ts:string;
 let _oldContent_meta:string;
@@ -21,15 +26,15 @@ export const applyBuildParamBefore = async (cfg:SelfBuildParam)=>{
     // console.log("cut_plugin_from_runtime",cut_plugin_from_runtime)
     // console.log("bAutoStarPlugin",bAutoStarPlugin)
     // console.log("serverAddress",serverAddress)
-    if (!fs.existsSync(runtimeScriptPath)) {
+    if (!fs.existsSync(runtimeScriptPath_1)) {
         return
     }
-    _oldContent_ts = fs.readFileSync(runtimeScriptPath, 'utf-8');
-    _oldContent_meta = fs.readFileSync(runtimeMetaPath, 'utf-8');
+    _oldContent_ts = fs.readFileSync(runtimeScriptPath_1, 'utf-8');
+    _oldContent_meta = fs.readFileSync(runtimeMetaPath_1, 'utf-8');
     if(cut_plugin_from_runtime){
         await unload_ts_from_runtime()
     }else{
-        const sourceScriptContent = fs.readFileSync(runtimeScriptPath, 'utf-8');
+        const sourceScriptContent = fs.readFileSync(runtimeScriptPath_1, 'utf-8');
         let newStr = sourceScriptContent.replace(
             /bAutoStart\s*=\s*(true|false)/, 
             `bAutoStart = ${bAutoStarPlugin}`
@@ -38,13 +43,13 @@ export const applyBuildParamBefore = async (cfg:SelfBuildParam)=>{
             /plugin_server_address\s*=\s*([`"'])(.*?)\1/,
             `plugin_server_address = \`${serverAddress}\``
         );
-        fs.writeFileSync(runtimeScriptPath, newStr, 'utf-8');
+        fs.writeFileSync(runtimeScriptPath_1, newStr, 'utf-8');
 
         // 刷新资源
-        const refreshResult = await Editor.Message.request(
+        await Editor.Message.request(
             "asset-db",
             "refresh-asset",
-            `db://assets/${runtimeScriptName}`
+            `db://assets/${runtimeScriptName_1}`
         );
     }
     return 0
@@ -53,15 +58,15 @@ export const applyBuildParamBefore = async (cfg:SelfBuildParam)=>{
 export const applyBuildParamAfter = async(cfg:SelfBuildParam)=>{
     console.log("结束构建",_oldContent_meta?.length)
     if(_oldContent_ts){
-        fs.writeFileSync(runtimeScriptPath, _oldContent_ts, 'utf-8');
+        fs.writeFileSync(runtimeScriptPath_1, _oldContent_ts, 'utf-8');
     }
     if(_oldContent_meta){
-        fs.writeFileSync(runtimeMetaPath, _oldContent_meta, 'utf-8');
+        fs.writeFileSync(runtimeMetaPath_1, _oldContent_meta, 'utf-8');
     }
     await Editor.Message.request(
         "asset-db",
         "refresh-asset",
-        `db://assets/${runtimeScriptName}`
+        `db://assets/${runtimeScriptName_1}`
     );
 }
 
@@ -69,20 +74,11 @@ export const load_ts_to_runtime = async () => {
     try {
         console.log(`[${_funcs.getPluginName()}] Injecting runtime script...`);
 
-        
-        const sourceScriptContent = fs.readFileSync(sourceScriptPath, 'utf-8');
+        {
+            const sourceScriptContent = fs.readFileSync(sourceScriptPath_2, 'utf-8');
 
-        let shouldWriteFile = true;
-
-        // 检查文件是否存在
-        if (fs.existsSync(runtimeScriptPath)) {
-            shouldWriteFile = false
-            console.log(`[${_funcs.getPluginName()}] Runtime script already exists and is up-to-date. Skipping injection.`);
-        }
-
-        if (shouldWriteFile) {
             // 写入文件
-            fs.writeFileSync(runtimeScriptPath, sourceScriptContent, 'utf-8');
+            fs.writeFileSync(runtimeScriptPath_2, sourceScriptContent, 'utf-8');
 
             await new Promise(function (resolve) {
                 setTimeout(() => {
@@ -91,13 +87,35 @@ export const load_ts_to_runtime = async () => {
             });
 
             // 刷新资源
-            console.log(`[${_funcs.getPluginName()}] Runtime script written to ${runtimeScriptPath}`);
-            const refreshResult = await Editor.Message.request(
+            console.log(`[${_funcs.getPluginName()}] Runtime script written to ${runtimeScriptPath_2}`);
+            await Editor.Message.request(
                 "asset-db",
                 "refresh-asset",
-                `db://assets/${runtimeScriptName}`
+                `db://assets/${runtimeScriptName_2}`
             );
         }
+
+        {
+            const sourceScriptContent = fs.readFileSync(sourceScriptPath_1, 'utf-8');
+
+            // 写入文件
+            fs.writeFileSync(runtimeScriptPath_1, sourceScriptContent, 'utf-8');
+
+            await new Promise(function (resolve) {
+                setTimeout(() => {
+                    resolve(null);
+                }, 1000);
+            });
+
+            // 刷新资源
+            console.log(`[${_funcs.getPluginName()}] Runtime script written to ${runtimeScriptPath_1}`);
+            await Editor.Message.request(
+                "asset-db",
+                "refresh-asset",
+                `db://assets/${runtimeScriptName_1}`
+            );
+        }
+        
     } catch (error) {
         console.error(`[${_funcs.getPluginName()}] Error injecting runtime script:`, error);
     }
@@ -109,13 +127,21 @@ export const unload_ts_from_runtime = async () => {
         console.log(`[${_funcs.getPluginName()}] Removing runtime script...`);
 
         // 删除文件
-        if (fs.existsSync(runtimeScriptPath)) {
-            fs.unlinkSync(runtimeScriptPath);
-            console.log(`[${_funcs.getPluginName()}] Runtime script removed: ${runtimeScriptPath}`);
+        if (fs.existsSync(runtimeScriptPath_1)) {
+            fs.unlinkSync(runtimeScriptPath_1);
+            console.log(`[${_funcs.getPluginName()}] Runtime script removed: ${runtimeScriptPath_1}`);
         }
-        if (fs.existsSync(runtimeMetaPath)) {
-            fs.unlinkSync(runtimeMetaPath);
-            console.log(`[${_funcs.getPluginName()}] Meta file removed: ${runtimeMetaPath}`);
+        if (fs.existsSync(runtimeScriptPath_2)) {
+            fs.unlinkSync(runtimeScriptPath_2);
+            console.log(`[${_funcs.getPluginName()}] Runtime script removed: ${runtimeScriptPath_2}`);
+        }
+        if (fs.existsSync(runtimeMetaPath_1)) {
+            fs.unlinkSync(runtimeMetaPath_1);
+            console.log(`[${_funcs.getPluginName()}] Meta file removed: ${runtimeMetaPath_1}`);
+        }
+        if (fs.existsSync(runtimeMetaPath_2)) {
+            fs.unlinkSync(runtimeMetaPath_2);
+            console.log(`[${_funcs.getPluginName()}] Meta file removed: ${runtimeMetaPath_2}`);
         }
 
         await new Promise(function (resolve) {
@@ -125,10 +151,15 @@ export const unload_ts_from_runtime = async () => {
         })
 
         // 刷新资源
-        const refreshResult = await Editor.Message.request(
+        await Editor.Message.request(
             "asset-db",
             "refresh-asset",
-            `db://assets/${runtimeScriptName}`
+            `db://assets/${runtimeScriptName_1}`
+        );
+        await Editor.Message.request(
+            "asset-db",
+            "refresh-asset",
+            `db://assets/${runtimeScriptName_2}`
         );
     } catch (error) {
         console.error(`[${_funcs.getPluginName()}] Error removing runtime script:`, error);
