@@ -17,6 +17,11 @@ class ServerSocket {
         );
     
         this.process = spawn(executablePath, ['-port', port]);
+        // const serverScript = path.join(_funcs.getCurPluginPath(), 'server/server.js');
+        // console.log('serverScript', serverScript);
+
+        // // 使用 spawn 启动子进程
+        // this.process = spawn('node', [serverScript,port]);
     
         // 保留原有的输出捕获与错误处理逻辑
         this.process.stdout.on('data', (data: Buffer) => {

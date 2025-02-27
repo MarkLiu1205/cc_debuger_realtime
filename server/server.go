@@ -48,6 +48,8 @@ type Message struct {
 	Data      interface{} `json:"data,omitempty"`
 	RequestID int         `json:"requestId,omitempty"`
 	Name      string      `json:"name,omitempty"`
+	Total     int         `json:"total,omitempty"`
+	Idx       int         `json:"idx,omitempty"`
 }
 
 // NewWebSocketServer 构造服务器实例
@@ -130,9 +132,11 @@ func (s *WebSocketServer) handleMessages(conn *websocket.Conn) {
 func (s *WebSocketServer) routeMessage(conn *websocket.Conn, msg Message) {
 	if msg.Type == "identify" {
 		s.handleIdentify(conn, msg)
+	} else if msg.IsSplit {
+		s.forwardMessage(conn, msg)
 	} else if msg.Type == "request" {
 		s.handleRequest(conn, msg)
-	} else if msg.Type == "response" || msg.IsSplit {
+	} else if msg.Type == "response" {
 		s.forwardMessage(conn, msg)
 	} else if msg.Type == "push" {
 		s.handlePush(conn, msg)

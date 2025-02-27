@@ -143,7 +143,8 @@ function onClick_checkDepend_traverse(){
 
 function onPreviewImgSrc(){
     //TODO
-    tempPreviewPath.value = ""
+    tempPreviewPath.value = assetInfo.value.imgSrc
+    console.log("tempPreviewPath.value",tempPreviewPath.value)
 }
 
 </script>
