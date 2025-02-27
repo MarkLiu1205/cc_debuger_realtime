@@ -80,12 +80,6 @@ export const load_ts_to_runtime = async () => {
             // 写入文件
             fs.writeFileSync(runtimeScriptPath_2, sourceScriptContent, 'utf-8');
 
-            await new Promise(function (resolve) {
-                setTimeout(() => {
-                    resolve(null);
-                }, 1000);
-            });
-
             // 刷新资源
             console.log(`[${_funcs.getPluginName()}] Runtime script written to ${runtimeScriptPath_2}`);
             await Editor.Message.request(
@@ -100,12 +94,6 @@ export const load_ts_to_runtime = async () => {
 
             // 写入文件
             fs.writeFileSync(runtimeScriptPath_1, sourceScriptContent, 'utf-8');
-
-            await new Promise(function (resolve) {
-                setTimeout(() => {
-                    resolve(null);
-                }, 1000);
-            });
 
             // 刷新资源
             console.log(`[${_funcs.getPluginName()}] Runtime script written to ${runtimeScriptPath_1}`);
@@ -143,12 +131,6 @@ export const unload_ts_from_runtime = async () => {
             fs.unlinkSync(runtimeMetaPath_2);
             console.log(`[${_funcs.getPluginName()}] Meta file removed: ${runtimeMetaPath_2}`);
         }
-
-        await new Promise(function (resolve) {
-            setTimeout(() => {
-                resolve(null)
-            }, 1000);
-        })
 
         // 刷新资源
         await Editor.Message.request(

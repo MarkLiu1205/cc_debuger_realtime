@@ -17,7 +17,7 @@ export const methods = {
         
 
         console.log("收到消息restart_self_ui")
-        Editor.Panel.close(packageJSON.name);
+        await Editor.Panel.close(packageJSON.name);
 
         const otherPanels = {
             [packageJSON.name+".eval_panel"] : false,

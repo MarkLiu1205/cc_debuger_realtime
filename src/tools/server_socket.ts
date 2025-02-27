@@ -1,12 +1,14 @@
 const { exec, spawn } = require('child_process');
 const path = require("path")
 
+import { eventBus } from './_enentBus';
 import { _funcs } from './_funcs';
 
 // WebSocket Server class
 class ServerSocket {
     private process: any = null;
 
+    private _isStarted = false;
     start(port: string) {
         const isWindows = process.platform === 'win32';
         const executablePath = path.join(
@@ -18,6 +20,10 @@ class ServerSocket {
     
         // 保留原有的输出捕获与错误处理逻辑
         this.process.stdout.on('data', (data: Buffer) => {
+            if(!this._isStarted){
+                this._isStarted = true
+                eventBus.emit("localServerStarted")
+            }
             console.info(`[Server]: ${data.toString().trim()}`);
         });
     

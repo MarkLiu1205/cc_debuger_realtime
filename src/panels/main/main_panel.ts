@@ -7,6 +7,7 @@ import { ElMessage } from 'element-plus';
 import { _funcs } from '../../tools/_funcs';
 import { _serverSocket } from '../../tools/server_socket';
 import { _pluginSocket } from '../../tools/plugin_socket';
+import { eventBus } from '../../tools/_enentBus';
 
 const weakMap = new WeakMap();
 
@@ -88,7 +89,8 @@ async function startServer(appInst) {
         ws:obj?.ws
     }
         
-    if(obj.ws){
+    const bUseCustomAddress = !!obj.ws
+    if(bUseCustomAddress){
         wsAddress = obj.ws;//用户手动选择的websocket服务器地址
     }else{
         delete obj.ws
@@ -102,12 +104,19 @@ async function startServer(appInst) {
     if(appInst?.setSocketAddress!=null){
         appInst.setSocketAddress(wsAddress)
     }
-   
-    setTimeout(() => {
+
+    if(bUseCustomAddress){
         _pluginSocket.connectToServer(wsAddress)
-        
         listenForLog()
-    }, 1000);
+    }else{
+        const _onServerStarted = ()=>{
+            eventBus.off("localServerStarted",_onServerStarted)
+    
+            _pluginSocket.connectToServer(wsAddress)
+            listenForLog()
+        }
+        eventBus.on("localServerStarted",_onServerStarted)
+    }
 }
 
 function listenForLog(){
