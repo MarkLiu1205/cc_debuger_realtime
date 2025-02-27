@@ -364,9 +364,10 @@ func (s *WebSocketServer) updateRuntimeList() {
 
 // handleClose 处理连接关闭
 func (s *WebSocketServer) handleClose(conn *websocket.Conn) {
-	s.mutex.Lock()
+
 	delete(s.connInfo, conn)
 	if conn == s.activeRuntime {
+		s.mutex.Lock()
 		name := s.getRuntimeName(conn)
 		info := s.connInfo[conn] // 注意：此时 info 可能已被删除
 		s.activeRuntime = nil
@@ -390,14 +391,14 @@ func (s *WebSocketServer) handleClose(conn *websocket.Conn) {
 			s.pluginConn = nil
 			fmt.Println("Plugin disconnected")
 		}
-		// 从运行时列表中移除
-		for i, r := range s.runtimes {
-			if r.conn == conn {
-				s.runtimes = append(s.runtimes[:i], s.runtimes[i+1:]...)
-				break
-			}
+
+	}
+	// 从运行时列表中移除
+	for i, r := range s.runtimes {
+		if r.conn == conn {
+			s.runtimes = append(s.runtimes[:i], s.runtimes[i+1:]...)
+			break
 		}
-		s.mutex.Unlock()
 	}
 	s.updateRuntimeList()
 }
