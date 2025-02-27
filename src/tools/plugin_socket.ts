@@ -64,6 +64,22 @@ class PluginSocket {
 
             this.m_socket.onclose = () => {
                 _funcs.log_1(' Disconnected from server');
+
+                const action = PushAction.otherSideOnlineChange
+                const obj = {
+                    bIsOnline:false,
+                    name:"",
+                    info: { 
+                        IP: "", 
+                        Port: 0, 
+                        Family: "" 
+                    }
+                }
+                if(this._onChangeForPushData[action]?.length>0){//表示注册过了监听
+                    for(let cb of this._onChangeForPushData[action]){
+                        cb(obj)
+                    }
+                }
             };
 
             this.m_socket.onerror = (error) => {

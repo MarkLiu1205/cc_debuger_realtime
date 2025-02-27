@@ -7,30 +7,32 @@ import { _funcs } from './_funcs';
 class ServerSocket {
     private process: any = null;
 
-    start(port:string) {
-        const serverScript = path.join(_funcs.getCurPluginPath(), 'server/server.js');
-        console.log('serverScript', serverScript);
-
-        // 使用 spawn 启动子进程
-        this.process = spawn('node', [serverScript,port]);
-
-        // 捕获子进程输出
+    start(port: string) {
+        const isWindows = process.platform === 'win32';
+        const executablePath = path.join(
+            _funcs.getCurPluginPath(),
+            isWindows ? 'server/proxy_server.exe' : 'server/proxy_server'
+        );
+    
+        this.process = spawn(executablePath, ['-port', port]);
+    
+        // 保留原有的输出捕获与错误处理逻辑
         this.process.stdout.on('data', (data: Buffer) => {
             console.info(`[Server]: ${data.toString().trim()}`);
         });
-
+    
         this.process.stderr.on('data', (data: Buffer) => {
             console.error(`[Server Error]: ${data.toString().trim()}`);
         });
-
+    
         this.process.on('error', (error: Error) => {
             console.error('[Server Error]', error);
         });
-
+    
         this.process.on('exit', (code: number) => {
             console.log(`[Server] Process exited with code ${code}`);
         });
-
+    
         console.log('[Server] WebSocket server started.');
     }
 

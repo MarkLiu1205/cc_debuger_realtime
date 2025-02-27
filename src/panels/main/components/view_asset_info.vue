@@ -29,7 +29,8 @@ onMounted(()=>{
 
     const localIps = _funcs.getLocalIPs();
     _pluginSocket.listenRuntimeOnlineInfo(async (info:OnlineInfo)=>{
-        const ip = info.info.ip;
+        // console.log("3在线刷新----",info)
+        const ip = info.info.IP;
         if(ip=="localhost"||ip=="::1"||ip=="127.0.0.1"||localIps.includes(ip)){
             const gameEnvObj = await _pluginSocket.getGameEnv()
             if(!gameEnvObj.isMobile){//表是不是模拟器

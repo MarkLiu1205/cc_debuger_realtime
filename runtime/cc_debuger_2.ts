@@ -280,6 +280,9 @@ class RunTimeSocket {
 
     /**发送drawcall等信息 */
     sendPush_profile(){
+        if(!_cc_().profiler.isShowingStats()){
+            return
+        }
         let stats = _cc_().profiler._stats
         if(stats){
             const keys = [

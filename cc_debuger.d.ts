@@ -422,9 +422,9 @@ interface OnlineInfo{
     bIsOnline:boolean,
     name:string,
     info: { 
-        ip: string, 
-        port: number, 
-        family: string 
+        IP: string, 
+        Port: number, 
+        Family: string 
     }
 }
 

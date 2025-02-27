@@ -28,11 +28,13 @@ const _curSelNodeInfo = ref<InspectorInfo_Node>()
 const _curSelResItem = ref<ResTreeItem>()
 
 _pluginSocket.listenRuntimeOnlineInfo((info)=>{
-    // _funcs.log_1("runtime在线吗?",info)
+    // console.log("1在线刷新----",info)
     isRuntimeOffline.value = !info.bIsOnline
     if(!info.bIsOnline){
         _curSelNodeInfo.value = null
         _curSelResItem.value = null
+        serverAddress_connected.value = ""
+        serverAddress_connecting.value = ""
         _pluginSocket.clear()
         _dataCtx.clear()
     }

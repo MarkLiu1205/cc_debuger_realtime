@@ -14,9 +14,11 @@ class WebSocketServerWrapper {
         console.log(`WebSocket server running on ws://localhost:${this.m_port}`);
 
         this.wss.on('connection', (ws,req) => {
-            const ip = req.socket.remoteAddress;
-            this._socketInfoMap[ws] = {ip:req.socket.remoteAddress,port:req.socket.remotePort,family:req.socket.remoteFamily}
-            console.log('New client connected from IP:', ip);
+            const IP = req.socket.remoteAddress;
+            const Port = req.socket.remotePort;
+            const Family = req.socket.remoteFamily;
+            this._socketInfoMap[ws] = {IP,Port,Family}
+            console.log('New client connected from IP:', IP);
             ws.on('message', (message) => this._onMessage(ws, message));
             ws.on('close', () => this._onClose(ws));
         });

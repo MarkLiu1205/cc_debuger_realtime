@@ -14,7 +14,7 @@ const dynamicTextureEnabled = ref(false)
 
 onMounted(()=>{
     _pluginSocket.listenRuntimeOnlineInfo((info:OnlineInfo)=>{
-        // console.log("在线刷新----",info.bIsOnline)
+        // console.log("2在线刷新----",info)
         curInfo.value = info
         if(nameArr.value==null){
             nameArr.value = [info.name]
@@ -121,11 +121,11 @@ async function onEditConfirmAddress(event){
             </ui-select>
         </div>
         <div class="row">
-            <label>{{ curInfo.info.family }}:</label>
+            <label>{{ curInfo.info.Family }}:</label>
             <label>Ip</label>
-            <label class="blue">{{ curInfo.info.ip }}</label>
+            <label class="blue">{{ curInfo.info.IP }}</label>
             <label>Port</label>
-            <label class="blue">{{ curInfo.info.port }}</label>
+            <label class="blue">{{ curInfo.info.Port }}</label>
         </div>
         <div v-if="gameEnvObj!=null">
             <div class="row" v-if="gameEnvObj.CC_PREVIEW">
