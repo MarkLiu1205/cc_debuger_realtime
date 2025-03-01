@@ -1,18 +1,25 @@
 {
     "name": "cc_debuger_realtime",
-    "version": "0.0.0",
+    "version": "1.0.0",
     "package_version": 2,
+    "author": "hyz",
+    "author-info": {
+        "email": "1451784145@qq.com",
+        "WeChat": "busky192",
+        "QQ": "im_chenpipi"
+    },
     "type": "module",
     "main": "./dist/browser.cjs",
     "scripts": {
         "dev": "npm run build -- --mode development",
         "build": "vite build",
-        "obfuscate": "node obfuscate-cjs.js",
-        "publish": "vite build && node obfuscate-cjs.js"
+        "obfuscate": "node plugin-tools.js",
+        "publish": "vite build && node plugin-tools.js"
     },
     "dependencies": {
         "@dagrejs/dagre": "^1.1.4",
         "@vue-flow/core": "^1.41.7",
+        "archiver": "^7.0.1",
         "element-plus": "^2.8.6",
         "fs-extra": "^11.2.0",
         "mitt": "^3.0.1",

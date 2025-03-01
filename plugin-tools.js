@@ -2,6 +2,7 @@ import fs from "fs-extra";
 import path from "path";
 import javascriptObfuscator from "javascript-obfuscator";
 import { execSync } from "child_process";
+import archiver from "archiver";
 
 async function waitForTime(sec) {
     return await new Promise((resolve,reject)=>{
@@ -123,6 +124,65 @@ function deal_dist(){
     });
 }
 
+/**打包成压缩包 */
+function packPluginToZip() {
+    const folders = [
+        "dist/",
+        "i18n/",
+        "builder/",
+        "runtime/cc_debuger_1.ts",
+        "runtime/cc_debuger_2.js",
+        "server/server.exe",
+        "server/server",
+        "package.json"
+    ];
+
+    let obj = JSON.parse(fs.readFileSync("package.json"))
+    // console.log(obj.version)
+
+    const saveZipPath = `archive/cc_debuger_${obj.version}(${obj.package_version}).zip`
+
+    const output = fs.createWriteStream(saveZipPath);
+    const archive = archiver('zip', {
+        zlib: { level: 9 } // 设置压缩级别
+    });
+
+    output.on('close', function () {
+        console.log(`${saveZipPath} has been finalized and the output file descriptor has closed. Total size: ${archive.pointer()} bytes`);
+    });
+
+    output.on('end', function () {
+        console.log('Data has been drained');
+    });
+
+    archive.on('warning', function (err) {
+        if (err.code !== 'ENOENT') {
+            throw err;
+        }
+        console.warn(err);
+    });
+
+    archive.on('error', function (err) {
+        throw err;
+    });
+
+    archive.pipe(output);
+
+    folders.forEach((folder) => {
+        if (fs.existsSync(folder)) {
+            if (fs.statSync(folder).isDirectory()) {
+                archive.directory(folder, folder);
+            } else {
+                archive.file(folder, { name: folder });
+            }
+        } else {
+            console.warn(`Warning: ${folder} does not exist and will not be included in the zip.`);
+        }
+    });
+
+    archive.finalize();
+}
+
 await waitForTime(1)
 deal_cc_debuger_2()
 
@@ -132,5 +192,7 @@ deal_server_go()
 await waitForTime(1)
 deal_dist()
 
+await waitForTime(1)
+packPluginToZip()
 
 console.log('Obfuscation complete!');
