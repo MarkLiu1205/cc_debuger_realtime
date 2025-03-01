@@ -30,6 +30,7 @@ watch(props,(newVal,oldVal)=>{
 
 const emit = defineEmits([
     'onSel_asset',
+    'onClickOutside',
 ])
 
 const treeProp_res = computed(()=>{
@@ -85,16 +86,25 @@ function handleClickOutside(event) {
         if(_funcs.checkMouseIsInElemen(ref_searchBar.value, event)){
             return
         }
-        if(selectedAssetId){
-            selectedAssetId = null
-            ref_resTree.value.setCurrentKey(null)
-            nextTick(() => {
-                ref_resTree.value?.setCurrentKey(null); // 确保 UI 重新渲染
-            });
-            emit('onSel_asset', null);
-        }
+        checkCancelSelect()
+        emit('onClickOutside', null);
     }
 }
+
+function checkCancelSelect(){
+    if(selectedAssetId){
+        selectedAssetId = null
+        ref_resTree.value.setCurrentKey(null)
+        nextTick(() => {
+            ref_resTree.value?.setCurrentKey(null); // 确保 UI 重新渲染
+        });
+        emit('onSel_asset', null);
+    }
+}
+
+defineExpose({
+    checkCancelSelect,
+});
 
 onMounted(() => {
 

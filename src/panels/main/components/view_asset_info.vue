@@ -29,17 +29,20 @@ onMounted(()=>{
 
     const localIps = _funcs.getLocalIPs();
     _pluginSocket.listenRuntimeOnlineInfo(async (info:OnlineInfo)=>{
-        // console.log("3在线刷新----",info)
-        const ip = info.info.IP;
-        if(ip=="localhost"||ip=="::1"||ip=="127.0.0.1"||localIps.includes(ip)){
-            const gameEnvObj = await _pluginSocket.getGameEnv()
-            if(!gameEnvObj.isMobile){//表是不是模拟器
-                bRuntimeIsLocalhost.value = true
+        console.log("3在线刷新----",info)
+        if(info.bIsOnline){
+            const ip = info?.info?.IP;
+            if(ip=="localhost"||ip=="::1"||ip=="127.0.0.1"||localIps.includes(ip)){
+                const gameEnvObj = await _pluginSocket.getGameEnv()
+                if(!gameEnvObj.isMobile){//表是不是模拟器
+                    bRuntimeIsLocalhost.value = true
+                }
+            }else{
+                bRuntimeIsLocalhost.value = false
             }
-        }else{
-            bRuntimeIsLocalhost.value = false
+            console.log("bRuntimeIsLocalhost",bRuntimeIsLocalhost.value)
         }
-        console.log("bRuntimeIsLocalhost",bRuntimeIsLocalhost.value)
+        
         curOnlineInfo.value = info
     })
 })
@@ -53,6 +56,7 @@ watch(assetInfo,(newVal,oldVal)=>{
     }else{
         isNotInCache.value = false
     }
+    tempPreviewPath.value = null;
 })
 
 const originalWidth = computed(()=>{

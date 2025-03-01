@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, inject } from "vue";
+import { ref, onMounted, inject, nextTick } from "vue";
 import { ElButton, ElImage, ElMessage, ElInput } from "element-plus";
 import { _funcs } from "../../tools/_funcs";
 
@@ -43,11 +43,13 @@ async function getDynamicAtlasCount() {
 async function getDynamicTextureAndSavePng(index: number) {
     if ( atlasCount.value === 0) return;
     isLoading.value = true;
-    const obj = await Editor.Message.request(_funcs.getPluginName(), "callMainPanelFunc", "_pluginSocket", "getDynamicTextureAndSavePng", index);
-    imagePath.value = obj.savePath
-    imageWidth.value = obj.width;
-    imageHeight.value = obj.height;
-    isLoading.value = false;
+    nextTick(async ()=>{
+        const obj = await Editor.Message.request(_funcs.getPluginName(), "callMainPanelFunc", "_pluginSocket", "getDynamicTextureAndSavePng", index);
+        imagePath.value = obj.savePath
+        imageWidth.value = obj.width;
+        imageHeight.value = obj.height;
+        isLoading.value = false;
+    })
 }
 
 async function refresh() {
@@ -93,7 +95,10 @@ onMounted(async () => {
         </div>
         <div v-else>
             <div v-if="isLoading" class="loading-container">
-                <ui-loading></ui-loading>
+                <div class="row">
+                    <ui-loading></ui-loading>
+                    正在加载动态图集...
+                </div>
             </div>
             <div v-else>
                 <div v-if="atlasCount === 0" class="button-group">
@@ -105,7 +110,10 @@ onMounted(async () => {
                         <ElImage :src="imagePath" class="image-preview" fit="contain" />
                     </div>
                     
-                    <ElInput v-model="imagePath" class="image-path" readonly :select-on-focus="true" />
+                    <div class="row">
+                        <label>缓存路径：</label>
+                        <ElInput v-model="imagePath" class="image-path" readonly :select-on-focus="true" />
+                    </div>
                     
                     <div class="button-group">
                         <ElButton @click="refresh">刷新</ElButton>
@@ -179,5 +187,11 @@ onMounted(async () => {
     display: flex;
     justify-content: center;
     gap: 15px;
+}
+
+.row{
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
 }
 </style>

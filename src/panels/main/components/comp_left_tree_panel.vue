@@ -24,9 +24,9 @@ const height_resTree = ref(200);
 
 const ref_parentContainer = ref(null);
 
-const ref_container_nodeTree = ref(null);
+const ref_nodeTree = ref(null);
 
-const ref_container_resTree = ref(null);
+const ref_resTree = ref(null);
 
 const gap_line = ref(null); //拉伸边界的线
 
@@ -84,18 +84,25 @@ function onSel_node (data: InspectorInfo_Node, node: TreeNode, e: MouseEvent){
     emit('onSel_node', data);
 }
 
+function onClickOutside(){
+    ref_nodeTree.value.checkCancelSelect()
+    ref_resTree.value.checkCancelSelect()
+}
+
 </script>
 
 <template>
     <div ref="ref_parentContainer" class="parent-container">
-        <comp_NodesTree ref="ref_container_nodeTree"
+        <comp_NodesTree ref="ref_nodeTree"
             :height_nodeTree="height_nodeTree"
             @onSel_node="onSel_node"
+            @onClickOutside="onClickOutside"
         />
         <div class="gap_line" ref="gap_line"></div>
-        <comp_AssetsTree  ref="ref_container_resTree"
+        <comp_AssetsTree  ref="ref_resTree"
             :height_resTree="height_resTree"
             @onSel_asset="onSel_asset"
+            @onClickOutside="onClickOutside"
         />
         <ContextMenu ref="contextMenuRef" />
     </div>

@@ -38,14 +38,14 @@ function onToggle(event){
             <h3>cc.UITransform</h3>
         </div>
         <div class="property">
-            <label>anchorPoint:</label>
+            <label>Anchor Point:</label>
             <div class="vector-input">
                 <ui-num-input id="anchorX" @change="onNumChange" :value="compModel.anchorX"  step="0.01" unit="x"></ui-num-input>
                 <ui-num-input id="anchorY" @change="onNumChange":value="compModel.anchorY"  step="0.01" unit="y"></ui-num-input>
             </div>
         </div>
         <div class="property">
-            <label>contentSize:</label>
+            <label>Content Size:</label>
             <div class="vector-input">
                 <ui-num-input id="width" @change="onNumChange" :value="compModel.width" placeholder="width"></ui-num-input>
                 <ui-num-input id="height" @change="onNumChange":value="compModel.height" placeholder="height"></ui-num-input>

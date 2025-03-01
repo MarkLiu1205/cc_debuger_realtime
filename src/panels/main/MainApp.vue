@@ -33,8 +33,7 @@ _pluginSocket.listenRuntimeOnlineInfo((info)=>{
     if(!info.bIsOnline){
         _curSelNodeInfo.value = null
         _curSelResItem.value = null
-        serverAddress_connected.value = ""
-        serverAddress_connecting.value = ""
+        
         _pluginSocket.clear()
         _dataCtx.clear()
     }

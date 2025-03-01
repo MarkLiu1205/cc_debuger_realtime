@@ -22,6 +22,7 @@ const props = defineProps({
 
 const emit = defineEmits([
     'onSel_node',
+    'onClickOutside',
 ])
 
 const treeProp_node:TreeOptionProps = {
@@ -209,17 +210,25 @@ function handleClickOutside(event) {
         if(_funcs.checkMouseIsInElemen(ref_searchBar.value, event)){
             return
         }
-        if(_curSelNodeInfo.value){
-            _curSelNodeInfo.value = null
-            ref_nodeTree.value.setCurrentKey(null)   
-            nextTick(() => {
-                ref_nodeTree.value?.setCurrentKey(null); // 确保 UI 重新渲染
-            });
-            
-            onSel_node(null)
-        }
+        emit('onClickOutside', null);
     }
 }
+
+function checkCancelSelect(){
+    if(_curSelNodeInfo.value){
+        _curSelNodeInfo.value = null
+        ref_nodeTree.value.setCurrentKey(null)   
+        nextTick(() => {
+            ref_nodeTree.value?.setCurrentKey(null); // 确保 UI 重新渲染
+        });
+        
+        onSel_node(null)
+    }
+}
+
+defineExpose({
+    checkCancelSelect,
+});
 
 onMounted(() => {
 
