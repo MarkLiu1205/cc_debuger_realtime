@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -219,76 +218,6 @@ func (s *WebSocketServer) handleRequest(conn *websocket.Conn, msg Message) {
 		}
 	}
 	s.forwardMessage(conn, msg)
-}
-
-// 声明HTTP端点URL常量
-const (
-	verifyEndpoint     = "/api/verify"
-	statisticsEndpoint = "/api/stats"
-)
-
-func (s *WebSocketServer) doVerify(conn *websocket.Conn, msg *Message) (interface{}, error) {
-	// 直接发送原始JSON数据
-	resp, err := s.sendJSONRequest(verifyEndpoint, msg.Data)
-	if err != nil {
-		return nil, fmt.Errorf("验证请求失败: %w", err)
-	}
-
-	response := Message{
-		Type:      msg.Type,
-		Action:    msg.Action,
-		RequestID: msg.RequestID,
-		Data:      resp,
-	}
-	s.writeMessage(conn,response)
-	return resp, nil
-}
-
-func (s *WebSocketServer) doStatistics(conn *websocket.Conn, msg *Message) (interface{}, error) {
-	// 直接发送原始JSON数据
-	resp, err := s.sendJSONRequest(statisticsEndpoint, msg.Data)
-	if err != nil {
-		return nil, fmt.Errorf("统计请求失败: %w", err)
-	}
-
-	response := Message{
-		Type:      msg.Type,
-		Action:    msg.Action,
-		RequestID: msg.RequestID,
-		Data:      resp,
-	}
-	s.writeMessage(conn,response)
-	return resp, nil
-}
-
-// 公共请求方法封装
-func (s *WebSocketServer) sendJSONRequest(endpoint string, data interface{}) (interface{}, error) {
-	jsonData, err := json.Marshal(data)
-	if err != nil {
-		return nil, fmt.Errorf("JSON序列化错误: %w", err)
-	}
-
-	req, err := http.NewRequest("POST", s.baseURL+endpoint, bytes.NewBuffer(jsonData))
-	if err != nil {
-		return nil, fmt.Errorf("请求构造失败: %w", err)
-	}
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := s.httpClient.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("网络请求异常: %w", err)
-	}
-	defer resp.Body.Close()
-
-	var result map[string]interface{}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return nil, fmt.Errorf("响应解析失败: %w", err)
-	}
-
-	if code, ok := result["code"].(float64); ok && code != 200 {
-		return nil, fmt.Errorf("服务端错误: %v", result["msg"])
-	}
-	return result["data"], nil
 }
 
 // handleCheckOnline 检查对端是否在线
