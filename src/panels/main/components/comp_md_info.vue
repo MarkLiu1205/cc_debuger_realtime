@@ -1,6 +1,7 @@
 
 <script lang="ts" setup>
 import { onMounted, ref } from 'vue';
+import { _funcs } from '../../../tools/_funcs';
 
 
 
@@ -9,15 +10,15 @@ import { onMounted, ref } from 'vue';
 <template>
     <div class="md-info">
         <div>
-            <label style="color: orange;">使用文档：</label>
+            <label style="color: orange;">{{ _funcs.getI18nText("text_34") }}</label>
             <ui-link>https://www.cocos.com/products</ui-link>
         </div>
         <div>
-            <label style="color: orange;">bug反馈：</label>
+            <label style="color: orange;">{{ _funcs.getI18nText("text_35") }}</label>
             <ui-link>https://www.cocos.com/products</ui-link>
         </div>
         <div>
-            <label style="color: orange;">联系作者：</label>
+            <label style="color: orange;">{{ _funcs.getI18nText("text_36") }}</label>
             <label>QQ 1451784145</label>
         </div>
     </div>

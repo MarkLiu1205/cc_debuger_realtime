@@ -114,15 +114,15 @@ defineExpose({
 <template>
     <div style="width: 100vw; height: 100vh;" ref="ref_container">
         <div class="center-align" style="flex-direction: column;" v-if="isRuntimeOffline">
-            <h2>没有检测到可用运行时</h2>
+            <h2>{{ _funcs.getI18nText("text_64") }}</h2>
         </div>
         <div class="log-viewer" v-else>
             <!-- 控制面板 -->
             <div class="controls">
-                <ElInput v-model="searchQuery" placeholder="搜索日志..." clearable />
-                <ElButton @click="clearLogs" type="danger">清空日志</ElButton>
-                <ElCheckbox v-model="autoScroll">自动滚动</ElCheckbox>
-                <ElButton @click="() => (filterLevel = 'all')">全部</ElButton>
+                <ElInput v-model="searchQuery" :placeholder='_funcs.getI18nText("text_86")' clearable />
+                <ElButton @click="clearLogs" type="danger">{{ _funcs.getI18nText("text_87") }}</ElButton>
+                <ElCheckbox v-model="autoScroll">{{ _funcs.getI18nText("text_88") }}</ElCheckbox>
+                <ElButton @click="() => (filterLevel = 'all')">{{ _funcs.getI18nText("text_89") }}</ElButton>
                 <ElButton @click="() => (filterLevel = 'info')">Info</ElButton>
                 <ElButton @click="() => (filterLevel = 'warn')">Warn</ElButton>
                 <ElButton @click="() => (filterLevel = 'error')">Error</ElButton>
@@ -131,20 +131,20 @@ defineExpose({
             <!-- 日志列表 -->
             <ElScrollbar :height="logHeight" ref="ref_scrollbar">
                 <ElTable :data="filteredLogs" style="width: 100%" size="small" border>
-                    <ElTableColumn prop="timestamp" label="时间" width="100" />
-                    <ElTableColumn prop="level" label="级别" width="80">
+                    <ElTableColumn prop="timestamp" :label='_funcs.getI18nText("text_90")' width="100" />
+                    <ElTableColumn prop="level" :label='_funcs.getI18nText("text_91")' width="80">
                         <template #default="{ row }">
                             <span :class="row.level">{{ row.level.toUpperCase() }}</span>
                         </template>
                     </ElTableColumn>
-                    <ElTableColumn prop="message" label="内容" />
+                    <ElTableColumn prop="message" :label='_funcs.getI18nText("text_92")' />
                 </ElTable>
             </ElScrollbar>
             <div class="bottomTip" v-if="gameEnvObj?.CC_PREVIEW">
-                注意：当前是preview模式，不支持cc.log/warn/error，只支持console.log/warn/error
+                {{ _funcs.getI18nText("text_93") }}
             </div>
             <div class="bottomTip" v-else-if="!gameEnvObj?.CC_DEBUG">
-                注意：当前是不是debug模式，不支持cc.log/warn/error，只支持console.log/warn/error
+                {{ _funcs.getI18nText("text_94") }}
             </div>
         </div>
     </div>

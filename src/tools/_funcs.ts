@@ -493,4 +493,25 @@ export function printTime(tag:string,...args){
     }
 }
 
+export function getI18nText(key:string){
+    key = `${getPluginName()}.${key}`
+    let str = Editor.I18n.t(key);
+    if(str==""){
+        console.log(`i18n.${key}为空`)
+    }
+    return str
+}
+
+/**
+ * 格式化字符串 formatStr("参数1:{0}, 参数2:{1}","aaa",123)
+ * @param format 
+ * @param args 
+ * @returns 
+ */
+export function formatStr(format:string,...args){
+    return format.replace(/\{(\d+)\}/g, function(match, index) {
+        return typeof args[index] !== 'undefined' ? args[index] : match;
+    });
+}
+
 }

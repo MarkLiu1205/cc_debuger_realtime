@@ -99,16 +99,16 @@ function onPageSizeChange(size) {
     <div class="container">
         <!-- 左侧输入框 -->
         <div class="left-panel">
-            <h3>输入 JS 代码</h3>
-            <ui-textarea :value="str_input" @change="onInputChange" placeholder="请使用 return 返回需要输出的结果"></ui-textarea>
+            <h3>{{ _funcs.getI18nText("text_74") }}</h3>
+            <ui-textarea :value="str_input" @change="onInputChange" :placeholder='_funcs.getI18nText("text_75")'></ui-textarea>
             <div class="pagination-container" v-if="pageSize > 0">
                 <el-pagination class="pagination" :current-page="pageIndex" :page-count="pageSize" :pager-count="5" @current-change="onPageIndexChange" @size-change="onPageSizeChange"/>
             </div>
             <div class="btn-bar">
-                <el-button type="primary" @click="do_eval"><ui-icon value="play"></ui-icon>执行</el-button>
+                <el-button type="primary" @click="do_eval"><ui-icon value="play"></ui-icon>{{ _funcs.getI18nText("text_76") }}</el-button>
                 <div>
-                    <el-button type="success" @click="saveHistory(pageIndex)" v-if="pageSize > 0">更新本条记录</el-button>
-                    <el-button type="success" @click="saveHistory(pageSize+1)">保存为新记录</el-button>
+                    <el-button type="success" @click="saveHistory(pageIndex)" v-if="pageSize > 0">{{ _funcs.getI18nText("text_77") }}</el-button>
+                    <el-button type="success" @click="saveHistory(pageSize+1)">{{ _funcs.getI18nText("text_78") }}</el-button>
                 </div>
             </div>
         </div>

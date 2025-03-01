@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref,reactive,watch,onUnmounted } from 'vue';
 import { ElDialog, ElTree } from 'element-plus';
+import { _funcs } from '../../../tools/_funcs';
 
 const menuPosition = reactive({ x: 0, y: 0 });
 
@@ -126,7 +127,7 @@ const onQueryChanged = (event) => {
         :style="{ top: `${menuPosition.y}px`, left: `${menuPosition.x}px` }"
         ref="selfPopupRef"
     >
-        <ui-input @change="onQueryChanged" placeholder="筛选" type="text"/>
+        <ui-input @change="onQueryChanged" :placeholder='_funcs.getI18nText("text_48")' type="text"/>
         <el-tree-v2
             ref="treeRef"
             :data="treeData"

@@ -174,7 +174,7 @@ async function openLogPanel(){
 async function openLocalCachePanel(){
     const gameEnvObj = await _pluginSocket.getGameEnv()
     if(!gameEnvObj.isNative){
-        showToast("非原生环境不支持此功能")
+        showToast(_funcs.getI18nText("text_12"))
         return
     }
     const panelId = _funcs.getPluginName()+".localCache_panel"
@@ -231,10 +231,10 @@ async function onEditConfirmAddress(event){
         return
     }
     if(url.length==0){
-        showToast("服务器地址不可为空")
+        showToast(_funcs.getI18nText("text_13"))
         return
     }else if(!url.startsWith("ws://")&&!url.startsWith("wss://")){
-        showToast("websocket服务器地址不合法")
+        showToast(_funcs.getI18nText("text_14"))
         return
     }
     serverAddress_connecting.value = url
@@ -242,10 +242,10 @@ async function onEditConfirmAddress(event){
 
     const config: any = {
         // title: 'buttons',
-        detail: `是否确定连接新的插件服务器：${url}`,
-        buttons: ['确定并重启', '取消'],
+        detail: `${_funcs.getI18nText("text_15")}${url}`,
+        buttons: [_funcs.getI18nText("text_16"), _funcs.getI18nText("text_17")],
     };
-    const result = await Editor.Dialog.info('提示', config);
+    const result = await Editor.Dialog.info(_funcs.getI18nText("text_18"), config);
     if(result.response==0){
         _funcs.saveCustomServerAddress(url)
         Editor.Message.send(_funcs.getPluginName(),"restart-self")
@@ -265,11 +265,11 @@ async function onEditConfirmAddress(event){
             <div class="center-align" style="flex-direction: column;" v-if="isRuntimeOffline">
                 <div v-if="isConnecting" style="display: flex;flex-direction: column;">
                     <div style="display: flex; flex-direction: row; margin-bottom: 5px;align-items: center;justify-content: center;">
-                        <h2>正在连接插件服务器</h2>
+                        <h2>{{ _funcs.getI18nText("text_4") }}</h2>
                         <ui-loading style="margin-left: 10px;"></ui-loading>
                     </div>
                     <div style="display: flex; flex-direction: row; margin-bottom: 20px;align-items: center;justify-content: center;height: 30px;">
-                        <h3>地址：</h3>
+                        <h3>{{ _funcs.getI18nText("text_5") }}</h3>
                         <div v-if="!bAddressEditFocus" style="min-width: 60px;height: 22px;">
                             <label style="font-size: 15px;">{{ serverAddress_connecting }}</label>
                         </div>
@@ -283,12 +283,12 @@ async function onEditConfirmAddress(event){
                             />
                         </div>
                         
-                        <ui-button v-if="!bAddressEditFocus" style="padding-top: 5px;padding-bottom: 5px;margin-left: 10px;" @click="onFocusEditAddress">切换</ui-button>
+                        <ui-button v-if="!bAddressEditFocus" style="padding-top: 5px;padding-bottom: 5px;margin-left: 10px;" @click="onFocusEditAddress">{{ _funcs.getI18nText("text_2") }}</ui-button>
                     </div>
                 </div>
                 <div v-else-if="serverAddress_connected" style="display: flex;flex-direction: column;">
                     <div style="display: flex; flex-direction: row; margin-bottom: 20px;align-items: center;justify-content: center;height: 30px;">
-                        <h3>已连接插件服务器：</h3>
+                        <h3>{{ _funcs.getI18nText("text_1") }}</h3>
                         <div v-if="!bAddressEditFocus"  style="min-width: 60px;">
                             <label style="font-size: 15px;">{{ serverAddress_connected }}</label>
                         </div>
@@ -299,18 +299,18 @@ async function onEditConfirmAddress(event){
                             @blur="handleNameBlur" 
                             @keydown.enter="onEditConfirmAddress" 
                         />
-                        <ui-button v-if="!bAddressEditFocus" style="padding-top: 5px;padding-bottom: 5px;margin-left: 10px;" @click="onFocusEditAddress">切换</ui-button>
+                        <ui-button v-if="!bAddressEditFocus" style="padding-top: 5px;padding-bottom: 5px;margin-left: 10px;" @click="onFocusEditAddress">{{ _funcs.getI18nText("text_2") }}</ui-button>
                     </div>
                     <div style="display: flex; flex-direction: row;align-items: center;justify-content: center;">
-                        <h2>但暂检测到可用运行时</h2>
+                        <h2>{{ _funcs.getI18nText("text_3") }}</h2>
                     </div>
                     <div style="display: flex; flex-direction: row;align-items: center;justify-content: center;">
-                        <ui-button type="default" style="margin-top: 5px; padding-top: 5px;padding-bottom: 5px;" @confirm="doOpenRuntimePreview">推荐点击打开本地预览 {{runtimePreviewUrl}}</ui-button>
+                        <ui-button type="default" style="margin-top: 5px; padding-top: 5px;padding-bottom: 5px;" @confirm="doOpenRuntimePreview">{{ _funcs.getI18nText("text_6") }} {{runtimePreviewUrl}}</ui-button>
                     </div>
                     
                 </div>
                 <div v-else>
-                    <h2>未连接插件服务器，请按F5重启</h2>
+                    <h2>{{ _funcs.getI18nText("text_7") }}</h2>
                 </div>
                 <comp_md_info style="margin-top: 20px;"/>
             </div>
@@ -329,10 +329,10 @@ async function onEditConfirmAddress(event){
                     <view_asset_info v-else-if="_curSelResItem!=null" v-model="_curSelResItem"/>
                     <div v-else style="display: flex;flex-direction: column; gap: 10px;margin: 10px;">
                         <div class="button-grid" >
-                            <el-button  @click="openEvalPanel">执行JS</el-button>
-                            <el-button  @click="openDynamicPanel">动态图集</el-button>
-                            <el-button  @click="openLogPanel">日志</el-button>
-                            <el-button  @click="openLocalCachePanel">可写目录</el-button>
+                            <el-button  @click="openEvalPanel">{{ _funcs.getI18nText("text_8") }}</el-button>
+                            <el-button  @click="openDynamicPanel">{{ _funcs.getI18nText("text_9") }}</el-button>
+                            <el-button  @click="openLogPanel">{{ _funcs.getI18nText("text_10") }}</el-button>
+                            <el-button  @click="openLocalCachePanel">{{ _funcs.getI18nText("text_11") }}</el-button>
                             <!-- <el-button  @click="test_1">测试</el-button> -->
                         </div>
                         <comp_deviceInfo/>

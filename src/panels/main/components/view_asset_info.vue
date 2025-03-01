@@ -29,7 +29,7 @@ onMounted(()=>{
 
     const localIps = _funcs.getLocalIPs();
     _pluginSocket.listenRuntimeOnlineInfo(async (info:OnlineInfo)=>{
-        console.log("3在线刷新----",info)
+        // console.log("3在线刷新----",info)
         if(info.bIsOnline){
             const ip = info?.info?.IP;
             if(ip=="localhost"||ip=="::1"||ip=="127.0.0.1"||localIps.includes(ip)){
@@ -157,15 +157,15 @@ function onPreviewImgSrc(){
     <div class="asset-info">
         <div v-if="assetInfo.path=='assets'">
             <div class="row">
-                <label class="orange">asset数量:</label>
+                <label class="orange">{{ _funcs.getI18nText("text_49") }}</label>
                 <label class="break-word">{{ floderStat.totalNum }}</label>
             </div>
             <div class="row">
-                <ui-label class="orange" tooltip="根据纹理图片的宽高计算的，仅是预估值，不完全准确">预估texture内存:</ui-label>
+                <ui-label class="orange" :tooltip='_funcs.getI18nText("text_50")'>{{ _funcs.getI18nText("text_51") }}</ui-label>
                 <label class="break-word">{{ (floderStat.totalTexMemory/1024/1024).toFixed(2) }}M</label>
             </div>
             <div >
-                <label class="orange">bundle列表:</label>
+                <label class="orange">{{ _funcs.getI18nText("text_52") }}</label>
                 <div v-for="(mode, index) in bundles" :key="mode" :value="mode">
                     <label class="clickable" @click="onClickBundle(mode)">@{{ mode }}</label>
                 </div>
@@ -173,11 +173,11 @@ function onPreviewImgSrc(){
         </div>
         <div v-else-if="assetInfo.isDirectory">
             <div class="row" v-if="assetInfo.isBundleFloder">
-                <label class="orange">是否bundle文件夹:</label>
+                <label class="orange">{{ _funcs.getI18nText("text_53") }}</label>
                 <label>YES</label>
             </div>
             <div class="row" v-if="!assetInfo.isBundleFloder">
-                <label class="orange">所属bundle:</label>
+                <label class="orange">{{ _funcs.getI18nText("text_54") }}</label>
                 <label>{{assetInfo.bundleName??"无"}}</label>
             </div>
             <div class="row">
@@ -185,17 +185,17 @@ function onPreviewImgSrc(){
                 <label class="break-word">{{ assetInfo.path }}</label>
             </div>
             <div class="row">
-                <label class="orange">asset数量:</label>
+                <label class="orange">{{ _funcs.getI18nText("text_49") }}</label>
                 <label class="break-word">{{ floderStat.totalNum }}</label>
             </div>
             <div class="row">
-                <ui-label class="orange" tooltip="根据纹理图片的宽高计算的，仅是预估值，不完全准确">预估texture内存:</ui-label>
+                <ui-label class="orange" :tooltip='_funcs.getI18nText("text_50")'>{{ _funcs.getI18nText("text_51") }}</ui-label>
                 <label class="break-word">{{ (floderStat.totalTexMemory/1024/1024).toFixed(2) }}M</label>
             </div>
         </div>
         <div v-else>
             <div class="row">
-                <label class="orange">所属bundle:</label>
+                <label class="orange">{{ _funcs.getI18nText("text_54") }}</label>
                 <label>{{assetInfo.bundleName??"无"}}</label>
             </div>
             
@@ -209,37 +209,37 @@ function onPreviewImgSrc(){
                 <label class="break-word">{{ assetInfo.uuid }}</label>
             </div>
             <div class="row">
-                <label class="orange">asset类型:</label>
+                <label class="orange">{{ _funcs.getI18nText("text_55") }}</label>
                 <label class="break-word">{{ assetInfo.assetType }}</label>
             </div>
             <div class="row" v-if="!isNotInCache">
-                <label class="orange">引用计数:</label>
-                <label>{{ assetInfo.refCount??"没有调用过addRef，疑似没有做内存管理" }}</label>
+                <label class="orange">{{ _funcs.getI18nText("text_56") }}:</label>
+                <label>{{ assetInfo.refCount??_funcs.getI18nText("text_57")}}</label>
             </div>
             <div class="row" v-if="isNotInCache">
-                <label class="yellow">⚠️此资源不在assetManager.assets缓存中</label>
+                <label class="yellow">{{ _funcs.getI18nText("text_58") }}</label>
 
             </div>
             <div style="margin-top: 10px;">
                 <div class="row" v-if="assetInfo.textureUuid">
-                    <label class="orange">依赖的Texture2D:</label>
+                    <label class="orange">{{ _funcs.getI18nText("text_59") }}</label>
                     <label class="clickable" @click="onClickUuid(assetInfo.textureUuid)">{{ assetInfo.textureUuid }}</label>
                 </div>
                 <div class="row" v-if="assetInfo.imageUuid">
-                    <label class="orange">依赖的ImageAsset:</label>
+                    <label class="orange">{{ _funcs.getI18nText("text_60") }}</label>
                     <label class="clickable" @click="onClickUuid(assetInfo.imageUuid)">{{ assetInfo.imageUuid }}</label>
                 </div>
             </div>
             <div style="margin-top: 10px;">
-                <label class="orange">依赖与引用：</label>
+                <label class="orange">{{ _funcs.getI18nText("text_61") }}</label>
                 <div class="dependusege">
                     <div class="row">
-                        <ui-button style="padding-top:5px;padding-bottom:5px" @confirm="onClick_checkUsege_node">查看引用此资源的所有节点</ui-button>
-                        <ui-button style="padding-top:5px;padding-bottom:5px" @confirm="onClick_checkUsege_asset">查看引用此资源的所有资源</ui-button>
+                        <ui-button style="padding-top:5px;padding-bottom:5px" @confirm="onClick_checkUsege_node">{{ _funcs.getI18nText("text_26") }}</ui-button>
+                        <ui-button style="padding-top:5px;padding-bottom:5px" @confirm="onClick_checkUsege_asset">{{ _funcs.getI18nText("text_27") }}</ui-button>
                     </div>
                     <div class="row">
-                        <ui-button style="padding-top:5px;padding-bottom:5px" @confirm="onClick_checkDepend">查看此资源依赖的资源</ui-button>
-                        <ui-button style="padding-top:5px;padding-bottom:5px" @confirm="onClick_checkDepend_traverse">递归查看此资源依赖的资源</ui-button>
+                        <ui-button style="padding-top:5px;padding-bottom:5px" @confirm="onClick_checkDepend">{{ _funcs.getI18nText("text_28") }}</ui-button>
+                        <ui-button style="padding-top:5px;padding-bottom:5px" @confirm="onClick_checkDepend_traverse">{{ _funcs.getI18nText("text_29") }}</ui-button>
                     </div>
                 </div>
                 
@@ -247,7 +247,7 @@ function onPreviewImgSrc(){
             <div style="margin-top: 10px;" v-if="bIsImage">
                 
                 <div class="row" v-if="assetInfo.assetType=='cc.ImageAsset' && !isNotInCache">
-                    <ui-label class="orange" tooltip="根据纹理图片的宽高计算的，仅是预估值，不完全准确">预估内存:</ui-label>
+                    <ui-label class="orange" :tooltip='_funcs.getI18nText("text_50")'>{{ _funcs.getI18nText("text_62") }}</ui-label>
                     <label class="break-word" >{{ (assetInfo.memory/1024/1024).toFixed(2) }}M</label>
                 </div>
                 <div class="row" style="gap: 5px;" v-if="!isNotInCache">
@@ -262,7 +262,7 @@ function onPreviewImgSrc(){
                     </div>
                     <div v-else>
                         <div v-if="assetInfo.imgSrc">
-                            <ui-button @click="onPreviewImgSrc">预览图片</ui-button>
+                            <ui-button @click="onPreviewImgSrc">{{ _funcs.getI18nText("text_63") }}</ui-button>
                             <ui-image v-if="tempPreviewPath" :value="tempPreviewPath" :style="{width:_width,height:_height}" />
                         </div>
                         <div v-else>

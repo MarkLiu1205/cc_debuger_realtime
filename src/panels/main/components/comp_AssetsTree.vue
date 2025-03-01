@@ -176,15 +176,16 @@ async function onFilterStrChange(newVal:string,oldVal?:string){
 
         if(arr!=null){
             if(arr.length==0){
-                _funcs.log_1("没有资源引用引用此资源")
-                showToast("没有资源引用引用此资源")
+                _funcs.log_1(_funcs.getI18nText("text_21"))
+                showToast(_funcs.getI18nText("text_21"))
                 
             }else{
                 const nodePaths = arr.map((nodeUuid)=>{
                     return _dataCtx.getResNodeInfoWithUuid(nodeUuid)?.path
                 })
-                _funcs.log_1("相关资源引用",nodePaths)
-                showToast(`找到了${nodePaths.length}个资源`)
+                _funcs.log_1(_funcs.getI18nText("text_23"),nodePaths)
+                showToast(_funcs.formatStr(_funcs.getI18nText("text_22"),nodePaths.length))
+                
             }
         }
         
@@ -304,28 +305,28 @@ function onRightClick_asset( event: MouseEvent, data: ResTreeItem, node: TreeNod
     }
     const menuOptions_asset = [
         { 
-            label: '复制并打印UUID', 
+            label: _funcs.getI18nText("text_24"), 
             action: () => {
-                _funcs.log_1("UUID(已复制)",data.uuid)
+                _funcs.log_1(_funcs.getI18nText("text_25"),data.uuid)
                 navigator.clipboard.writeText(data.uuid)
             }
         },{ 
-            label: '查看引用此资源的所有节点', 
+            label: _funcs.getI18nText("text_26"), 
             action: () => {
                 eventBus.emit("check-asset-usege-node", data.uuid);
             }
         },{ 
-            label: '查看引用此资源的所有资源', 
+            label: _funcs.getI18nText("text_27"), 
             action: () => {
                 eventBus.emit("check-asset-usege-asset", data.uuid);
             }
         },{ 
-            label: '查看此资源依赖的资源', 
+            label: _funcs.getI18nText("text_28"), 
             action: () => {
                 eventBus.emit("check-asset-depend", data.uuid);
             }
         },{ 
-            label: '递归查看此资源依赖的资源', 
+            label: _funcs.getI18nText("text_29"), 
             action: () => {
                 eventBus.emit("check-asset-depend-traverse", data.uuid);
             }
@@ -461,7 +462,7 @@ const clearFilterStr = () => {
     <div ref="ref_container_resTree" :style="{ height: height_resTree + 'px' }">
         <div class="loading-div" v-if="resTree_datas.length==0">
             <ui-loading></ui-loading>
-            <span style="margin-left: 10px;">正在加载资源列表</span>
+            <span style="margin-left: 10px;">{{ _funcs.getI18nText("text_30") }}</span>
         </div>
         <div v-else>
             <div ref="ref_searchBar" class="searchBar" :style="{height:searchBarHeight+'px'}">
@@ -473,7 +474,7 @@ const clearFilterStr = () => {
                     <ui-input
                         style="flex: 1;"
                         v-model="str_filter"
-                        placeholder="筛选路径或uuid"
+                        :placeholder='_funcs.getI18nText("text_31")'
                         type="text"
                     />
                     <ui-icon
@@ -485,10 +486,10 @@ const clearFilterStr = () => {
                 </div>
                 
                 <div class="searchBar-button-container">
-                    <ui-button type="icon" tooltip="切换为列表模式" @confirm="changeToListMode" v-if="_isTreeMode">
+                    <ui-button type="icon" :tooltip='_funcs.getI18nText("text_32")' @confirm="changeToListMode" v-if="_isTreeMode">
                         <ui-icon value="list"></ui-icon>
                     </ui-button>
-                    <ui-button type="icon" tooltip="切换为树形模式" @confirm="changeToTreeMode" v-else>
+                    <ui-button type="icon" :tooltip='_funcs.getI18nText("text_33")' @confirm="changeToTreeMode" v-else>
                         <ui-icon value="render-stage"></ui-icon>
                     </ui-button>
                 </div>

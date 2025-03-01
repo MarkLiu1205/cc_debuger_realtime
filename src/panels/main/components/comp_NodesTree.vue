@@ -326,20 +326,20 @@ function onRightClick_node( event: MouseEvent, data: NodeTreeItem, node: TreeNod
 
     const menuOptions_node = [
         { 
-            label: '复制并打印UUID', 
+            label: _funcs.getI18nText("text_37"), 
             action: () => {
                 _funcs.log_1("Path",data.path)
                 _funcs.log_1("UUID(已被复制)",data.uuid)
                 navigator.clipboard.writeText(data.uuid)
             }
         },{ 
-            label: '查看此节点依赖的资源', 
+            label: _funcs.getI18nText("text_38"), 
             action: () => {
                 console.log("点击1",data.uuid,data.path)
                 eventBus.emit("check-node-depends-asset", data.uuid);
             }
         },{ 
-            label: '递归查看所有依赖的资源（含子节点）', 
+            label: _funcs.getI18nText("text_39"), 
             action: () => {
                 console.log("点击2",data.uuid,data.path)
                 eventBus.emit("check-node-traverse-depends-asset", data.uuid);
@@ -398,15 +398,15 @@ async function onFilterStrChange(newVal:string,oldVal?:string){
             const arr = Object.keys(filteredMapByAssetUuid)
             if(arr.length==0){
                 // Editor.Dialog.error("没有节点引用引用此资源",{buttons:["确定"]})
-                _funcs.log_1("没有节点引用引用此资源")
-                showToast("没有节点引用引用此资源1")
+                _funcs.log_1(_funcs.getI18nText("text_40"))
+                showToast(_funcs.getI18nText("text_40"))
                 
             }else{
                 const nodePaths = arr.map((nodeUuid)=>{
                     return _dataCtx.getTreeNodeInfoWithUuid(nodeUuid)?.path
                 })
-                _funcs.log_1("相关节点引用",nodePaths)
-                showToast(`找到了${nodePaths.length}个节点`)
+                _funcs.log_1(_funcs.getI18nText("text_42"),nodePaths)
+                showToast(_funcs.formatStr(_funcs.getI18nText("text_41"),nodePaths.length))
             }
         }
         
@@ -449,7 +449,7 @@ const clearFilterStr = () => {
     <div ref="ref_container_nodeTree"  :style="{ height: height_nodeTree + 'px'}">
         <div class="loading-div" v-if="nodeTree_datas.length==0">
             <ui-loading></ui-loading>
-            <span style="margin-left: 10px;">正在加载节点树</span>
+            <span style="margin-left: 10px;">{{_funcs.getI18nText("text_43")}}</span>
         </div>
         <div v-else>
 
@@ -463,7 +463,7 @@ const clearFilterStr = () => {
                     <ui-input
                         style="flex: 1;"
                         v-model="str_filter"
-                        placeholder="筛选路径或uuid"
+                        :placeholder='_funcs.getI18nText("text_44")'
                         type="text"
                     />
                     <ui-icon
@@ -474,10 +474,10 @@ const clearFilterStr = () => {
                     ></ui-icon>
                 </div>
                 <div class="searchBar-button-container">
-                    <ui-button type="icon" tooltip="展开全部" @confirm="doExpandAll" v-if="isCollapsed">
+                    <ui-button type="icon" :tooltip='_funcs.getI18nText("text_45")' @confirm="doExpandAll" v-if="isCollapsed">
                         <ui-icon value="expand"></ui-icon>
                     </ui-button>
-                    <ui-button type="icon" tooltip="折叠全部" @confirm="doCollapseAll" v-else>
+                    <ui-button type="icon" :tooltip='_funcs.getI18nText("text_46")' @confirm="doCollapseAll" v-else>
                         <ui-icon value="collapse"></ui-icon>
                     </ui-button>
                 </div>

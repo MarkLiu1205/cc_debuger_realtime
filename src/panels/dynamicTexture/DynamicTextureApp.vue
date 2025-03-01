@@ -85,25 +85,25 @@ onMounted(async () => {
 <template>
     <div class="container">
         <div v-if="isRuntimeOffline">
-            <h2>没有检测到可用运行时</h2>
+            <h2>{{ _funcs.getI18nText("text_64") }}</h2>
         </div>
         <div v-else-if="!dynamicTextureEnabled">
             <div v-if="atlasCount === 0" class="button-group">
-                <h2>未开启动态图集</h2>
-                <ElButton @click="refresh">刷新</ElButton>
+                <h2>{{ _funcs.getI18nText("text_65") }}</h2>
+                <ElButton @click="refresh">{{ _funcs.getI18nText("text_66") }}</ElButton>
             </div>
         </div>
         <div v-else>
             <div v-if="isLoading" class="loading-container">
                 <div class="row">
                     <ui-loading></ui-loading>
-                    正在加载动态图集...
+                    {{ _funcs.getI18nText("text_67") }}
                 </div>
             </div>
             <div v-else>
                 <div v-if="atlasCount === 0" class="button-group">
-                    <h2>没有可用的图片</h2>
-                    <ElButton @click="refresh">刷新</ElButton>
+                    <h2>{{ _funcs.getI18nText("text_68") }}</h2>
+                    <ElButton @click="refresh">{{ _funcs.getI18nText("text_66") }}</ElButton>
                 </div>
                 <div v-else>
                     <div class="image-container">
@@ -111,16 +111,16 @@ onMounted(async () => {
                     </div>
                     
                     <div class="row">
-                        <label>缓存路径：</label>
+                        <label>{{ _funcs.getI18nText("text_69") }}</label>
                         <ElInput v-model="imagePath" class="image-path" readonly :select-on-focus="true" />
                     </div>
                     
                     <div class="button-group">
-                        <ElButton @click="refresh">刷新</ElButton>
-                        <ElButton @click="prevImage" :disabled="currentIndex === 0">上一张</ElButton>
-                        <p class="image-info">当前：{{ currentIndex + 1 }} / {{ atlasCount }}</p>
-                        <ElButton @click="nextImage" :disabled="currentIndex >= atlasCount - 1">下一张</ElButton>
-                        <p class="image-info">尺寸：{{ imageWidth }} x {{ imageHeight }}</p>
+                        <ElButton @click="refresh">{{ _funcs.getI18nText("text_66") }}</ElButton>
+                        <ElButton @click="prevImage" :disabled="currentIndex === 0">{{_funcs.getI18nText("text_72")}} </ElButton>
+                        <p class="image-info">{{_funcs.getI18nText("text_70")}} {{ currentIndex + 1 }} / {{ atlasCount }}</p>
+                        <ElButton @click="nextImage" :disabled="currentIndex >= atlasCount - 1">{{_funcs.getI18nText("text_73")}} </ElButton>
+                        <p class="image-info">{{_funcs.getI18nText("text_71")}} {{ imageWidth }} x {{ imageHeight }}</p>
                     </div>
                 </div>
             </div>

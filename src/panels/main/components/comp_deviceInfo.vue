@@ -74,18 +74,18 @@ async function onEditConfirmAddress(event){
     }
     
     if(url.length==0){
-        showToast("服务器地址不可为空")
+        showToast(_funcs.getI18nText("text_13"))
         return
     }else if(!url.startsWith("ws://")&&!url.startsWith("wss://")){
-        showToast("websocket服务器地址不合法")
+        showToast(_funcs.getI18nText("text_14"))
         return
     }
     const config: any = {
         // title: 'buttons',
-        detail: `是否确定连接新的插件服务器：${url}`,
-        buttons: ['确定并重启', '取消'],
+        detail: `${_funcs.getI18nText("text_15")}${url}`,
+        buttons: [_funcs.getI18nText("text_16"), _funcs.getI18nText("text_17")],
     };
-    const result = await Editor.Dialog.info('提示', config);
+    const result = await Editor.Dialog.info(_funcs.getI18nText("text_18"), config);
     if(result.response==0){
         _funcs.saveCustomServerAddress(url)
         Editor.Message.send(_funcs.getPluginName(),"restart-self")
@@ -100,7 +100,7 @@ async function onEditConfirmAddress(event){
 <template>
     <div class="device-info" v-if="curInfo?.bIsOnline">
         <div style="display: flex; flex-direction: row; margin-bottom: 5px;align-items: center;height: 30px;">
-            <ui-label tooltip="可以自己搭建远程中转服务器,详见文档">已连接插件服务器：</ui-label>
+            <ui-label :tooltip='_funcs.getI18nText("text_1")'>{{ _funcs.getI18nText("text_1") }}</ui-label>
             <div v-if="!bAddressEditFocus"  style="min-width: 60px;">
                 <label style="font-size: 15px;">{{ serverAddress_connected }}</label>
             </div>
@@ -111,10 +111,10 @@ async function onEditConfirmAddress(event){
                 @blur="handleNameBlur" 
                 @keydown.enter="onEditConfirmAddress" 
             />
-            <ui-button v-if="!bAddressEditFocus" style="padding-top: 5px;padding-bottom: 5px;margin-left: 10px;" @click="onFocusEditAddress">切换</ui-button>
+            <ui-button v-if="!bAddressEditFocus" style="padding-top: 5px;padding-bottom: 5px;margin-left: 10px;" @click="onFocusEditAddress">{{ _funcs.getI18nText("text_2") }}</ui-button>
         </div>
         <div class="row">
-            <label>当前runtime:</label>
+            <label>{{ _funcs.getI18nText("text_20") }}</label>
             <!-- <label class="blue">{{ curInfo.name }}</label> -->
             <ui-select id="id_cacheMode" :value="curInfo.name" @change="onSelect">
                 <option v-for="(mode, index) in nameArr" :key="index" :value="mode">{{ mode }}</option>

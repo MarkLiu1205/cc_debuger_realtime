@@ -56,14 +56,14 @@ async function syncSelectFile(){
     bIsSyncing.value = true
     // console.log("同步选中文件到本地",curSelItem.value.path)
     if(curSelItem.value.isFloder){
-        showToast("不能同步文件夹")
+        showToast(_funcs.getI18nText("text_79"))
         bIsSyncing.value = false
         return
     }
     
     const u8a = await getWritableFileData(curSelItem.value.path)
     if(u8a==null){
-        showToast("获取文件数据失败")
+        showToast(_funcs.getI18nText("text_80"))
         bIsSyncing.value = false
         return
     }
@@ -72,10 +72,10 @@ async function syncSelectFile(){
     try{
         fs.writeFileSync(savePath,u8a)
         // console.log("保存文件",savePath,result,u8a.length)
-        showToast("保存文件成功")
+        showToast(_funcs.getI18nText("text_81"))
     }catch(e){
         // console.error("保存文件失败",e)
-        showToast("保存文件失败")
+        showToast(_funcs.getI18nText("text_82"))
     }
     bIsSyncing.value = false
 }
@@ -95,17 +95,17 @@ async function getWritableFileData(filePath:string){
 <template>
     <div class="container">
         <div v-if="isRuntimeOffline">
-            <h2>没有检测到可用运行时</h2>
+            <h2>{{ _funcs.getI18nText("text_64") }}</h2>
         </div>
         <div v-else class="column">
             <div class="row">
-                <label class="text">运行时可写路径: {{ gameEnvObj.writablePath }}</label>
+                <label class="text">{{ _funcs.getI18nText("text_83") }} {{ gameEnvObj.writablePath }}</label>
             </div>
             <div class="row">
-                <label class="text">本地同步路径: {{ syncFloderPath }}</label>
+                <label class="text">{{ _funcs.getI18nText("text_84") }} {{ syncFloderPath }}</label>
             </div>
             <div style="height: 40px;justify-content: center;align-items: center;" >
-                <el-button type="success" @click="syncSelectFile" :disabled="(!curSelItem||curSelItem.isFloder)||bIsSyncing">同步选中文件到本地</el-button>
+                <el-button type="success" @click="syncSelectFile" :disabled="(!curSelItem||curSelItem.isFloder)||bIsSyncing">{{ _funcs.getI18nText("text_85") }}</el-button>
             </div>
             <div class="tree-container">
                 <el-tree-v2 
