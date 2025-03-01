@@ -108,12 +108,12 @@ func (s *WebSocketServer) writeMessage(conn *websocket.Conn, msg interface{}) er
 	info.mu.Lock()
 	defer info.mu.Unlock()
 
-	jsonData, err := json.Marshal(msg)
-	if err != nil {
+	// jsonData, err := json.Marshal(msg)
+	// if err != nil {
 
-	} else {
-		fmt.Printf("\n向外发送: %s", jsonData)
-	}
+	// } else {
+	// 	fmt.Printf("\n向外发送: %s", jsonData)
+	// }
 
 	return conn.WriteJSON(msg)
 }
@@ -140,13 +140,13 @@ func (s *WebSocketServer) handleMessages(conn *websocket.Conn) {
 		s.routeMessage(conn, msg)
 
 		// 根据连接类型打印日志
-		isActiveRuntime := (conn == s.activeRuntime)
-		isPlugin := (conn == s.pluginConn)
-		if isActiveRuntime {
-			fmt.Println("\nRuntime message:", string(msgBytes))
-		} else if isPlugin {
-			fmt.Println("\nPlugin message:", string(msgBytes))
-		}
+		// isActiveRuntime := (conn == s.activeRuntime)
+		// isPlugin := (conn == s.pluginConn)
+		// if isActiveRuntime {
+		// 	fmt.Println("\nRuntime message:", string(msgBytes))
+		// } else if isPlugin {
+		// 	fmt.Println("\nPlugin message:", string(msgBytes))
+		// }
 	}
 }
 
@@ -186,7 +186,7 @@ func (s *WebSocketServer) handleIdentify(conn *websocket.Conn, msg Message) {
 		}
 
 		if s.pluginConn != nil {
-			s._doSelectActiveRuntime(runtimeName)
+			s._doSelectActiveRuntime("")
 			s.sendConnectionUpdate(s.getRuntimeName(s.activeRuntime), true)
 		}
 		s.updateRuntimeList()
@@ -198,6 +198,7 @@ func (s *WebSocketServer) handleIdentify(conn *websocket.Conn, msg Message) {
 			s._doSelectActiveRuntime("")
 			s.sendConnectionUpdate(s.getRuntimeName(s.activeRuntime), true)
 		}
+		s.updateRuntimeList()
 	}
 }
 
@@ -239,7 +240,7 @@ func (s *WebSocketServer) doVerify(conn *websocket.Conn, msg *Message) (interfac
 		RequestID: msg.RequestID,
 		Data:      resp,
 	}
-	conn.WriteJSON(response)
+	s.writeMessage(conn,response)
 	return resp, nil
 }
 
@@ -256,7 +257,7 @@ func (s *WebSocketServer) doStatistics(conn *websocket.Conn, msg *Message) (inte
 		RequestID: msg.RequestID,
 		Data:      resp,
 	}
-	conn.WriteJSON(response)
+	s.writeMessage(conn,response)
 	return resp, nil
 }
 
@@ -316,6 +317,7 @@ func (s *WebSocketServer) handlePush(conn *websocket.Conn, msg Message) {
 		s.sendConnectionUpdate(s.getRuntimeName(s.activeRuntime), false)
 		if runtimeName, ok := msg.Data.(string); ok {
 			s._doSelectActiveRuntime(runtimeName)
+			s.sendConnectionUpdate(s.getRuntimeName(s.activeRuntime), true)
 		} else {
 			fmt.Println("Invalid runtime name in selectActiveRuntime")
 		}
@@ -361,7 +363,7 @@ func (s *WebSocketServer) addRuntime(conn *websocket.Conn, name string) string {
 	return name
 }
 
-// updateRuntimeList 更新运行时列表（通知插件端）
+// 更新运行时列表（通知插件端）
 func (s *WebSocketServer) updateRuntimeList() {
 	s.mutex.Lock()
 	names := make([]string, 0, len(s.runtimes))
@@ -384,56 +386,48 @@ func (s *WebSocketServer) updateRuntimeList() {
 
 // handleClose 优化后的连接关闭处理
 func (s *WebSocketServer) handleClose(conn *websocket.Conn) {
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
-
-	// 保存需要通知的信息
-	var notifyInfo struct {
-		isActiveRuntime bool
-		name            string
-		info            *ConnectionInfo
-		pluginConn      *websocket.Conn
-	}
 
 	// 清理连接信息
+	s.mutex.Lock()
 	delete(s.connInfo, conn)
+	s.mutex.Unlock()
 
 	// 处理运行时连接
 	if conn == s.activeRuntime {
-		notifyInfo.isActiveRuntime = true
-		notifyInfo.name = s.getRuntimeName(conn)
-		notifyInfo.pluginConn = s.pluginConn
+		s.sendConnectionUpdate(s.getRuntimeName(s.activeRuntime), false)
+
+		s.mutex.Lock()
 		s.activeRuntime = nil
+		s.removeRuntime(conn)
+
 		fmt.Println("Runtime disconnected")
-	} else if conn == s.pluginConn {
-		s.pluginConn = nil
-		fmt.Println("Plugin disconnected")
-	}
+		s.mutex.Unlock()
 
-	// 从运行时列表移除
-	s.removeRuntime(conn)
-
-	// 在锁外发送通知
-	go func() {
-		if notifyInfo.isActiveRuntime && notifyInfo.pluginConn != nil {
-			msg := Message{
-				Type:   "push",
-				Action: "otherSideOnlineChange",
-				Data: map[string]interface{}{
-					"bIsOnline": false,
-					"name":      notifyInfo.name,
-					"info":      notifyInfo.info,
-				},
-			}
-			if err := s.writeMessage(notifyInfo.pluginConn, msg); err != nil {
-				fmt.Printf("\nFailed to send disconnection notice: %v", err)
+		s.updateRuntimeList()
+		if len(s.runtimes) > 0 {
+			newName := s.runtimes[0].name
+			if newName != "" {
+				s.sendConnectionUpdate(newName, true)
+				s.activeRuntime = s.runtimes[0].conn
+				msg := Message{Type: "push", Action: "markActive", Data: true}
+				s.writeMessage(s.activeRuntime, msg)
 			}
 		}
-		s.updateRuntimeList()
-	}()
+	} else if conn == s.pluginConn {
+		s.mutex.Lock()
+		s.pluginConn = nil
+		s.mutex.Unlock()
+		fmt.Println("Plugin disconnected")
+		if s.activeRuntime != nil {
+			msg := Message{Type: "push", Action: "markActive", Data: false}
+			s.writeMessage(s.activeRuntime, msg)
+		}
+	}
+
+	// }()
 }
 
-// removeRuntime 从运行时列表移除连接
+// 从运行时列表移除连接
 func (s *WebSocketServer) removeRuntime(conn *websocket.Conn) {
 	for i := len(s.runtimes) - 1; i >= 0; i-- {
 		if s.runtimes[i].conn == conn {
@@ -463,18 +457,22 @@ func (s *WebSocketServer) _doSelectActiveRuntime(name string) {
 	s.writeMessage(newRuntime, msg)
 }
 
-// sendConnectionUpdate 发送连接状态更新给插件端
+// 发送连接状态更新给插件端
 func (s *WebSocketServer) sendConnectionUpdate(name string, bOnline bool) {
-	s.mutex.Lock()
-	pluginConn := s.pluginConn
-	activeRuntime := s.activeRuntime
-	info := s.connInfo[activeRuntime]
-	s.mutex.Unlock()
-
-	if pluginConn == nil || activeRuntime == nil {
+	if s.pluginConn == nil {
 		return
 	}
-	s.writeMessage(pluginConn, Message{
+
+	s.mutex.Lock()
+	activeRuntime := s.getRuntimeByName(name)
+	if activeRuntime == nil {
+		s.mutex.Unlock()
+		return
+	}
+	info := s.connInfo[activeRuntime.conn]
+	s.mutex.Unlock()
+
+	s.writeMessage(s.pluginConn, Message{
 		Type:   "push",
 		Action: "otherSideOnlineChange",
 		Data: map[string]interface{}{
