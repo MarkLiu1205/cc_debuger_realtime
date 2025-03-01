@@ -26,7 +26,7 @@ function onNumChange(event){
 
 function onToggle(event){
     compModel.value.enabled = event.target.value
-    console.log("event.target.value",event.target.value,"id",event.target.id)
+    // console.log("event.target.value",event.target.value,"id",event.target.id)
 }
 
 </script>

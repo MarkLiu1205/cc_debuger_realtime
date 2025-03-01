@@ -50,7 +50,7 @@ class PluginSocket {
         this.closeSocket()
         await new Promise((resolve, reject) => {
             this.m_socket = new WebSocket(url);
-            console.log("ggggggggg",url,this.m_socket.url)
+            // console.log("ggggggggg",url,this.m_socket.url)
             this.m_socket.onopen = () => {
                 _funcs.log_1(' Connected to server');
                 this._send({ type: 'identify', role: 'plugin' })

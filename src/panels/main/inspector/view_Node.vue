@@ -69,7 +69,7 @@ function onNumChange(event){
 
 
 function onSelect(event){
-    console.log("layer changed to:", event.target.value)
+    // console.log("layer changed to:", event.target.value)
     nodeModel.value.layer = event.target.value
 }
 

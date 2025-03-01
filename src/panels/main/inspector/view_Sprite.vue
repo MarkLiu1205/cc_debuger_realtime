@@ -47,7 +47,7 @@ function onConfirmColor(event){
     const [r,g,b,a] = event.target.value
     
     compModel.value.color = _funcs.rgbaToHex(r,g,b,a)
-    console.log("r,g,b,a",r,g,b,a,compModel.value.color)
+    // console.log("r,g,b,a",r,g,b,a,compModel.value.color)
 }
 
 function onSelect(event){
@@ -55,16 +55,16 @@ function onSelect(event){
     const sel = event.target.value
     if(eleId=="id_sizeMode"){
         compModel.value.sizeMode = sel
-        console.log("sizeMode changed to:", event.target.value,compModel.value.sizeMode)
+        // console.log("sizeMode changed to:", event.target.value,compModel.value.sizeMode)
     }else if(eleId=="id_type"){
         compModel.value.type = sel
-        console.log("Sprite type changed to:", event.target.value,compModel.value.type)
+        // console.log("Sprite type changed to:", event.target.value,compModel.value.type)
     }
     
 }
 
 function onSelect_SpriteType(event){
-    console.log("Sprite type changed to:", event.target.value,compModel.value.type)
+    // console.log("Sprite type changed to:", event.target.value,compModel.value.type)
 }
 
 function onToggle(event){
@@ -78,7 +78,7 @@ function onToggle(event){
         compModel.value.trim = bool
     }
     
-    console.log("event.target.value",event.target.value,"id",event.target.id)
+    // console.log("event.target.value",event.target.value,"id",event.target.id)
 }
 
 </script>

@@ -1,4 +1,4 @@
-module proxy_server
+module server
 
 go 1.22.2
 

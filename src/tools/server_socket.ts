@@ -13,7 +13,7 @@ class ServerSocket {
         const isWindows = process.platform === 'win32';
         const executablePath = path.join(
             _funcs.getCurPluginPath(),
-            isWindows ? 'server/proxy_server.exe' : 'server/proxy_server'
+            isWindows ? 'server/server.exe' : 'server/server'
         );
         this.process = spawn(executablePath, ['-port', port]);
 

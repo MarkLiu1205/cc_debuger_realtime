@@ -30,7 +30,7 @@ function openDialog(event,datas:Array<NodeTreeItem>,onSelect) {
     }
     treeData = datas as any
     _onSelect = onSelect
-    console.log('打开弹窗');
+    // console.log('打开弹窗');
     dialogVisible.value = true;
     // const { clientX, clientY } = event;
     // menuPosition.x = clientX;
@@ -107,7 +107,7 @@ const filterMethod = (query, data,node) => {
     
     if (!data || !data.path) return false;
     const bMatch = data.path.toLowerCase().includes(query.toLowerCase());
-    console.log("筛选条件:", query,bMatch,typeof bMatch);
+    // console.log("筛选条件:", query,bMatch,typeof bMatch);
     return bMatch;
 };
 

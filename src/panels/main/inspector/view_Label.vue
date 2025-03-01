@@ -65,14 +65,14 @@ function onToggle(event){
         compModel.value.useSystemFont = bool
     }
     
-    console.log("event.target.value",event.target.value,"id",event.target.id)
+    // console.log("event.target.value",event.target.value,"id",event.target.id)
 }
 
 function onConfirmColor(arr){
     const [r,g,b,a] = arr
     
     compModel.value.color = _funcs.rgbaToHex(r,g,b,a)
-    console.log("r,g,b,a",r,g,b,a,compModel.value.color)
+    // console.log("r,g,b,a",r,g,b,a,compModel.value.color)
 }
 
 function onTextChange(event){
@@ -87,7 +87,7 @@ function onTextChange(event){
     }else if(eleId=="id_underlineHeight"){
         compModel.value.underlineHeight = val
     }
-    console.log("event",val,eleId)
+    // console.log("event",val,eleId)
 }
 
 
@@ -99,7 +99,7 @@ function onTab(event){
     }else if(eleId=="id_v-align"){
         compModel.value.verticalAlign = idx
     }
-    console.log("idx",idx)
+    // console.log("idx",idx)
 }
 
 function onNumChange(event){
@@ -110,7 +110,7 @@ function onNumChange(event){
     }else if(eleId=="id_lineHeight"){
         compModel.value.lineHeight = num
     }
-    console.log("num",num,eleId)
+    // console.log("num",num,eleId)
 }
 
 function onSelect(event){
@@ -118,10 +118,10 @@ function onSelect(event){
     const sel = event.target.value
     if(eleId=="id_overFlow"){
         compModel.value.overflow = sel
-        console.log("overflow changed to:", event.target.value,compModel.value.overflow)
+        // console.log("overflow changed to:", event.target.value,compModel.value.overflow)
     }else if(eleId=="id_cacheMode"){
         compModel.value.cacheMode = sel
-        console.log("Sprite cacheMode changed to:", event.target.value,compModel.value.cacheMode)
+        // console.log("Sprite cacheMode changed to:", event.target.value,compModel.value.cacheMode)
     }
     
 }

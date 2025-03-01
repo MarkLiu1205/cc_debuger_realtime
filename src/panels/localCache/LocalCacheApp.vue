@@ -46,9 +46,9 @@ const customClass = (nodeData): string => {
 function onClickItem (data:WritableFileInfo, node, e: MouseEvent){
     curSelItem.value = data
     if(data.isFloder){
-        console.log("点击文件夹",data.path)
+        // console.log("点击文件夹",data.path)
     }else{
-        console.log("点击文件",data.path)
+        // console.log("点击文件",data.path)
     }
 }
 

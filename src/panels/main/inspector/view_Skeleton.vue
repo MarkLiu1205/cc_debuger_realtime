@@ -72,7 +72,7 @@ function onSelect(event) {
     }  else if (eleId === "id_animation") {
         compModel.value.animation = sel
     } 
-    console.log("eleId",eleId,"sel",sel)
+    // console.log("eleId",eleId,"sel",sel)
 }
 
 </script>

@@ -56,7 +56,7 @@ export const applyBuildParamBefore = async (cfg:SelfBuildParam)=>{
 }
 
 export const applyBuildParamAfter = async(cfg:SelfBuildParam)=>{
-    console.log("结束构建",_oldContent_meta?.length)
+    // console.log("结束构建",_oldContent_meta?.length)
     if(_oldContent_ts){
         fs.writeFileSync(runtimeScriptPath_1, _oldContent_ts, 'utf-8');
     }

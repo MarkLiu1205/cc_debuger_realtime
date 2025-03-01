@@ -335,13 +335,13 @@ function onRightClick_node( event: MouseEvent, data: NodeTreeItem, node: TreeNod
         },{ 
             label: _funcs.getI18nText("text_38"), 
             action: () => {
-                console.log("点击1",data.uuid,data.path)
+                // console.log("点击1",data.uuid,data.path)
                 eventBus.emit("check-node-depends-asset", data.uuid);
             }
         },{ 
             label: _funcs.getI18nText("text_39"), 
             action: () => {
-                console.log("点击2",data.uuid,data.path)
+                // console.log("点击2",data.uuid,data.path)
                 eventBus.emit("check-node-traverse-depends-asset", data.uuid);
             }
         }

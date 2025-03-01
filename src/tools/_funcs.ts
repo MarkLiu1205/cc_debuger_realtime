@@ -137,7 +137,7 @@ export function getIconOfResType(type:string){
 export async function getRuntimePreviewUrl(){
     const port = await new Promise((resolve)=>{
         Editor.Message.request("server","query-port").then((port)=>{
-            console.log("query-port",port)
+            // console.log("query-port",port)
             resolve(port)
         })
     })
@@ -342,7 +342,7 @@ export function registerF5(){
         // console.log('Global keydown event:', event.key);
         
         if(event.key=="F5"){
-            console.log("按了F5")
+            // console.log("按了F5")
             Editor.Message.send(_funcs.getPluginName(),"restart-self")
         }
       });
@@ -497,7 +497,7 @@ export function getI18nText(key:string){
     key = `${getPluginName()}.${key}`
     let str = Editor.I18n.t(key);
     if(str==""){
-        console.log(`i18n.${key}为空`)
+        _funcs.log_1(`i18n.${key}为空`)
     }
     return str
 }

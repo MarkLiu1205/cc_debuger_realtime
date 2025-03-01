@@ -1,3 +1,5 @@
+import { _funcs } from "./_funcs";
+
 const {PNG} = require('pngjs');
 const fs = require('fs-extra');
 
@@ -45,6 +47,6 @@ export namespace _utils{
         // 保存为 PNG 文件
         const buffer = PNG.sync.write(png);
         fs.writeFileSync(savePath, buffer);
-        console.log('文件保存成功: ',savePath);
+        _funcs.log_1('文件保存成功: ',savePath);
     }
 }

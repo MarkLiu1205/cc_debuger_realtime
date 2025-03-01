@@ -81,7 +81,7 @@ function onSelect(event){
     const sel = event.target.value
     if(eleId=="id_cacheMode"){
         compModel.value.cacheMode = sel
-        console.log("Sprite cacheMode changed to:", event.target.value,compModel.value.cacheMode)
+        // console.log("Sprite cacheMode changed to:", event.target.value,compModel.value.cacheMode)
     }
     
 }

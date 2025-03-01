@@ -6,7 +6,9 @@
     "main": "./dist/browser.cjs",
     "scripts": {
         "dev": "npm run build -- --mode development",
-        "build": "vite build"
+        "build": "vite build",
+        "obfuscate": "node obfuscate-cjs.js",
+        "publish": "vite build && node obfuscate-cjs.js"
     },
     "dependencies": {
         "@dagrejs/dagre": "^1.1.4",

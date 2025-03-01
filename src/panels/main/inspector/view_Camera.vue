@@ -204,7 +204,7 @@ function onSelectChange(event) {
     } else if (id === "id_iso") {
         compModel.value.iso = parseInt(value);
     } 
-    console.log("value",value,typeof value,"id",id)
+    // console.log("value",value,typeof value,"id",id)
 }
 
 function onConfirmColor(event){

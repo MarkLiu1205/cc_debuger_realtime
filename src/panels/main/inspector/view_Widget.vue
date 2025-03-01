@@ -88,7 +88,7 @@ function onTab(event){
             compModel.value.isAlignBottom = true
         }
     }
-    console.log(id,value,_tabVal_H.value)
+    // console.log(id,value,_tabVal_H.value)
 }
 
 function onNumChange(event) {

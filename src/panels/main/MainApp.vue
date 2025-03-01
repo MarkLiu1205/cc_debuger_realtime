@@ -112,7 +112,7 @@ onUnmounted(() => {
 });
 
 async function onSel_node(info:InspectorInfo_Node){
-    console.log('选中节点:', info);
+    // console.log('选中节点:', info);
     _curSelNodeInfo.value = info
     _curSelResItem.value = null
 }

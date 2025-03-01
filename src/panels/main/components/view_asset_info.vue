@@ -40,7 +40,7 @@ onMounted(()=>{
             }else{
                 bRuntimeIsLocalhost.value = false
             }
-            console.log("bRuntimeIsLocalhost",bRuntimeIsLocalhost.value)
+            // console.log("bRuntimeIsLocalhost",bRuntimeIsLocalhost.value)
         }
         
         curOnlineInfo.value = info
@@ -120,7 +120,7 @@ const bundles = computed(()=>{
 })
 
 function onClickBundle(mode: string) {
-    console.log(`Label clicked: ${mode}`,_dataCtx.m_bundles[mode]);
+    // console.log(`Label clicked: ${mode}`,_dataCtx.m_bundles[mode]);
     
     onClickUuid(_dataCtx.m_bundles[mode].uuid)
 }
@@ -148,7 +148,7 @@ function onClick_checkDepend_traverse(){
 function onPreviewImgSrc(){
     //TODO
     tempPreviewPath.value = assetInfo.value.imgSrc
-    console.log("tempPreviewPath.value",tempPreviewPath.value)
+    // console.log("tempPreviewPath.value",tempPreviewPath.value)
 }
 
 </script>

@@ -2,6 +2,6 @@
 
 set cur=%cd%
 
-npm run build
+npm run publish
 
 pause

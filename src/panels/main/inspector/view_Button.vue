@@ -49,7 +49,7 @@ function onToggle(event){
         compModel.value.interactable = bool
     }
     
-    console.log("event.target.value",event.target.value,"id",event.target.id)
+    // console.log("event.target.value",event.target.value,"id",event.target.id)
 }
 
 function onSelect(event){
@@ -57,7 +57,7 @@ function onSelect(event){
     const sel = event.target.value
     if(eleId=="id_transition"){
         compModel.value.transition = sel
-        console.log("transition changed to:", event.target.value,compModel.value.transition)
+        // console.log("transition changed to:", event.target.value,compModel.value.transition)
     }
     
 }
@@ -70,7 +70,7 @@ function onNumChange(event){
     }else if(eleId=="id_duration"){
         compModel.value.duration = num
     }
-    console.log("num",num,eleId)
+    // console.log("num",num,eleId)
 }
 
 function onConfirmColor(event){
@@ -86,12 +86,12 @@ function onConfirmColor(event){
     }else if(eleId=="id_disabledColor"){
         compModel.value.disabledColor = hex
     }
-    console.log("hex",hex,eleId)
+    // console.log("hex",hex,eleId)
 }
 
 //已经自动绑定了，不需要赋值
 function onNodeChange(event){
-    console.log("onNodeChange",event,compModel.value.target)
+    // console.log("onNodeChange",event,compModel.value.target)
 }
 
 </script>

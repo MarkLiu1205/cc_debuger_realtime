@@ -39,7 +39,7 @@ function onSliderChange(event) {
     const value = event.target.value
     pModel.value[props.propretyName] = value
 
-    console.log(value,typeof value)
+    // console.log(value,typeof value)
 }
 
 function onNumChange(event,sub?:string) {
@@ -76,7 +76,7 @@ function onAssetChange(event){
 }
 
 onMounted(()=>{
-    console.log("ssss",pModel)
+    // console.log("ssss",pModel)
 })
 
 </script>
