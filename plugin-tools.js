@@ -74,7 +74,7 @@ function deal_server_js(){
 
 function deal_server_go(){
     const serverFloder = "server"
-    const serverGoFile = "server.go"
+    const serverGoFile = "server.go verify_tools.go"
     execSync(`cd ${serverFloder} && go build ${serverGoFile}`);
 }
 
