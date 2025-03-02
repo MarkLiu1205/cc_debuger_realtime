@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import TestFlow from './components/TestFlow.vue';
 import Inspector_Node from './components/Inspector_Node.vue';
-import dlg_list_selecter from './components/dlg_list_selecter.vue';
-import comp_node_selecter from './components/comp_node_selecter.vue';
+
+import comp_verify_code from './components/comp_verify_code.vue';
 import { computed, createVNode, h, inject, nextTick, onMounted, onUnmounted, provide, reactive, ref, render, watch } from 'vue';
 import { ElButton, ElDialog, ElMessage } from 'element-plus';
 import { _funcs } from '../../tools/_funcs';
@@ -132,13 +132,15 @@ function doOpenRuntimePreview() {
 async function test_1() {
     // let isLoggedIn = await Editor.User.isLoggedIn()
     // console.log("是否登录",isLoggedIn)
-    // let data:Editor.User.UserData = await Editor.User.getData()
-    // console.log("用户数据",data)
+    let data:Editor.User.UserData = await Editor.User.getData()
+    console.log("用户数据",data)
 
     // const lists = await _pluginSocket.getWitablePathFilesInfo()
     // console.log("可写目录",JSON.stringify(lists,null,2))
     const localIp = _funcs.getLocalIpv4IP()
     console.log("localIp",localIp)
+
+    _pluginSocket.doVerify("kkkkkkk")
 }
 
 async function openEvalPanel(event: MouseEvent){
@@ -189,7 +191,7 @@ const serverAddress_connected = ref("")
 const serverAddress_connecting = ref("")
 
 /**是否正在连接插件服务器 */
-const isConnecting = ref(false)
+const isConnectingServer = ref(false)
 
 const bAddressEditFocus = ref(false);
 const addressInputRef = ref<HTMLInputElement | null>(null);
@@ -203,10 +205,14 @@ defineExpose({
 });
 
 onMounted(()=>{
-    isConnecting.value = !_pluginSocket.checkIsConnect()
-    _pluginSocket.waitSocketOpen().then(()=>{
+    isConnectingServer.value = !_pluginSocket.checkIsConnect()
+    // _pluginSocket.waitSocketOpen().then(()=>{
+    //     serverAddress_connected.value = _pluginSocket.getSocketUrl()
+    //     isConnectingServer.value = false
+    // })
+    _pluginSocket.listenForSocketState((bIsConnected)=>{
+        isConnectingServer.value = !bIsConnected
         serverAddress_connected.value = _pluginSocket.getSocketUrl()
-        isConnecting.value = false
     })
 })
 
@@ -238,7 +244,7 @@ async function onEditConfirmAddress(event){
         return
     }
     serverAddress_connecting.value = url
-    isConnecting.value = false
+    isConnectingServer.value = false
 
     const config: any = {
         // title: 'buttons',
@@ -254,6 +260,88 @@ async function onEditConfirmAddress(event){
     }
 }
 
+const verifyInfo = reactive<VerifyRespParam>({
+    activationCode:"",
+    state:0,
+    endTime:0,
+    latestVersion:"",
+    authorInfo:{
+        helpDocUrl:"https://www.cocos.com/products?a=1",
+        feedbackUrl:"https://www.cocos.com/products?a=2",
+        qq:["1451784145"],
+        qqgroups:["581563429"],
+        wechat:["busky192"],
+    }
+})
+provide("verifyInfo",verifyInfo)
+
+//正在验证购买
+const isVerifying = computed(()=>{
+    return verifyInfo.state==0
+})
+
+//试用期
+const isInTrialing = computed(()=>{
+    return verifyInfo.state==2
+})
+
+//试用期结束，未激活
+const isVerifyFailed = computed(()=>{
+    return verifyInfo.state==1
+})
+
+//激活码已过期
+const isExpired = computed(()=>{
+    return verifyInfo.state==4
+})
+
+async function onDoVerify(activationCode:string){
+    verifyInfo.state = 0
+    nextTick(async ()=>{
+        console.log("去验证",activationCode)
+        const resp = await _pluginSocket.doVerify(activationCode)
+        console.log("验证结果",resp)
+        
+        await Editor.Profile.setConfig(_funcs.getPluginName(),"activationCode",resp.activationCode)
+        for(let k in resp){
+            verifyInfo[k] = resp[k]
+        }
+        if(resp.state==1){//未激活
+
+        }else if(resp.state==2){//试用期中
+
+        }else if(resp.state==3){//已激活
+
+        }else if(resp.state==4){//激活码已过期
+
+        }
+    })
+}
+
+provide("do_verify_activation_code",onDoVerify)
+
+function onVerifyFail(data){
+    console.log("验证失败",data)
+    verifyInfo.state = data.state
+}
+
+onMounted(async ()=>{
+    eventBus.on("verify_fail",onVerifyFail)
+    
+    const code = await Editor.Profile.getConfig(_funcs.getPluginName(),"activationCode")
+    console.log("========code",code)
+    onDoVerify(code)
+})
+
+onUnmounted(()=>{
+    eventBus.off("verify_fail",onVerifyFail)
+})
+
+const hasJumpedTrial = ref(false)
+function onJumpTrial(){
+    hasJumpedTrial.value = true
+}
+
 </script>
 
 <template>
@@ -262,8 +350,8 @@ async function onEditConfirmAddress(event){
     </div> -->
     <div style="width: 100vw; height: 100vh; ">  
         <div style=" width: calc(100% - 10px);height: calc(100% - 35px);">
-            <div class="center-align" style="flex-direction: column;" v-if="isRuntimeOffline">
-                <div v-if="isConnecting" style="display: flex;flex-direction: column;">
+            <div class="center-align" v-if="isConnectingServer">
+                <div  style="display: flex;flex-direction: column;">
                     <div style="display: flex; flex-direction: row; margin-bottom: 5px;align-items: center;justify-content: center;">
                         <h2>{{ _funcs.getI18nText("text_4") }}</h2>
                         <ui-loading style="margin-left: 10px;"></ui-loading>
@@ -286,7 +374,15 @@ async function onEditConfirmAddress(event){
                         <ui-button v-if="!bAddressEditFocus" style="padding-top: 5px;padding-bottom: 5px;margin-left: 10px;" @click="onFocusEditAddress">{{ _funcs.getI18nText("text_2") }}</ui-button>
                     </div>
                 </div>
-                <div v-else-if="serverAddress_connected" style="display: flex;flex-direction: column;">
+                <comp_md_info/>
+            </div>
+            <div class="center-align" v-else-if="isVerifying||isVerifyFailed||isExpired||(isInTrialing&&!hasJumpedTrial)">
+                <comp_verify_code @onJumpTrial="onJumpTrial"/>
+                <comp_md_info/>
+            </div>
+            <div class="center-align" v-else-if="isRuntimeOffline">
+                
+                <div v-if="serverAddress_connected" style="display: flex;flex-direction: column;">
                     <div style="display: flex; flex-direction: row; margin-bottom: 20px;align-items: center;justify-content: center;height: 30px;">
                         <h3>{{ _funcs.getI18nText("text_1") }}</h3>
                         <div v-if="!bAddressEditFocus"  style="min-width: 60px;">
@@ -314,6 +410,7 @@ async function onEditConfirmAddress(event){
                 </div>
                 <comp_md_info style="margin-top: 20px;"/>
             </div>
+            
             <div id="eid_view_main" class="cls_view_main" v-else>
                 <div id="eid_view_asset_list" class="left-panel" :style="{ width: width_left_panel + 'px' }">
                     <comp_left_tree_panel 
@@ -327,7 +424,7 @@ async function onEditConfirmAddress(event){
                     
                     <Inspector_Node v-if="_curSelNodeInfo!=null" v-model="_curSelNodeInfo"/>
                     <view_asset_info v-else-if="_curSelResItem!=null" v-model="_curSelResItem"/>
-                    <div v-else style="display: flex;flex-direction: column; gap: 10px;margin: 10px;">
+                    <div v-else class="defaultInfo">
                         <div class="button-grid" >
                             <el-button  @click="openEvalPanel">{{ _funcs.getI18nText("text_8") }}</el-button>
                             <el-button  @click="openDynamicPanel">{{ _funcs.getI18nText("text_9") }}</el-button>
@@ -392,6 +489,16 @@ async function onEditConfirmAddress(event){
     display: flex;
     justify-content: center;
     align-items: center;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.defaultInfo{
+    display: flex;
+    flex-direction: column; 
+    gap: 10px;
+    margin: 10px;
+    /* overflow-y: auto; */
 }
 
 </style>

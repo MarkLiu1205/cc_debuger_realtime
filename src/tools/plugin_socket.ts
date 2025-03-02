@@ -1,3 +1,4 @@
+import { eventBus } from "./_enentBus";
 import { _funcs } from "./_funcs";
 import { _utils } from "./_utils";
 
@@ -10,7 +11,7 @@ interface OneMsg{
     type: string, 
     action: string; 
     data?: any; 
-    requestId: number 
+    requestId: number;
 }
 
 interface SplitMsg{
@@ -55,6 +56,9 @@ class PluginSocket {
                 _funcs.log_1(' Connected to server');
                 this._send({ type: 'identify', role: 'plugin' })
                 resolve(null);
+                for(let cb of this._socketStateCallbacks){
+                    cb(true)
+                }
             };
 
             this.m_socket.onmessage = (event) => {
@@ -80,6 +84,14 @@ class PluginSocket {
                         cb(obj)
                     }
                 }
+
+                for(let cb of this._socketStateCallbacks){
+                    cb(false)
+                }
+
+                setTimeout(() => {
+                    this.connectToServer(this.m_url)
+                }, 5000);
             };
 
             this.m_socket.onerror = (error) => {
@@ -111,10 +123,32 @@ class PluginSocket {
             this._onOpenResolve.push(resolve)
         })
     }
+
+    private _socketStateCallbacks:Array<(bIsConnected:boolean)=>void> = []
+    listenForSocketState(callback:(bIsConnected:boolean)=>void){
+        if(!this._socketStateCallbacks.includes(callback)){
+            this._socketStateCallbacks.push(callback)
+        }
+        callback(this.checkIsConnect())
+    }
     
     private _spiltMsg:Record<number,Array<SplitMsg>> = {}
     private _onMessage(msg: OneMsg) {
         // _funcs.log_1("onMesage",JSON.stringify(msg))
+        const verifyInfo = msg["verifyInfo"] as VerifyRespParam;
+        if(typeof verifyInfo=="object"){
+            if(verifyInfo.state!=null){
+                eventBus.emit("verify_fail",verifyInfo)
+            }
+            
+            if(verifyInfo.state==1||verifyInfo.state==4){
+                const requestId = msg.requestId
+                if (requestId!=null&&this.m_pendingRequests.has(requestId)) {
+                    this.m_pendingRequests.delete(requestId);
+                }
+                return
+            }
+        }
         if(msg["isSplit"]){
             const obj = msg as any as SplitMsg
             this._spiltMsg[obj.uniqueId] = this._spiltMsg[obj.uniqueId] || []
@@ -522,6 +556,34 @@ class PluginSocket {
     async getRecursiveDependsOfNode(uuid:string): Promise<Array<string>>{
         await this.waitForRuntimeIsInline()
         return this._sendRequest("getRecursiveDependsOfNode",uuid)
+    }
+
+    /**获取Texture的纹理数据 */
+    async getTextureData(uuid:string):Promise<{width:number,height:number,base64Data:string}>{
+        await this.waitForRuntimeIsInline()
+        let ret = await this._sendRequest("getTextureData",uuid,"request",60*1000) as any
+        return ret
+    }
+
+    /**
+     * 校验激活码
+     * @param activationCode 
+     * @returns 
+     */
+    async doVerify(activationCode:string):Promise<VerifyRespParam>{
+        await this.waitSocketOpen()
+        let userInfo:Editor.User.UserData = await Editor.User.getData()
+
+        let obj = {
+            activationCode,
+            cocos_uid:userInfo.cocos_uid,
+            email:userInfo.email,
+            nickname:userInfo.nickname,
+            versionName:_funcs.getPluginVersionName(),
+        }
+        let ret = await this._sendRequest("VerifyActivationCode",obj) as any
+        console.log("------ret",ret)
+        return ret
     }
 
     clear(){

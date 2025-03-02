@@ -445,3 +445,34 @@ interface SelfBuildParam{
     /**中转websocket服务器地址 */
     serverAddress:boolean
 }
+
+interface VerifyReqParam{
+    /**激活码 */
+    activationCode:string,
+    cocos_uid:string,
+    email:string,
+    nickname:string,
+    /**软件版本名称 如1.0.0 */
+    versionName:string,
+    /**当前硬件的设备号 */
+    deviceId:string,
+}
+
+interface VerifyRespParam{
+    /**激活状态  0表示正在验证 1未激活  2试用期中  3已激活 4激活码已过期(激活码分为永久激活码和3个月有效激活码) */
+    state:number,
+    //返回激活码(如果暂未激活，返回空字符串)
+    activationCode:string,
+    /**时间戳，试用期时表示试用结束时间，激活码过期时表示过期时间 */
+    endTime:number,
+    /**软件的最新版本号 */
+    latestVersion:string,
+    /**联系作者信息(可扩展json) */
+    authorInfo:{
+        helpDocUrl:string,
+        feedbackUrl:string,
+        qq:Array<string>,
+        qqgroups:Array<string>,
+        wechat:Array<string>,
+    }
+}

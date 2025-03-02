@@ -39,18 +39,33 @@ type ConnectionInfo struct {
 	mu     sync.Mutex // 每个连接的独立写锁
 }
 
+type VerifyInfo struct {
+	EndTime        int64       `json:"endTime,omitempty"`
+	State          int         `json:"state,omitempty"`
+	ActivationCode string      `json:"activationCode,omitempty"`
+	LatestVersion  string      `json:"latestVersion,omitempty"`
+	AuthorInfo     interface{} `json:"authorInfo,omitempty"`
+}
+
 // Message 定义消息结构
 type Message struct {
-	Type      string      `json:"type"`
-	Action    string      `json:"action,omitempty"`
-	Role      string      `json:"role,omitempty"`
-	IsSplit   bool        `json:"isSplit,omitempty"`
-	Data      interface{} `json:"data,omitempty"`
-	RequestID int         `json:"requestId,omitempty"`
-	Name      string      `json:"name,omitempty"`
-	Total     int         `json:"total,omitempty"`
-	Idx       int         `json:"idx,omitempty"`
+	Type       string      `json:"type"`
+	Action     string      `json:"action,omitempty"`
+	Role       string      `json:"role,omitempty"`
+	IsSplit    bool        `json:"isSplit,omitempty"`
+	Data       interface{} `json:"data,omitempty"`
+	RequestID  int         `json:"requestId,omitempty"`
+	Name       string      `json:"name,omitempty"`
+	Total      int         `json:"total,omitempty"`
+	Idx        int         `json:"idx,omitempty"`
+	VerifyInfo VerifyInfo  `json:"verifyInfo,omitempty"`
 }
+
+// "endTime":        0,
+// "state":          verifyState,
+// "activationCode": activationCode,
+// "latestVersion":  latestVersion,
+// "authorInfo":     authorInfo,
 
 // NewWebSocketServer 构造服务器实例
 func NewWebSocketServer(port int, verifyUrl string) *WebSocketServer {
@@ -105,7 +120,6 @@ func (s *WebSocketServer) writeMessage(conn *websocket.Conn, msg interface{}) er
 	}
 
 	info.mu.Lock()
-	defer info.mu.Unlock()
 
 	// jsonData, err := json.Marshal(msg)
 	// if err != nil {
@@ -114,7 +128,10 @@ func (s *WebSocketServer) writeMessage(conn *websocket.Conn, msg interface{}) er
 	// 	fmt.Printf("\n向外发送: %s", jsonData)
 	// }
 
-	return conn.WriteJSON(msg)
+	ret := conn.WriteJSON(msg)
+	info.mu.Unlock()
+
+	return ret
 }
 
 // handleMessages 处理消息接收与路由
@@ -217,6 +234,14 @@ func (s *WebSocketServer) handleRequest(conn *websocket.Conn, msg Message) {
 			return
 		}
 	}
+	if conn == s.pluginConn {
+		dealFakeData(&msg)
+		if !isVerified() {
+			msg.Type = "response"
+			s.writeMessage(conn, msg)
+			return
+		}
+	}
 	s.forwardMessage(conn, msg)
 }
 
@@ -240,7 +265,7 @@ func (s *WebSocketServer) handleCheckOnline(conn *websocket.Conn, msg Message) {
 	conn.WriteJSON(response)
 }
 
-// handlePush 处理推送消息
+// 处理推送消息
 func (s *WebSocketServer) handlePush(conn *websocket.Conn, msg Message) {
 	if msg.Action == "selectActiveRuntime" {
 		s.sendConnectionUpdate(s.getRuntimeName(s.activeRuntime), false)
@@ -252,7 +277,19 @@ func (s *WebSocketServer) handlePush(conn *websocket.Conn, msg Message) {
 		}
 		return
 	}
+	if conn == s.activeRuntime {
+		dealFakeData(&msg)
+	}
 	s.forwardMessage(conn, msg)
+}
+
+func printMsg(msg *Message) {
+	msgBytes, err := json.MarshalIndent(msg, "", "  ")
+	if err != nil {
+		fmt.Println("Error marshaling msg:", err)
+		return
+	}
+	fmt.Println("Message content:", string(msgBytes))
 }
 
 // forwardMessage 转发消息到目标连接

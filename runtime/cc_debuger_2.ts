@@ -145,6 +145,10 @@ class RunTimeSocket {
             } else if (msg.action === 'getDynamicTextureData') {
                 const index = msg.data
                 data = getDynamicTextureData(index)
+            } else if (msg.action === 'getTextureData') {
+                const uuid = msg.data
+                const _tex = _cc_().assetManager.assets.get(uuid)
+                data = getTextureData(_tex)
             } else if (msg.action === 'getWitablePathFilesInfo') {
                 data = getWitablePathFilesInfo()
             } else if (msg.action === 'getWritableFileData') {
@@ -1303,12 +1307,19 @@ function getDynamicTextureData(index:number){
     if(_atlases.length==0){
         return null;
     }
-    const _tex = _atlases[0]._texture;
+    const _tex = _atlases[index]._texture;
     if(_tex==null){
         return null
     }
     
-    const arr = readPixels(_tex,false)
+    return getTextureData(_tex,false)
+}
+
+function getTextureData(_tex:any/**import("cc").Texture2D */, flipY = true){
+    if(_tex==null){
+        return null
+    }
+    const arr = readPixels(_tex,flipY)
     const base64String = uint8ArrayToBase64(arr)
     return {width:_tex.width,height:_tex.height,base64Data:base64String}
 }

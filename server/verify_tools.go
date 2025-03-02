@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/gorilla/websocket"
 )
@@ -32,14 +33,104 @@ const (
 	statisticsEndpoint = "/api/stats"
 )
 
+const (
+	State_none = 0
+	//未通过验证
+	State_unverified = 1
+	//在试用期中
+	State_in_trial = 2
+	//已经验证通过
+	State_verify_success = 3
+	//激活码过期了
+	State_verify_expired = 4
+)
+
+var (
+	verifyState = State_none
+)
+
+func isVerified() bool {
+	return verifyState == State_in_trial || verifyState == State_verify_success
+}
+
+func dealFakeData(msg *Message) {
+	if verifyState == State_verify_success {
+		return
+	}
+	activationCode := ""
+	latestVersion := "1.1.0"
+	authorInfo := map[string]interface{}{
+		"helpDocUrl":"https://www.cocos.com/products?b=1",
+		"feedbackUrl":"https://www.cocos.com/products?b=2",
+		"qq":       []string{"1451784145", "2273520958"},
+		"qqgroups": []string{"581563429"},
+		"wechat":   []string{"busky192"},
+	}
+
+	verifyInfo := VerifyInfo{
+		EndTime:        0,
+		State:          verifyState,
+		ActivationCode: activationCode,
+		LatestVersion:  latestVersion,
+		AuthorInfo:     authorInfo,
+	}
+
+	if verifyState == State_in_trial { //试用期
+		endTime := time.Now().Unix() + 3600*25
+		verifyInfo.EndTime = endTime
+
+		msg.VerifyInfo = verifyInfo
+
+	} else if verifyState == State_unverified { //验证失败
+		msg.VerifyInfo = verifyInfo
+	} else if verifyState == State_verify_expired { //激活码过期
+
+		endTime := time.Now().Unix() + 3600*25
+		verifyInfo.EndTime = endTime
+	}
+}
+
 func (s *WebSocketServer) doVerify(conn *websocket.Conn, msg *Message) (interface{}, error) {
 	if dataMap, ok := msg.Data.(map[string]interface{}); ok {
 		deviceID, err := getDeviceID()
 		if err == nil {
-			dataMap["deviceID"] = deviceID
+			if dataMap["deviceId"] == nil || dataMap["deviceId"] == "" {
+				dataMap["deviceId"] = deviceID
+			}
 		}
 	} else {
 		return nil, fmt.Errorf("invalid data format")
+	}
+	printInterface(msg.Data)
+
+	if true {
+		ret := msg
+
+		verifyState = State_in_trial
+
+		endTime := time.Now().Unix() + 3600*25
+		activationCode := "55555"
+		latestVersion := "1.1.0"
+		authorInfo := map[string]interface{}{
+			"helpDocUrl":"https://www.cocos.com/products?b=1",
+			"feedbackUrl":"https://www.cocos.com/products?b=2",
+			"qq":       []string{"1451784145", "2273520958"},
+			"qqgroups": []string{"581563429"},
+			"wechat":   []string{"busky192"},
+		}
+		verifyInfo := map[string]interface{}{
+			"endTime":        endTime,
+			"state":          verifyState,
+			"activationCode": activationCode,
+			"latestVersion":  latestVersion,
+			"authorInfo":     authorInfo,
+		}
+
+		ret.Data = verifyInfo
+		ret.Type = "response"
+		printInterface(ret.Data)
+		s.writeMessage(conn, ret)
+		return nil, nil
 	}
 
 	// 直接发送原始JSON数据
@@ -49,13 +140,23 @@ func (s *WebSocketServer) doVerify(conn *websocket.Conn, msg *Message) (interfac
 	}
 
 	response := Message{
-		Type:      msg.Type,
+		Type:      "response",
 		Action:    msg.Action,
 		RequestID: msg.RequestID,
 		Data:      resp,
 	}
 	s.writeMessage(conn, response)
 	return resp, nil
+}
+
+func printInterface(data interface{}) {
+	// 将 data 序列化为 JSON 字符串并打印
+	dataJSON, err := json.Marshal(data)
+	if err != nil {
+		fmt.Printf("\nFailed to marshal data: %v\n", err)
+	} else {
+		fmt.Printf("\ndata: %s\n", dataJSON)
+	}
 }
 
 func (s *WebSocketServer) doStatistics(conn *websocket.Conn, msg *Message) (interface{}, error) {

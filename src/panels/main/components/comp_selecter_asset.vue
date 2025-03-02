@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref, computed, inject, Ref, watch, defineModel, onMounted } from 'vue';
-import dlg_list_selecter from './dlg_list_selecter.vue';
 import { _pluginSocket } from '../../../tools/plugin_socket';
 import { _dataCtx } from '../../../tools/_dataCtx';
 import { eventBus } from '../../../tools/_enentBus';
