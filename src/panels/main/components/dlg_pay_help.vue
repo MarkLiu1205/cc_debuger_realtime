@@ -2,6 +2,8 @@
 import { ref,defineExpose, computed } from 'vue';
 import comp_md_info from './comp_md_info.vue'
 import { _funcs } from '../../../tools/_funcs';
+import {  ElButton } from "element-plus";
+
 
 const dialogVisible = ref(false);
 
@@ -77,8 +79,8 @@ const buyTip = computed(()=>{
             <h3>{{ _funcs.getI18nText("text_104") }}</h3>
             <comp_md_info/>
             <div class="buttons">
-                <el-button @click="onBtn_change_payType">{{ bUseWechatPay?_funcs.getI18nText("text_105"):_funcs.getI18nText("text_106") }}</el-button>
-                <el-button @click="onBtn_change_buyLevel">{{ bUseFoever?_funcs.getI18nText("text_107"):_funcs.getI18nText("text_108") }}</el-button>
+                <ElButton @click="onBtn_change_payType">{{ bUseWechatPay?_funcs.getI18nText("text_105"):_funcs.getI18nText("text_106") }}</ElButton>
+                <ElButton @click="onBtn_change_buyLevel">{{ bUseFoever?_funcs.getI18nText("text_107"):_funcs.getI18nText("text_108") }}</ElButton>
             </div>
             
             <div>
@@ -89,7 +91,7 @@ const buyTip = computed(()=>{
             
     </div>
     <template #footer>
-      <el-button @click="dialogVisible = false">{{ _funcs.getI18nText("text_109") }}</el-button>
+      <ElButton @click="dialogVisible = false">{{ _funcs.getI18nText("text_109") }}</ElButton>
     </template>
   </el-dialog>
 </template>

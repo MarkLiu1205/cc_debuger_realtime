@@ -99,8 +99,6 @@ function onClickJump(){
 <style scoped>
 
 .verify_view{
-    /* padding: 20px;*/
-    /* border: 1px solid rgb(165, 165, 165);  */
     user-select: text;
     display: flex; 
     flex-direction: column;
