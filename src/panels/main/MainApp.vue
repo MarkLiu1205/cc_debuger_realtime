@@ -321,7 +321,7 @@ async function onDoVerify(activationCode:string){
 provide("do_verify_activation_code",onDoVerify)
 
 function onVerifyFail(data){
-    console.log("验证失败",data)
+    // console.log("验证失败",data)
     verifyInfo.state = data.state
 }
 

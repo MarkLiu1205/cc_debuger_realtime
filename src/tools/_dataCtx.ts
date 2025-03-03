@@ -130,7 +130,7 @@ class _DataContext{
                             isDirectory:false
                         }
                     }else{
-                        console.error("uuid找不到资源",uuid,resObj.classname)
+                        // console.error("uuid找不到资源",uuid,resObj.classname)
                         continue
                     }
                 }

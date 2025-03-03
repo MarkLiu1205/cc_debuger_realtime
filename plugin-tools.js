@@ -15,7 +15,7 @@ async function waitForTime(sec) {
 function deal_cc_debuger_2(){
     // TODO: 先使用 tsc 编译 cc_debuger_2.ts 再进行混淆
     const tsFilePath = 'runtime/cc_debuger_2.ts';
-    const jsFilePath = 'runtime/cc_debuger_2.js';
+    const jsFilePath = 'runtime/cc_debuger_2_ugly.ts';
 
     if (fs.existsSync(jsFilePath)) {
         fs.removeSync(jsFilePath)
@@ -35,7 +35,7 @@ function deal_cc_debuger_2(){
             const jsCode = fs.readFileSync(jsFilePath, 'utf-8');
             const obfuscatedJsCode = javascriptObfuscator.obfuscate(jsCode, {
                 compact: true,
-                controlFlowFlattening: true,
+                controlFlowFlattening: false,
                 deadCodeInjection: true,
                 stringArray: true,
                 rotateStringArray: true,
@@ -43,7 +43,8 @@ function deal_cc_debuger_2(){
                 stringArrayThreshold: 0.75,
             }).getObfuscatedCode();
 
-            fs.writeFileSync(jsFilePath, obfuscatedJsCode, 'utf-8');
+            const uglyJsCode = `const jsStr = \`${obfuscatedJsCode}\`\nconst _func = new Function(jsStr)\n_func()`
+            fs.writeFileSync(jsFilePath, uglyJsCode, 'utf-8');
             console.log(`Obfuscated: ${jsFilePath}\n`);
         }
     }
@@ -59,7 +60,7 @@ function deal_server_js(){
         const serverCode = fs.readFileSync(serverFilePath, 'utf-8');
         const obfuscatedServerCode = javascriptObfuscator.obfuscate(serverCode, {
             compact: true,
-            controlFlowFlattening: true,
+            controlFlowFlattening: false,
             deadCodeInjection: true,
             stringArray: true,
             rotateStringArray: true,
@@ -183,16 +184,18 @@ function packPluginToZip() {
     archive.finalize();
 }
 
-await waitForTime(1)
+// await waitForTime(1)
+// deal_cc_debuger_2()
+
+// await waitForTime(1)
+// deal_server_go()
+
+// await waitForTime(1)
+// deal_dist()
+
+// await waitForTime(1)
+// packPluginToZip()
+
 deal_cc_debuger_2()
-
-await waitForTime(1)
-deal_server_go()
-
-await waitForTime(1)
-deal_dist()
-
-await waitForTime(1)
-packPluginToZip()
 
 console.log('Obfuscation complete!');

@@ -5,7 +5,7 @@ const path = require("path")
 import { _funcs } from './_funcs';
 
 const runtimeScriptName_1 = 'cc_debuger_1.ts';
-const runtimeScriptName_2 = 'cc_debuger_2.js';
+const runtimeScriptName_2 = 'cc_debuger_2_ugly.ts';
 
 const sourceScriptPath_1 = path.join(_funcs.getCurPluginPath(), "runtime/", runtimeScriptName_1);
 const sourceScriptPath_2 = path.join(_funcs.getCurPluginPath(), "runtime/", runtimeScriptName_2);
