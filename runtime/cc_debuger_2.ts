@@ -999,7 +999,7 @@ class _RuntimeData{
     private _getComponentProperties(component: any/**import("cc").Component */):any/**CompInfo_Base */ {
         const clsPrototype = component["__proto__"]
         const clsName = clsPrototype.__classname__
-        if(clsName=="_cc_().MeshRenderer"){
+        if(clsName=="cc.MeshRenderer"){
             let g = 0;
         }
         let map = getAttrInfosOfComponentInst(component)
@@ -1007,33 +1007,33 @@ class _RuntimeData{
         for(let k in map){
             const obj = map[k]
             let val = component[k]
-            if(obj.type=="_cc_().Node"||obj.type=="_cc_().Component"||obj.type=="_cc_().Asset"){
+            if(obj.type=="cc.Node"||obj.type=="cc.Component"||obj.type=="cc.Asset"){
                 val = val?.uuid??""
-            }else if(obj.type=="_cc_().Color"){
+            }else if(obj.type=="cc.Color"){
                 val = val.toHEX()
-            }else if(obj.type=="_cc_().Size"){
+            }else if(obj.type=="cc.Size"){
                 val = {
                     width:val.width,
                     height:val.height,
                 }
-            }else if(obj.type=="_cc_().Vec2"||obj.type=="_cc_().Vec3"||obj.type=="_cc_().Vec4"){
+            }else if(obj.type=="cc.Vec2"||obj.type=="cc.Vec3"||obj.type=="cc.Vec4"){
                 val = {
                     x:val.x,
                     y:val.y,
                     z:val.z,
                     w:val.w,
                 }
-            }else if(obj.type=="_cc_().Rect"){
+            }else if(obj.type=="cc.Rect"){
                 val = {
                     x:val.x,
                     y:val.y,
                     width:val.width,
                     height:val.height,
                 }
-            }else if(obj.ctor=="_cc_().ClickEvent"){
+            }else if(obj.ctor=="cc.ClickEvent"){
                 val = component[k].map((item:any/**import("cc").EventHandler */)=>JSON.stringify({node:item?.target?.uuid,comp:item?._componentId,handler:item?.handler}))
             }else{
-                if(obj.ctor=="_cc_().ModelBakeSettings"){
+                if(obj.ctor=="cc.ModelBakeSettings"){
                     let g = 0;
                 }
                 
@@ -1054,7 +1054,7 @@ class _RuntimeData{
             }
             data[k] = val
         }
-        if(clsName === "_cc_().UITransform"){//因为UITransform比较特殊，contentSize和anchorPoint都是readonly的，实际是通过width、height/anchorX、anchorY修改的
+        if(clsName === "cc.UITransform"){//因为UITransform比较特殊，contentSize和anchorPoint都是readonly的，实际是通过width、height/anchorX、anchorY修改的
             const comp = component as any/**import("cc").UITransform */
             data = {
                 anchorX:comp.anchorX,
@@ -1106,23 +1106,23 @@ function getAttrInfosOfComponentInst(compInst:any/**import("cc").Component */){
                 attrType = "number"
             }else if(_instType=="object"){
                 if(_instVal instanceof _cc_().Color){
-                    attrType = "_cc_().Color"
+                    attrType = "cc.Color"
                 }else if(_instVal instanceof _cc_().Vec2){
-                    attrType = "_cc_().Vec2"
+                    attrType = "cc.Vec2"
                 }else if(_instVal instanceof _cc_().Vec3){
-                    attrType = "_cc_().Vec3"
+                    attrType = "cc.Vec3"
                 }else if(_instVal instanceof _cc_().Vec4){
-                    attrType = "_cc_().Vec4"
+                    attrType = "cc.Vec4"
                 }else if(_instVal instanceof _cc_().Rect){
-                    attrType = "_cc_().Rect"
+                    attrType = "cc.Rect"
                 }else if(_instVal instanceof _cc_().Size){
-                    attrType = "_cc_().Size"
+                    attrType = "cc.Size"
                 }else if(_instVal instanceof _cc_().Node){
-                    attrType = "_cc_().Node"
+                    attrType = "cc.Node"
                 }else if(_instVal instanceof _cc_().Component){
-                    attrType = "_cc_().Component"
+                    attrType = "cc.Component"
                 }else if(_instVal instanceof _cc_().Asset){
-                    attrType = "_cc_().Asset"
+                    attrType = "cc.Asset"
                 }
             }
             map[k].type = attrType
@@ -1149,23 +1149,8 @@ function _getAttrInfosOfComponentProrotype(clsPrototype){
         |"default"|"enumList"|"hasGetter"|"hasSetter"|"ctor"
 
     function _getAttr(attrs:Object,name:string,p:pTypes){
-        let v = attrs[`${name}$_$${p}`]??null
-        // if(v==null&&p!="visible"&&p!="hasGetter"){
-        //     if(_getAttr(attrs,name,"hasGetter")){
-        //         v = _getAttr(attrs,`_${name}`,p)
-        //         if(v==null){
-        //             if(clsName=="Camera"){//camera有bug,手动修复
-        //                 if(name=="clearColor"){
-        //                     v = _getAttr(attrs,`_color`,p)
-        //                 }else if(name=="clearDepth"){
-        //                     v = _getAttr(attrs,`_depth`,p)
-        //                 }else if(name=="clearStencil"){
-        //                     v = _getAttr(attrs,`_stencil`,p)
-        //                 }
-        //             }
-        //         }
-        //     }
-        // }
+        const key = name+"$_$"+p
+        let v = attrs[key]??null
         return v
     }
     
@@ -1256,12 +1241,12 @@ function _getAttrInfosOfComponentProrotype(clsPrototype){
             const isComponent = _cc_().Component.prototype==pCtor.prototype || _cc_().Component.prototype.isPrototypeOf(pCtor.prototype)
             const isAsset = _cc_().Asset.prototype==pCtor.prototype || _cc_().Asset.prototype.isPrototypeOf(pCtor.prototype)
             if(isNode){
-                param.type = "_cc_().Node"
+                param.type = "cc.Node"
             }else if(isComponent){
-                param.type = "_cc_().Component"
+                param.type = "cc.Component"
             }else if(isAsset){
-                param.type = "_cc_().Asset"
-            }else if(param.ctor=="_cc_().ClickEvent"){
+                param.type = "cc.Asset"
+            }else if(param.ctor=="cc.ClickEvent"){
                 let g = 0 
             }
         }else if(typeof param.type=="object"){
