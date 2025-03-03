@@ -1,6 +1,6 @@
 
 <script lang="ts" setup>
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { _pluginSocket } from '../../../tools/plugin_socket';
 import { _dataCtx } from '../../../tools/_dataCtx';
 import { eventBus } from '../../../tools/_enentBus';
@@ -13,6 +13,8 @@ const curOnlineInfo = ref<OnlineInfo>(null)
 //当前运行时是不是在本机运行
 const bRuntimeIsLocalhost = ref(true)
 
+//是否正在下载预览图片
+const isDownloadingTempPath = ref(false)
 //临时预览地址（即在asset-db中查询不到，必须实时下载的）
 const tempPreviewPath = ref("")
 
@@ -27,12 +29,11 @@ onMounted(()=>{
         isNotInCache.value = false
     }
 
-    const localIps = _funcs.getLocalIPs();
     _pluginSocket.listenRuntimeOnlineInfo(async (info:OnlineInfo)=>{
         // console.log("3在线刷新----",info)
         if(info.bIsOnline){
             const ip = info?.info?.IP;
-            if(ip=="localhost"||ip=="::1"||ip=="127.0.0.1"||localIps.includes(ip)){
+            if(_funcs.checkIpIsLocalhost(ip)){
                 const gameEnvObj = await _pluginSocket.getGameEnv()
                 if(!gameEnvObj.isMobile){//表是不是模拟器
                     bRuntimeIsLocalhost.value = true
@@ -57,6 +58,7 @@ watch(assetInfo,(newVal,oldVal)=>{
         isNotInCache.value = false
     }
     tempPreviewPath.value = null;
+    isDownloadingTempPath.value = false
 })
 
 const originalWidth = computed(()=>{
@@ -146,10 +148,25 @@ function onClick_checkDepend_traverse(){
 }
 
 function onPreviewImgSrc(){
-    //TODO
-    tempPreviewPath.value = assetInfo.value.imgSrc
-    // console.log("tempPreviewPath.value",tempPreviewPath.value)
+    isDownloadingTempPath.value = true
+    nextTick(async ()=>{
+        let uuid = assetInfo.value.uuid
+        if(assetInfo.value.assetType=="cc.ImageAsset"){
+            uuid+="@6c48a"
+        }
+        const obj = await _pluginSocket.saveTextureByUuid(uuid)
+        if(obj==null){
+            _funcs.log_1("图片下载失败",assetInfo.value.uuid)
+            return
+        }
+        tempPreviewPath.value = obj.savePath
+        console.log("tempPreviewPath.value",tempPreviewPath.value)
+    })
 }
+
+computed(()=>{
+    const socketUrl = _pluginSocket.getSocketUrl()
+})
 
 </script>
 
@@ -211,6 +228,8 @@ function onPreviewImgSrc(){
             <div class="row">
                 <label class="orange">{{ _funcs.getI18nText("text_55") }}</label>
                 <label class="break-word">{{ assetInfo.assetType }}</label>
+                <label class="green" v-if="assetInfo.assetType=='cc.ImageAsset'||assetInfo.assetType=='cc.Texture2D'">(这是自动图集)</label>
+                <label class="green" v-if="assetInfo.assetType=='cc.SpriteFrame'">(已加入自动图集)</label>
             </div>
             <div class="row" v-if="!isNotInCache">
                 <label class="orange">{{ _funcs.getI18nText("text_56") }}:</label>
@@ -256,16 +275,24 @@ function onPreviewImgSrc(){
                     <label>x</label>
                     <label>{{ originalHeight }}</label>
                 </div>
-                <div class="image" :style="{width:_width,height:_height}" >
-                    <div v-if="bRuntimeIsLocalhost">
+                <div  >
+                    <div v-if="bRuntimeIsLocalhost" class="image" :style="{width:_width,height:_height}">
                         <ui-image :value="assetInfo.imgSrc??assetInfo.uuid" :style="{width:_width,height:_height}" />
                     </div>
                     <div v-else>
-                        <div v-if="assetInfo.imgSrc">
-                            <ui-button @click="onPreviewImgSrc">{{ _funcs.getI18nText("text_63") }}</ui-button>
-                            <ui-image v-if="tempPreviewPath" :value="tempPreviewPath" :style="{width:_width,height:_height}" />
+                        <div v-if="assetInfo.imgSrc&&assetInfo.isNativeImg">
+                            <div style="display: flex;flex-direction: column;gap: 10px;align-items: start;">
+                                <ui-button @click="onPreviewImgSrc">{{ _funcs.getI18nText("text_63") }}</ui-button>
+                                <label v-if="tempPreviewPath">{{ tempPreviewPath }}</label>
+                            </div>
+                            <div v-if="tempPreviewPath" class="image" :style="{width:_width,height:_height}">
+                                <ui-image  :value="tempPreviewPath" :style="{width:_width,height:_height}" />
+                            </div>
                         </div>
-                        <div v-else>
+                        <div v-else-if="assetInfo.imgSrc&&assetInfo.isUrlImg" class="image" :style="{width:_width,height:_height}">
+                            <ui-image :value="assetInfo.imgSrc" :style="{width:_width,height:_height}" />
+                        </div>
+                        <div v-else class="image" :style="{width:_width,height:_height}">
                             <ui-image :value="assetInfo.uuid" :style="{width:_width,height:_height}" />
                         </div>
                     </div>
@@ -318,6 +345,11 @@ function onPreviewImgSrc(){
 
 .yellow{
     color: rgb(238, 255, 0);
+    font-size: 15px;
+}
+
+.green{
+    color: rgb(18, 247, 151);
     font-size: 15px;
 }
 

@@ -566,6 +566,29 @@ class PluginSocket {
     }
 
     /**
+     * 根据texture2D的uuid，下载图片保存到本地
+     * @param uuid 
+     * @returns 
+     */
+    async saveTextureByUuid(uuid:string){
+        const obj = await this.getTextureData(uuid)
+        if(!obj){
+            return
+        }
+        const unit8arr = _utils.base64ToUint8Array(obj.base64Data);
+        const floderPath = `${_funcs.getCurPluginPath()}/cache/textures`;
+        await _funcs.ensureFloderExist(floderPath);
+        let savePath = `${floderPath}/${uuid}}.png`;
+        _utils.saveUnit8ArrayPng(unit8arr, obj.width, obj.height, savePath);
+        savePath = savePath.replace(/\\/g, "/");
+        return {
+            savePath,
+            width:obj.width,
+            height:obj.height,
+        }
+    }
+
+    /**
      * 校验激活码
      * @param activationCode 
      * @returns 

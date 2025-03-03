@@ -455,6 +455,16 @@ export function getLocalIPs() {
     return results;
 }
 
+/**判断IP是否是本机 */
+export function checkIpIsLocalhost(ip:string){
+    const localIps = _funcs.getLocalIPs();
+    if(ip=="localhost"||ip=="::1"||ip=="127.0.0.1"||localIps.includes(ip)){
+        return true
+    }else{
+        return false
+    }
+}
+
 export function getFs(){
     return fs
 }
