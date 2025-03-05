@@ -60,11 +60,11 @@ func dealFakeData(msg *Message) {
 	activationCode := ""
 	latestVersion := "1.1.0"
 	authorInfo := map[string]interface{}{
-		"helpDocUrl":"https://www.cocos.com/products?b=1",
-		"feedbackUrl":"https://www.cocos.com/products?b=2",
-		"qq":       []string{"1451784145", "2273520958"},
-		"qqgroups": []string{"581563429"},
-		"wechat":   []string{"busky192"},
+		"helpDocUrl":  "https://www.cocos.com/products?b=1",
+		"feedbackUrl": "https://www.cocos.com/products?b=2",
+		"qq":          []string{"1451784145", "2273520958"},
+		"qqgroups":    []string{"581563429"},
+		"wechat":      []string{"busky192"},
 	}
 
 	verifyInfo := VerifyInfo{
@@ -112,11 +112,11 @@ func (s *WebSocketServer) doVerify(conn *websocket.Conn, msg *Message) (interfac
 		activationCode := "55555"
 		latestVersion := "1.1.0"
 		authorInfo := map[string]interface{}{
-			"helpDocUrl":"https://www.cocos.com/products?b=1",
-			"feedbackUrl":"https://www.cocos.com/products?b=2",
-			"qq":       []string{"1451784145", "2273520958"},
-			"qqgroups": []string{"581563429"},
-			"wechat":   []string{"busky192"},
+			"helpDocUrl":  "https://www.cocos.com/products?b=1",
+			"feedbackUrl": "https://www.cocos.com/products?b=2",
+			"qq":          []string{"1451784145", "2273520958"},
+			"qqgroups":    []string{"581563429"},
+			"wechat":      []string{"busky192"},
 		}
 		verifyInfo := map[string]interface{}{
 			"endTime":        endTime,
@@ -167,7 +167,7 @@ func (s *WebSocketServer) doStatistics(conn *websocket.Conn, msg *Message) (inte
 	}
 
 	response := Message{
-		Type:      msg.Type,
+		Type:      "response",
 		Action:    msg.Action,
 		RequestID: msg.RequestID,
 		Data:      resp,

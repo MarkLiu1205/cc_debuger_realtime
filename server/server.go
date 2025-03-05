@@ -12,7 +12,7 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-// WebSocketServer 封装服务器状态
+// 封装服务器状态
 type WebSocketServer struct {
 	port          int
 	upgrader      websocket.Upgrader
@@ -25,13 +25,13 @@ type WebSocketServer struct {
 	httpClient    *http.Client
 }
 
-// RuntimeInfo 存储运行时连接信息
+// 存储运行时连接信息
 type RuntimeInfo struct {
 	conn *websocket.Conn
 	name string
 }
 
-// ConnectionInfo 记录连接详细信息（包含写锁）
+// 记录连接详细信息（包含写锁）
 type ConnectionInfo struct {
 	IP     string
 	Port   string
@@ -47,7 +47,7 @@ type VerifyInfo struct {
 	AuthorInfo     interface{} `json:"authorInfo,omitempty"`
 }
 
-// Message 定义消息结构
+// 定义消息结构
 type Message struct {
 	Type       string      `json:"type"`
 	Action     string      `json:"action,omitempty"`
@@ -61,13 +61,7 @@ type Message struct {
 	VerifyInfo VerifyInfo  `json:"verifyInfo,omitempty"`
 }
 
-// "endTime":        0,
-// "state":          verifyState,
-// "activationCode": activationCode,
-// "latestVersion":  latestVersion,
-// "authorInfo":     authorInfo,
-
-// NewWebSocketServer 构造服务器实例
+// 构造服务器实例
 func NewWebSocketServer(port int, verifyUrl string) *WebSocketServer {
 	return &WebSocketServer{
 		port: port,
@@ -82,14 +76,14 @@ func NewWebSocketServer(port int, verifyUrl string) *WebSocketServer {
 	}
 }
 
-// Start 启动WebSocket服务器
+// 启动WebSocket服务器
 func (s *WebSocketServer) Start() {
 	http.HandleFunc("/", s.handleConnection)
 	fmt.Printf("\nWebSocket server running on ws://localhost:%d", s.port)
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", s.port), nil))
 }
 
-// handleConnection 处理新连接
+// 处理新连接
 func (s *WebSocketServer) handleConnection(w http.ResponseWriter, r *http.Request) {
 	conn, err := s.upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -109,7 +103,7 @@ func (s *WebSocketServer) handleConnection(w http.ResponseWriter, r *http.Reques
 	go s.handleMessages(conn)
 }
 
-// writeMessage 安全写入消息（带连接级锁）
+// 安全写入消息（带连接级锁）
 func (s *WebSocketServer) writeMessage(conn *websocket.Conn, msg interface{}) error {
 	s.mutex.RLock()
 	info, exists := s.connInfo[conn]
@@ -121,11 +115,24 @@ func (s *WebSocketServer) writeMessage(conn *websocket.Conn, msg interface{}) er
 
 	info.mu.Lock()
 
-	// jsonData, err := json.Marshal(msg)
-	// if err != nil {
-
+	// tipStr := ""
+	// if conn == s.activeRuntime {
+	// 	tipStr = "我发给runtime"
 	// } else {
-	// 	fmt.Printf("\n向外发送: %s", jsonData)
+	// 	tipStr = "我发给plugin"
+	// }
+
+	// m, ok := msg.(Message)
+	// if ok {
+	// 	if m.IsSplit {
+	// 		fmt.Println(tipStr, m.Total, m.Idx)
+	// 	} else {
+	// 		// jsonData, err := json.Marshal(msg)
+	// 		// if err == nil {
+	// 		// 	fmt.Printf("\n%s: %s", tipStr, jsonData)
+	// 		// }
+	// 		fmt.Println(tipStr, m.Type, m.Action)
+	// 	}
 	// }
 
 	ret := conn.WriteJSON(msg)
@@ -134,7 +141,7 @@ func (s *WebSocketServer) writeMessage(conn *websocket.Conn, msg interface{}) er
 	return ret
 }
 
-// handleMessages 处理消息接收与路由
+// 处理消息接收与路由
 func (s *WebSocketServer) handleMessages(conn *websocket.Conn) {
 	defer func() {
 		s.handleClose(conn)
@@ -153,20 +160,25 @@ func (s *WebSocketServer) handleMessages(conn *websocket.Conn) {
 			continue
 		}
 
-		s.routeMessage(conn, msg)
+		// // 根据连接类型打印日志
+		// if conn == s.activeRuntime {
+		// 	if msg.IsSplit {
+		// 		fmt.Println("\n从Runtime 发来消息,IsSplit:", msg.Total, msg.Idx)
+		// 	} else {
+		// 		// fmt.Println("\n从Runtime 发来消息:", string(msgBytes))
+		// 		fmt.Println("\n从Runtime 发来消息:", msg.Type, msg.Action)
+		// 	}
 
-		// 根据连接类型打印日志
-		// isActiveRuntime := (conn == s.activeRuntime)
-		// isPlugin := (conn == s.pluginConn)
-		// if isActiveRuntime {
-		// 	fmt.Println("\nRuntime message:", string(msgBytes))
-		// } else if isPlugin {
-		// 	fmt.Println("\nPlugin message:", string(msgBytes))
+		// } else if conn == s.pluginConn {
+		// 	// fmt.Println("\nPlugin 发来消息:", string(msgBytes))
+		// 	fmt.Println("\nPlugin 发来消息:", msg.Type, msg.Action)
 		// }
+
+		s.routeMessage(conn, msg)
 	}
 }
 
-// routeMessage 分发消息
+// 分发消息
 func (s *WebSocketServer) routeMessage(conn *websocket.Conn, msg Message) {
 	if msg.Type == "identify" {
 		s.handleIdentify(conn, msg)
@@ -183,7 +195,7 @@ func (s *WebSocketServer) routeMessage(conn *websocket.Conn, msg Message) {
 	}
 }
 
-// handleIdentify 处理身份识别消息
+// 处理身份识别消息
 func (s *WebSocketServer) handleIdentify(conn *websocket.Conn, msg Message) {
 
 	switch msg.Role {
@@ -218,7 +230,7 @@ func (s *WebSocketServer) handleIdentify(conn *websocket.Conn, msg Message) {
 	}
 }
 
-// handleRequest 处理请求消息
+// 处理请求消息
 func (s *WebSocketServer) handleRequest(conn *websocket.Conn, msg Message) {
 	if msg.Action == "checkOtherSideIsInline" {
 		s.handleCheckOnline(conn, msg)
@@ -245,7 +257,7 @@ func (s *WebSocketServer) handleRequest(conn *websocket.Conn, msg Message) {
 	s.forwardMessage(conn, msg)
 }
 
-// handleCheckOnline 检查对端是否在线
+// 检查对端是否在线
 func (s *WebSocketServer) handleCheckOnline(conn *websocket.Conn, msg Message) {
 	var online bool
 	s.mutex.Lock()
@@ -262,7 +274,7 @@ func (s *WebSocketServer) handleCheckOnline(conn *websocket.Conn, msg Message) {
 		RequestID: msg.RequestID,
 		Data:      online,
 	}
-	conn.WriteJSON(response)
+	s.writeMessage(conn, response)
 }
 
 // 处理推送消息
@@ -292,7 +304,7 @@ func printMsg(msg *Message) {
 	fmt.Println("Message content:", string(msgBytes))
 }
 
-// forwardMessage 转发消息到目标连接
+// 转发消息到目标连接
 func (s *WebSocketServer) forwardMessage(src *websocket.Conn, msg Message) {
 	s.mutex.RLock()
 	target := s.getTargetConnection(src)
@@ -305,7 +317,7 @@ func (s *WebSocketServer) forwardMessage(src *websocket.Conn, msg Message) {
 	}
 }
 
-// getTargetConnection 根据来源判断转发方向
+// 根据来源判断转发方向
 func (s *WebSocketServer) getTargetConnection(src *websocket.Conn) *websocket.Conn {
 	if src == s.pluginConn {
 		return s.activeRuntime
@@ -316,7 +328,7 @@ func (s *WebSocketServer) getTargetConnection(src *websocket.Conn) *websocket.Co
 	return nil
 }
 
-// addRuntime 添加运行时连接
+// 添加运行时连接
 func (s *WebSocketServer) addRuntime(conn *websocket.Conn, name string) string {
 	// 检查名称冲突
 	if s.getRuntimeByName(name) != nil {
@@ -350,7 +362,7 @@ func (s *WebSocketServer) updateRuntimeList() {
 	})
 }
 
-// handleClose 优化后的连接关闭处理
+// 优化后的连接关闭处理
 func (s *WebSocketServer) handleClose(conn *websocket.Conn) {
 
 	// 清理连接信息
@@ -450,7 +462,7 @@ func (s *WebSocketServer) sendConnectionUpdate(name string, bOnline bool) {
 
 }
 
-// getRuntimeByName 根据名称查找运行时
+// 根据名称查找运行时
 func (s *WebSocketServer) getRuntimeByName(name string) *RuntimeInfo {
 	for _, r := range s.runtimes {
 		if r.name == name {
@@ -460,7 +472,7 @@ func (s *WebSocketServer) getRuntimeByName(name string) *RuntimeInfo {
 	return nil
 }
 
-// getRuntimeName 获取运行时名称
+// 获取运行时名称
 func (s *WebSocketServer) getRuntimeName(conn *websocket.Conn) string {
 	for _, r := range s.runtimes {
 		if r.conn == conn {
@@ -471,7 +483,7 @@ func (s *WebSocketServer) getRuntimeName(conn *websocket.Conn) string {
 }
 
 func main() {
-	port := flag.Int("port", 8888, "server port")
+	port := flag.Int("port", 8085, "server port")
 	verifyUrl := flag.String("verifyUrl", "http://your-api-server:8080", "verifyUrl")
 	flag.Parse()
 
