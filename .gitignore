@@ -27,3 +27,4 @@ cache/
 /tsconfig.tsbuildinfo
 /runtime/cc_debuger_2.js
 /archive
+/runtime/cc_debuger_2_ugly.ts

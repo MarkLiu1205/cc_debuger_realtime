@@ -184,18 +184,16 @@ function packPluginToZip() {
     archive.finalize();
 }
 
-// await waitForTime(1)
-// deal_cc_debuger_2()
-
-// await waitForTime(1)
-// deal_server_go()
-
-// await waitForTime(1)
-// deal_dist()
-
-// await waitForTime(1)
-// packPluginToZip()
-
+await waitForTime(1)
 deal_cc_debuger_2()
+
+await waitForTime(1)
+deal_server_go()
+
+await waitForTime(1)
+deal_dist()
+
+await waitForTime(1)
+packPluginToZip()
 
 console.log('Obfuscation complete!');
