@@ -1375,8 +1375,11 @@ function getTextureData(_tex:any/**import("cc").Texture2D */, flipY = true){
         return null
     }
     const arr = readPixels(_tex,flipY)
-    const base64String = uint8ArrayToBase64(arr)
-    return {width:_tex.width,height:_tex.height,base64Data:base64String}
+    const obj =  cropBlankPixels(arr,_tex.width,_tex.height)
+    const base64String = uint8ArrayToBase64(obj.buffer)
+    obj["base64Data"] = base64String
+    delete obj.buffer
+    return obj
 }
 
 function readPixels(texture: any/**import("cc").Texture2D */, flipY = true): Uint8Array {
@@ -1416,6 +1419,105 @@ function uint8ArrayToBase64(uint8Array: Uint8Array): string {
     }
 
     return btoa(result);
+}
+
+function cropBlankPixels(buffer: Uint8Array, width: number, height: number): {
+    buffer: Uint8Array,
+    width: number,
+    height: number,
+    oldWidth: number,
+    oldHeight: number,
+    top: number,
+    left: number,
+    right: number,
+    bottom: number
+} {
+    // 寻找上下边界
+    let top = 0;
+    let bottomLine = height - 1;
+
+    // 寻找上边界
+    for (; top < height; top++) {
+        let hasPixel = false;
+        for (let x = 0; x < width; x++) {
+            if (buffer[(top * width + x) * 4 + 3] !== 0) {
+                hasPixel = true;
+                break;
+            }
+        }
+        if (hasPixel) break;
+    }
+
+    // 寻找下边界
+    for (; bottomLine >= top; bottomLine--) {
+        let hasPixel = false;
+        for (let x = 0; x < width; x++) {
+            if (buffer[(bottomLine * width + x) * 4 + 3] !== 0) {
+                hasPixel = true;
+                break;
+            }
+        }
+        if (hasPixel) break;
+    }
+
+    // 处理全透明情况
+    if (top > bottomLine) {
+        return {
+            buffer,
+            width: 0,
+            height: 0,
+            oldWidth: width,
+            oldHeight: height,
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0
+        };
+    }
+
+    // 寻找左右边界
+    let leftMin = width;
+    let rightMax = 0;
+
+    for (let y = top; y <= bottomLine; y++) {
+        // 找左边界
+        let left = 0;
+        for (; left < width; left++) {
+            if (buffer[(y * width + left) * 4 + 3] !== 0) break;
+        }
+        if (left < leftMin) leftMin = left;
+
+        // 找右边界
+        let right = width - 1;
+        for (; right >= leftMin; right--) {
+            if (buffer[(y * width + right) * 4 + 3] !== 0) break;
+        }
+        if (right > rightMax) rightMax = right;
+    }
+
+    // 计算裁剪参数
+    const newWidth = rightMax - leftMin + 1;
+    const newHeight = bottomLine - top + 1;
+    const newBuffer = new Uint8Array(newWidth * newHeight * 4);
+
+    // 复制有效像素数据
+    for (let y = 0; y < newHeight; y++) {
+        const srcStart = ((top + y) * width + leftMin) * 4;
+        const srcEnd = srcStart + newWidth * 4;
+        newBuffer.set(buffer.subarray(srcStart, srcEnd), y * newWidth * 4);
+    }
+
+    return {
+        buffer: newBuffer,
+        width: newWidth,
+        height: newHeight,
+        oldWidth: width,
+        oldHeight: height,
+        top: top,
+        left: leftMin,
+        right: width - rightMax - 1,
+        bottom: height - bottomLine - 1
+    };
 }
 
 async function evalJsStr(jsStr:string){

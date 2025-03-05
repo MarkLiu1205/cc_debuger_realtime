@@ -446,6 +446,19 @@ interface SelfBuildParam{
     serverAddress:boolean
 }
 
+interface TexDataInfo{
+    width: number,
+    height: number,
+    buffer: Uint8Array,
+    base64Data?: string,
+    oldWidth?: number,
+    oldHeight?: number,
+    top?: number,
+    left?: number,
+    right?: number,
+    bottom?: number
+}
+
 interface VerifyReqParam{
     /**激活码 */
     activationCode:string,

@@ -49,4 +49,41 @@ export namespace _utils{
         fs.writeFileSync(savePath, buffer);
         _funcs.log_1('文件保存成功: ',savePath);
     }
+
+    export function restoreCroppedImage(croppedData: TexDataInfo): TexDataInfo {
+        // 解构参数
+        const { buffer: croppedBuffer, oldWidth, oldHeight, top, left, right, bottom } = croppedData;
+        
+        // 创建全透明原始尺寸的缓冲区
+        const originalBuffer = new Uint8Array(oldWidth * oldHeight * 4);
+        originalBuffer.fill(0); // 初始化为全透明
+    
+        // 有效性检查
+        if (croppedBuffer.length === 0 || oldWidth === 0 || oldHeight === 0) {
+            return { buffer: originalBuffer, width: oldWidth, height: oldHeight };
+        }
+    
+        // 计算有效区域参数
+        const newWidth = oldWidth - left - right;
+        const newHeight = oldHeight - top - bottom;
+    
+        // 逐行复制像素数据
+        for (let y = 0; y < newHeight; y++) {
+            const srcStart = y * newWidth * 4;
+            const srcEnd = srcStart + newWidth * 4;
+            const destY = top + y;
+            const destStart = (destY * oldWidth + left) * 4;
+            
+            originalBuffer.set(
+                croppedBuffer.subarray(srcStart, srcEnd),
+                destStart
+            );
+        }
+    
+        return {
+            buffer: originalBuffer,
+            width: oldWidth,
+            height: oldHeight
+        };
+    }
 }

@@ -450,7 +450,7 @@ class PluginSocket {
         return this._sendRequest("getDynamicAtlasCount")
     }
 
-    async getDynamicTextureData(index:number=0):Promise<{width:number,height:number,base64Data:string}>{
+    async getDynamicTextureData(index:number=0):Promise<TexDataInfo>{
         await this.waitForRuntimeIsInline()
         const time_1 = Date.now()
         let ret = await this._sendRequest("getDynamicTextureData",index,"request",60*1000) as any
@@ -472,15 +472,19 @@ class PluginSocket {
         }
         const obj = await this.getDynamicTextureData(index)
         const unit8arr = _utils.base64ToUint8Array(obj.base64Data);
+        obj.buffer = unit8arr
+        delete obj.base64Data
+        const newObj = _utils.restoreCroppedImage(obj)
+
         const floderPath = `${_funcs.getCurPluginPath()}/cache/dynamic_texture`;
         await _funcs.ensureFloderExist(floderPath);
         let savePath = `${floderPath}/${index}_${Date.now()}.png`;
-        _utils.saveUnit8ArrayPng(unit8arr, obj.width, obj.height, savePath);
+        _utils.saveUnit8ArrayPng(newObj.buffer, newObj.width, newObj.height, savePath);
         savePath = savePath.replace(/\\/g, "/");
         return {
             savePath,
-            width:obj.width,
-            height:obj.height,
+            width:newObj.width,
+            height:newObj.height,
         }
     }
 
@@ -559,7 +563,7 @@ class PluginSocket {
     }
 
     /**获取Texture的纹理数据 */
-    async getTextureData(uuid:string):Promise<{width:number,height:number,base64Data:string}>{
+    async getTextureData(uuid:string):Promise<TexDataInfo>{
         await this.waitForRuntimeIsInline()
         let ret = await this._sendRequest("getTextureData",uuid,"request",60*1000) as any
         return ret
@@ -576,15 +580,18 @@ class PluginSocket {
             return
         }
         const unit8arr = _utils.base64ToUint8Array(obj.base64Data);
+        obj.buffer = unit8arr
+        delete obj.base64Data
+        const newObj = _utils.restoreCroppedImage(obj)
         const floderPath = `${_funcs.getCurPluginPath()}/cache/textures`;
         await _funcs.ensureFloderExist(floderPath);
         let savePath = `${floderPath}/${uuid}}.png`;
-        _utils.saveUnit8ArrayPng(unit8arr, obj.width, obj.height, savePath);
+        _utils.saveUnit8ArrayPng(newObj.buffer, newObj.width, newObj.height, savePath);
         savePath = savePath.replace(/\\/g, "/");
         return {
             savePath,
-            width:obj.width,
-            height:obj.height,
+            width:newObj.width,
+            height:newObj.height,
         }
     }
 
