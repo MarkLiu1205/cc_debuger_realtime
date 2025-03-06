@@ -462,18 +462,33 @@ interface TexDataInfo{
 interface VerifyReqParam{
     /**激活码 */
     activationCode:string,
+    /**当前硬件的设备号 */
+    deviceId:string,
+    /**用户的uid（可能为空） */
     cocos_uid:string,
+    /**用户的邮件 */
     email:string,
+    /**用户的昵称 */
     nickname:string,
     /**软件版本名称 如1.0.0 */
     versionName:string,
-    /**当前硬件的设备号 */
-    deviceId:string,
+}
+
+enum VerifyState {
+	State_none = 0,
+	//未通过验证
+	State_unverified = 1,
+	//在试用期中
+	State_in_trial = 2,
+	//已经验证通过
+	State_verify_success = 3,
+	//激活码过期了
+	State_verify_expired = 4,
 }
 
 interface VerifyRespParam{
     /**激活状态  0表示正在验证 1未激活  2试用期中  3已激活 4激活码已过期(激活码分为永久激活码和3个月有效激活码) */
-    state:number,
+    state:VerifyState,
     //返回激活码(如果暂未激活，返回空字符串)
     activationCode:string,
     /**时间戳，试用期时表示试用结束时间，激活码过期时表示过期时间 */
