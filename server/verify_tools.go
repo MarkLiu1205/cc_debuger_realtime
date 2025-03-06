@@ -29,8 +29,8 @@ func test() {
 
 // 声明HTTP端点URL常量
 const (
-	verifyEndpoint     = "/api/verify"
-	statisticsEndpoint = "/api/stats"
+	verifyEndpoint     = "/verify"
+	statisticsEndpoint = "/stats"
 )
 
 const (
@@ -46,7 +46,14 @@ const (
 )
 
 var (
-	verifyState = State_none
+	verifyState  = State_none
+	m_authorInfo = map[string]interface{}{
+		"helpDocUrl":  "https://www.cocos.com/products?b=1",
+		"feedbackUrl": "https://www.cocos.com/products?b=2",
+		"qq":          []string{"1451784145", "2273520958"},
+		"qqgroups":    []string{"581563429"},
+		"wechat":      []string{"busky192"},
+	}
 )
 
 func isVerified() bool {
@@ -59,20 +66,13 @@ func dealFakeData(msg *Message) {
 	}
 	activationCode := ""
 	latestVersion := "1.1.0"
-	authorInfo := map[string]interface{}{
-		"helpDocUrl":  "https://www.cocos.com/products?b=1",
-		"feedbackUrl": "https://www.cocos.com/products?b=2",
-		"qq":          []string{"1451784145", "2273520958"},
-		"qqgroups":    []string{"581563429"},
-		"wechat":      []string{"busky192"},
-	}
 
 	verifyInfo := VerifyInfo{
 		EndTime:        0,
 		State:          verifyState,
 		ActivationCode: activationCode,
 		LatestVersion:  latestVersion,
-		AuthorInfo:     authorInfo,
+		AuthorInfo:     m_authorInfo,
 	}
 
 	if verifyState == State_in_trial { //试用期
@@ -103,7 +103,7 @@ func (s *WebSocketServer) doVerify(conn *websocket.Conn, msg *Message) (interfac
 	}
 	printInterface(msg.Data)
 
-	if true {
+	if false {
 		ret := msg
 
 		verifyState = State_in_trial
@@ -111,19 +111,12 @@ func (s *WebSocketServer) doVerify(conn *websocket.Conn, msg *Message) (interfac
 		endTime := time.Now().Unix() + 3600*25
 		activationCode := "55555"
 		latestVersion := "1.1.0"
-		authorInfo := map[string]interface{}{
-			"helpDocUrl":  "https://www.cocos.com/products?b=1",
-			"feedbackUrl": "https://www.cocos.com/products?b=2",
-			"qq":          []string{"1451784145", "2273520958"},
-			"qqgroups":    []string{"581563429"},
-			"wechat":      []string{"busky192"},
-		}
 		verifyInfo := map[string]interface{}{
 			"endTime":        endTime,
 			"state":          verifyState,
 			"activationCode": activationCode,
 			"latestVersion":  latestVersion,
-			"authorInfo":     authorInfo,
+			"authorInfo":     m_authorInfo,
 		}
 
 		ret.Data = verifyInfo
@@ -200,10 +193,7 @@ func (s *WebSocketServer) sendJSONRequest(endpoint string, data interface{}) (in
 		return nil, fmt.Errorf("响应解析失败: %w", err)
 	}
 
-	if code, ok := result["code"].(float64); ok && code != 200 {
-		return nil, fmt.Errorf("服务端错误: %v", result["msg"])
-	}
-	return result["data"], nil
+	return result, nil
 }
 
 // getDeviceID 获取设备号或唯一标识符

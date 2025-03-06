@@ -484,7 +484,7 @@ func (s *WebSocketServer) getRuntimeName(conn *websocket.Conn) string {
 
 func main() {
 	port := flag.Int("port", 8085, "server port")
-	verifyUrl := flag.String("verifyUrl", "http://your-api-server:8080", "verifyUrl")
+	verifyUrl := flag.String("verifyUrl", "http://106.52.57.191:8080", "verifyUrl")
 	flag.Parse()
 
 	server := NewWebSocketServer(*port, *verifyUrl)

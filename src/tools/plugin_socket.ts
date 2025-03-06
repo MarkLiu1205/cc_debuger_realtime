@@ -606,11 +606,12 @@ class PluginSocket {
 
         let obj = {
             activationCode,
-            cocos_uid:userInfo.cocos_uid,
+            cocos_uid:userInfo.cocos_uid+"",
             email:userInfo.email,
             nickname:userInfo.nickname,
             versionName:_funcs.getPluginVersionName(),
         }
+        console.log("------obj",obj)
         let ret = await this._sendRequest("VerifyActivationCode",obj) as any
         console.log("------ret",ret)
         return ret
