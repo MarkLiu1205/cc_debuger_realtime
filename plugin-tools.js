@@ -36,7 +36,7 @@ function deal_cc_debuger_2(){
             const obfuscatedJsCode = javascriptObfuscator.obfuscate(jsCode, {
                 compact: true,
                 controlFlowFlattening: false,
-                deadCodeInjection: true,
+                deadCodeInjection: false,
                 stringArray: true,
                 rotateStringArray: true,
                 stringArrayEncoding: ['base64'],
@@ -48,6 +48,22 @@ function deal_cc_debuger_2(){
             console.log(`Obfuscated: ${jsFilePath}\n`);
         }
     }
+}
+
+function move_cc_debuger_2_ugly() {
+    const fromPath = 'runtime/cc_debuger_2_ugly.ts';
+    const toPath = '../../assets/cc_debuger_2_ugly.ts';
+
+    // 检查目标路径是否存在
+    if (fs.existsSync(toPath)) {
+        console.log(`Target file ${toPath} exists. Overwriting...`);
+    } else {
+        console.log(`Target file ${toPath} does not exist. Creating...`);
+    }
+
+    // 复制源文件到目标路径并进行覆盖
+    fs.copyFileSync(fromPath, toPath);
+    console.log(`Copied ${fromPath} to ${toPath}`);
 }
 
 function deal_server_js(){
@@ -132,7 +148,7 @@ function packPluginToZip() {
         "i18n/",
         "builder/",
         "runtime/cc_debuger_1.ts",
-        "runtime/cc_debuger_2.js",
+        "runtime/cc_debuger_2_ugly.ts",
         "server/server.exe",
         "server/server",
         "package.json"
@@ -141,7 +157,12 @@ function packPluginToZip() {
     let obj = JSON.parse(fs.readFileSync("package.json"))
     // console.log(obj.version)
 
-    const saveZipPath = `archive/cc_debuger_${obj.version}(${obj.package_version}).zip`
+    const archiveDir = 'archive';
+    if (!fs.existsSync(archiveDir)) {
+        fs.mkdirSync(archiveDir);
+    }
+
+    const saveZipPath = `${archiveDir}/cc_debuger_${obj.version}(${obj.package_version}).zip`
 
     const output = fs.createWriteStream(saveZipPath);
     const archive = archiver('zip', {
@@ -197,3 +218,4 @@ await waitForTime(1)
 packPluginToZip()
 
 console.log('Obfuscation complete!');
+move_cc_debuger_2_ugly()
