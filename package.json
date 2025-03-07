@@ -14,12 +14,13 @@
         "dev": "npm run build -- --mode development",
         "build": "vite build",
         "obfuscate": "node plugin-tools.js",
+        "clear": "node plugin-tools.js isClear",
+        "install_publish": "npm install --production",
         "publish": "vite build && node plugin-tools.js"
     },
     "dependencies": {
         "@dagrejs/dagre": "^1.1.4",
         "@vue-flow/core": "^1.41.7",
-        "archiver": "^7.0.1",
         "element-plus": "^2.8.6",
         "fs-extra": "^11.2.0",
         "mitt": "^3.0.1",
@@ -40,7 +41,8 @@
         "unplugin-vue-components": "^0.27.5",
         "vite": "^5.4.1",
         "vite-plugin-obfuscator": "^1.0.5",
-        "vue-tsc": "^2.1.10"
+        "vue-tsc": "^2.1.10",
+        "archiver": "^7.0.1"
     },
     "contributions": {
         "builder": "./builder/builder.js",

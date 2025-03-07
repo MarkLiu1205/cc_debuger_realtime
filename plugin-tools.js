@@ -202,17 +202,54 @@ function packPluginToZip() {
     archive.finalize();
 }
 
-await waitForTime(1)
-deal_cc_debuger_2()
+function cleanNpmCacheSync() {
+    try {
+      // 定义要删除的文件和目录的路径
+      const nodeModulesPath = "node_modules"
+      const packageLockPath = "package-lock.json"
+   
+      // 检查并删除 node_modules 目录
+      if (fs.existsSync(nodeModulesPath)) {
+        console.log("Deleting node_modules directory...");
+        fs.removeSync(nodeModulesPath);
+        console.log("node_modules directory deleted.");
+      } else {
+        console.log("node_modules directory does not exist.");
+      }
+   
+      // 检查并删除 package-lock.json 文件
+      if (fs.existsSync(packageLockPath)) {
+        console.log("Deleting package-lock.json file...");
+        fs.removeSync(packageLockPath);
+        console.log("package-lock.json file deleted.");
+      } else {
+        console.log("package-lock.json file does not exist.");
+      }
+    } catch (error) {
+      console.error("An error occurred while cleaning the project:", error);
+    }
+  }
 
-await waitForTime(1)
-deal_server_go()
 
-await waitForTime(1)
-deal_dist()
+const args = process.argv.slice(2);
+console.log("param",args);
+ 
+const firstArg = args[0];
+if(firstArg=="isClear"){
+    cleanNpmCacheSync()
+}else{
+    await waitForTime(1)
+    deal_cc_debuger_2()
 
-await waitForTime(1)
-packPluginToZip()
+    await waitForTime(1)
+    deal_server_go()
 
-console.log('Obfuscation complete!');
-move_cc_debuger_2_ugly()
+    await waitForTime(1)
+    deal_dist()
+
+    await waitForTime(1)
+    packPluginToZip()
+
+    console.log('Obfuscation complete!');
+    move_cc_debuger_2_ugly()
+}
