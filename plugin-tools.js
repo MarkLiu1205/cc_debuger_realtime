@@ -57,13 +57,10 @@ function move_cc_debuger_2_ugly() {
     // 检查目标路径是否存在
     if (fs.existsSync(toPath)) {
         console.log(`Target file ${toPath} exists. Overwriting...`);
-    } else {
-        console.log(`Target file ${toPath} does not exist. Creating...`);
+        // 复制源文件到目标路径并进行覆盖
+        fs.copyFileSync(fromPath, toPath);
+        console.log(`Copied ${fromPath} to ${toPath}`);
     }
-
-    // 复制源文件到目标路径并进行覆盖
-    fs.copyFileSync(fromPath, toPath);
-    console.log(`Copied ${fromPath} to ${toPath}`);
 }
 
 function deal_server_js(){
