@@ -300,6 +300,10 @@ async function onDoVerify(activationCode:string){
     nextTick(async ()=>{
         console.log("去验证",activationCode)
         const resp = await _pluginSocket.doVerify(activationCode)
+        if(resp.state==null||resp.state<0){
+            verifyInfo.state = 1
+            return
+        }
         console.log("验证结果",resp)
         
         await Editor.Profile.setConfig(_funcs.getPluginName(),"activationCode",resp.activationCode)
