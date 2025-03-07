@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -21,7 +22,7 @@ type WebSocketServer struct {
 	runtimes      []*RuntimeInfo                      // 所有运行时连接列表
 	connInfo      map[*websocket.Conn]*ConnectionInfo // 连接信息映射（包含写锁）
 	mutex         sync.RWMutex                        // 并发控制锁（改为读写锁）
-	baseURL       string
+	baseURLs      []string
 	httpClient    *http.Client
 }
 
@@ -62,14 +63,14 @@ type Message struct {
 }
 
 // 构造服务器实例
-func NewWebSocketServer(port int, verifyUrl string) *WebSocketServer {
+func NewWebSocketServer(port int, baseURLs []string) *WebSocketServer {
 	return &WebSocketServer{
 		port: port,
 		upgrader: websocket.Upgrader{
 			CheckOrigin: func(r *http.Request) bool { return true },
 		},
 		connInfo: make(map[*websocket.Conn]*ConnectionInfo),
-		baseURL:  verifyUrl,
+		baseURLs: baseURLs,
 		httpClient: &http.Client{
 			Timeout: 10 * time.Second,
 		},
@@ -482,11 +483,44 @@ func (s *WebSocketServer) getRuntimeName(conn *websocket.Conn) string {
 	return ""
 }
 
+// 解析命令行参数，支持单一地址或 JSON 数组
+func parseBaseURLs(verifyUrl string) ([]string, error) {
+	verifyUrl = strings.TrimSpace(verifyUrl)
+	if verifyUrl == "" {
+		return nil, fmt.Errorf("verifyUrl 不能为空")
+	}
+
+	// 如果以 [ 开头，尝试解析为 JSON 数组
+	if strings.HasPrefix(verifyUrl, "[") {
+		var urls []string
+		if err := json.Unmarshal([]byte(verifyUrl), &urls); err != nil {
+			return nil, fmt.Errorf("解析 JSON 数组失败: %w", err)
+		}
+		if len(urls) == 0 {
+			return nil, fmt.Errorf("JSON 数组为空")
+		}
+		return urls, nil
+	}
+
+	// 单一地址，直接返回单元素切片
+	return []string{verifyUrl}, nil
+}
+
 func main() {
 	port := flag.Int("port", 8085, "server port")
-	verifyUrl := flag.String("verifyUrl", "http://106.52.57.191:8080", "verifyUrl")
+	verifyUrl := flag.String("verifyUrl", "[\"http://106.52.57.191:8080\",\"http://ccdebuger.com:8080\"]", "verifyUrl (单一地址或 JSON 数组)")
 	flag.Parse()
 
-	server := NewWebSocketServer(*port, *verifyUrl)
+	if true {
+		*port = 8888
+		*verifyUrl = "http://localhost:8080"
+	}
+
+	urls, err := parseBaseURLs(*verifyUrl)
+	if err != nil {
+		log.Fatalf("解析 verifyUrl 失败: %v", err)
+	}
+
+	server := NewWebSocketServer(*port, urls)
 	server.Start()
 }

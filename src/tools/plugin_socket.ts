@@ -337,7 +337,7 @@ class PluginSocket {
             setTimeout(() => {
                 if (this.m_pendingRequests.has(requestId)) {
                     this.m_pendingRequests.delete(requestId);
-                    reject(new Error(`Request timed out:  ${JSON.stringify(payload)}`));
+                    reject(new Error(`Request timed out:  ${payload.action}`));
                 }
             }, timeout); // 5 秒超时
             
@@ -606,14 +606,14 @@ class PluginSocket {
 
         let obj = {
             activationCode,
-            cocos_uid:userInfo.cocos_uid+"",
+            cocos_uid:userInfo.cocos_uid,
             email:userInfo.email,
             nickname:userInfo.nickname,
             versionName:_funcs.getPluginVersionName(),
         }
-        console.log("------obj",obj)
+        // console.log("------obj",obj)
         let ret = await this._sendRequest("VerifyActivationCode",obj) as any
-        console.log("------ret",ret)
+        // console.log("------ret",ret)
         return ret
     }
 

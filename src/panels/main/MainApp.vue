@@ -261,7 +261,9 @@ async function onEditConfirmAddress(event){
 }
 
 const verifyInfo = reactive<VerifyRespParam>({
+    statusCode:200,
     activationCode:"",
+    msg:"",
     state:0,
     endTime:0,
     latestVersion:"",
@@ -298,13 +300,13 @@ const isExpired = computed(()=>{
 async function onDoVerify(activationCode:string){
     verifyInfo.state = 0
     nextTick(async ()=>{
-        console.log("去验证",activationCode)
+        // console.log("去验证",activationCode)
         const resp = await _pluginSocket.doVerify(activationCode)
         if(resp.state==null||resp.state<0){
             verifyInfo.state = 1
             return
         }
-        console.log("验证结果",resp)
+        // console.log("验证结果",resp)
         
         await Editor.Profile.setConfig(_funcs.getPluginName(),"activationCode",resp.activationCode)
         for(let k in resp){
@@ -332,9 +334,8 @@ function onVerifyFail(data){
 onMounted(async ()=>{
     eventBus.on("verify_fail",onVerifyFail)
     
-    const code = await Editor.Profile.getConfig(_funcs.getPluginName(),"activationCode")
-    console.log("========code",code)
-    onDoVerify(code)
+    
+    onDoVerify("")
 })
 
 onUnmounted(()=>{

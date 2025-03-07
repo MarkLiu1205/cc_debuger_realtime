@@ -171,29 +171,61 @@ func (s *WebSocketServer) doStatistics(conn *websocket.Conn, msg *Message) (inte
 
 // 公共请求方法封装
 func (s *WebSocketServer) sendJSONRequest(endpoint string, data interface{}) (interface{}, error) {
-	jsonData, err := json.Marshal(data)
+	requestData, ok := data.(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("数据格式错误，期望 map[string]interface{}")
+	}
+
+	// 确保 cocos_uid 是字符串
+	if cocosUID, exists := requestData["cocos_uid"]; exists {
+		switch v := cocosUID.(type) {
+		case string:
+			// 已经是字符串，无需转换
+		case int, int32, int64, float32, float64:
+			requestData["cocos_uid"] = fmt.Sprintf("%v", v)
+		default:
+			return nil, fmt.Errorf("cocos_uid 类型不支持: %T", v)
+		}
+	}
+
+	jsonData, err := json.Marshal(requestData)
 	if err != nil {
 		return nil, fmt.Errorf("JSON序列化错误: %w", err)
 	}
 
-	req, err := http.NewRequest("POST", s.baseURL+endpoint, bytes.NewBuffer(jsonData))
-	if err != nil {
-		return nil, fmt.Errorf("请求构造失败: %w", err)
-	}
-	req.Header.Set("Content-Type", "application/json")
+	// 重试逻辑
+	var lastErr error
+	for _, baseURL := range s.baseURLs {
+		req, err := http.NewRequest("POST", baseURL+endpoint, bytes.NewBuffer(jsonData))
+		if err != nil {
+			lastErr = fmt.Errorf("请求构造失败 (URL: %s): %w", baseURL, err)
+			continue
+		}
+		req.Header.Set("Content-Type", "application/json")
 
-	resp, err := s.httpClient.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("网络请求异常: %w", err)
-	}
-	defer resp.Body.Close()
+		resp, err := s.httpClient.Do(req)
+		if err != nil {
+			lastErr = fmt.Errorf("网络请求异常 (URL: %s): %w", baseURL, err)
+			continue
+		}
+		defer resp.Body.Close()
 
-	var result map[string]interface{}
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return nil, fmt.Errorf("响应解析失败: %w", err)
+		var result map[string]interface{}
+		if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+			lastErr = fmt.Errorf("响应解析失败 (URL: %s): %w", baseURL, err)
+			continue
+		}
+		result["statusCode"] = resp.StatusCode
+
+		// 请求成功，返回结果
+		return result, nil
 	}
 
-	return result, nil
+	// 所有地址都失败，返回最后一个错误
+	if lastErr != nil {
+		return nil, fmt.Errorf("所有地址请求失败: %w", lastErr)
+	}
+	return nil, fmt.Errorf("没有可用的 baseURL")
 }
 
 // getDeviceID 获取设备号或唯一标识符

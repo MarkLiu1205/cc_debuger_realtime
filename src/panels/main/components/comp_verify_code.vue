@@ -49,18 +49,34 @@ function onBtnPayHelp(){
 }
 
 const tipExpired = computed(()=>{
-    const dateStr = _funcs.formatDate("yyyy-MM-dd hh:mm",verifyInfo.endTime*1000)
+    const _endTime = verifyInfo.endTime - 8*3600//转为北京时间
+    const dateStr = _funcs.formatDate("yyyy-MM-dd hh:mm",_endTime*1000)
     return _funcs.formatStr(_funcs.getI18nText("text_116"),dateStr)
 })
 
 const tipInTrialing = computed(()=>{
-    const dateStr = _funcs.formatDate("yyyy-MM-dd hh:mm",verifyInfo.endTime*1000)
+    const _endTime = verifyInfo.endTime - 8*3600//转为北京时间
+    const dateStr = _funcs.formatDate("yyyy-MM-dd hh:mm",_endTime*1000)
     return _funcs.formatStr(_funcs.getI18nText("text_115"),dateStr)
 })
 
 function onClickJump(){
     emit('onJumpTrial')
 }
+
+const errorTip = computed(()=>{
+    if(verifyInfo.statusCode==200){
+        if(verifyInfo.endTime&&verifyInfo.endTime!=0){
+            const _endTime = verifyInfo.endTime - 8*3600//转为北京时间
+            const dateStr = _funcs.formatDate("yyyy-MM-dd hh:mm",_endTime*1000)
+            return _funcs.formatStr(_funcs.getI18nText("text_117"),dateStr)
+        }else{
+            return _funcs.getI18nText("text_95")
+        }
+    }else{
+        return verifyInfo.msg
+    }
+})
 
 </script>
 
@@ -74,7 +90,7 @@ function onClickJump(){
             <h2 >{{ tipInTrialing }}</h2>
             <ui-button style="padding-top: 5px;padding-bottom: 5px;" @click="onClickJump">{{ _funcs.getI18nText("text_113") }}</ui-button>
         </div>
-        <h2 v-else-if="isVerifyFailed">{{ _funcs.getI18nText("text_95") }}</h2>
+        <h2 v-else-if="isVerifyFailed">{{ errorTip }}</h2>
         <h2 v-else-if="isExpired">{{ tipExpired }}</h2>
         <div style="display: flex; flex-direction: row;gap: 10px;justify-content: center;align-items: center;">
             <h3>{{ _funcs.getI18nText("text_96") }}</h3>

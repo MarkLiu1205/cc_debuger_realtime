@@ -22,7 +22,7 @@ module.exports = {
     text_19: 'You can build a remote transfer server yourself, see the document for details',
     text_20: 'Current runtime:',
     text_21: 'No resource references this resource',
-    text_22: 'Found {1} resources',
+    text_22: 'Found {0} resources',
     text_23: 'Related resource references',
     text_24: 'Copy and print UUID',
     text_25: 'UUID (copied)',
@@ -117,7 +117,7 @@ module.exports = {
     text_114: 'Verifying the activation code..',
     text_115: 'You are in the trial period, the trial ends at: {0}',
     text_116: 'Your activation code has expired on {0}',
-    text_117: '',
+    text_117: 'Your trial ended on {0}',
     text_118: '',
     text_119: '',
 };
