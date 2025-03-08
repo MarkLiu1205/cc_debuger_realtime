@@ -5,7 +5,7 @@ import { _pluginSocket } from '../tools/plugin_socket';
 import { applyBuildParamAfter, applyBuildParamBefore, load_ts_to_runtime, unload_ts_from_runtime } from '../tools/runtime_socket_helper';
 const { pathExistsSync, writeFileSync, readFileSync } = require('fs-extra');
 
-console.log("packageJSON",packageJSON)
+// console.log("packageJSON",packageJSON)
 
 export const methods = {
     async open_main() {

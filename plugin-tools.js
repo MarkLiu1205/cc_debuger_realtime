@@ -148,6 +148,7 @@ function packPluginToZip() {
         "runtime/cc_debuger_2_ugly.ts",
         "server/server.exe",
         "server/server",
+        "server/server-linux",
         "package.json"
     ];
 
@@ -241,8 +242,22 @@ function cleanNpmCacheSync() {
     } catch (error) {
       console.error("An error occurred while cleaning the project:", error);
     }
-  }
+}
 
+// 修改 buildServer 函数
+function buildServer() {
+    if(process.platform != "win32"){
+        return
+    }
+    const buildBatPath = "build.bat"
+    const buildBatDir = "server"
+    try {
+        execSync(`cd ${buildBatDir} && call ${buildBatPath}`, { stdio: 'inherit', shell: true });
+    } catch (err) {
+        console.error(`Failed to execute build script: ${err.message}`);
+        process.exit(1);
+    }
+}
 
 const args = process.argv.slice(2);
 console.log("param",args);
@@ -251,6 +266,8 @@ const firstArg = args[0];
 if(firstArg=="isClear"){
     cleanNpmCacheSync()
 }else{
+    buildServer()
+
     await waitForTime(1)
     deal_cc_debuger_2()
 
