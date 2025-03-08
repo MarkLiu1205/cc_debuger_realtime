@@ -148,7 +148,7 @@ function packPluginToZip() {
         "runtime/cc_debuger_2_ugly.ts",
         "server/server.exe",
         "server/server",
-        "server/server-linux",
+        // "server/server-linux",
         "package.json"
     ];
 
@@ -246,13 +246,9 @@ function cleanNpmCacheSync() {
 
 // 修改 buildServer 函数
 function buildServer() {
-    if(process.platform != "win32"){
-        return
-    }
-    const buildBatPath = "build.bat"
     const buildBatDir = "server"
     try {
-        execSync(`cd ${buildBatDir} && call ${buildBatPath}`, { stdio: 'inherit', shell: true });
+        execSync(`cd ${buildBatDir} && go build`, { stdio: 'inherit', shell: true });
     } catch (err) {
         console.error(`Failed to execute build script: ${err.message}`);
         process.exit(1);
