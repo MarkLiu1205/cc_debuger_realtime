@@ -151,15 +151,23 @@ function packPluginToZip() {
         "package.json"
     ];
 
-    let obj = JSON.parse(fs.readFileSync("package.json"))
+    let obj = JSON.parse(fs.readFileSync("package.json"));
     // console.log(obj.version)
+
+    // 去掉 scripts 和 devDependencies 字段
+    delete obj.scripts;
+    delete obj.devDependencies;
+
+    // 将修改后的内容写入一个临时文件
+    const tempPackageJsonPath = "temp_package.json";
+    fs.writeFileSync(tempPackageJsonPath, JSON.stringify(obj, null, 2), "utf-8");
 
     const archiveDir = 'archive';
     if (!fs.existsSync(archiveDir)) {
         fs.mkdirSync(archiveDir);
     }
 
-    const saveZipPath = `${archiveDir}/cc_debuger_${obj.version}(${obj.package_version}).zip`
+    const saveZipPath = `${archiveDir}/cc_debuger_realtime_${obj.version}(${obj.package_version}).zip`;
 
     const output = fs.createWriteStream(saveZipPath);
     const archive = archiver('zip', {
@@ -168,6 +176,8 @@ function packPluginToZip() {
 
     output.on('close', function () {
         console.log(`${saveZipPath} has been finalized and the output file descriptor has closed. Total size: ${archive.pointer()} bytes`);
+        // 删除临时文件
+        fs.removeSync(tempPackageJsonPath);
     });
 
     output.on('end', function () {
@@ -191,6 +201,9 @@ function packPluginToZip() {
         if (fs.existsSync(folder)) {
             if (fs.statSync(folder).isDirectory()) {
                 archive.directory(folder, folder);
+            } else if (folder === "package.json") {
+                // 使用修改后的临时文件替换原始的 package.json
+                archive.file(tempPackageJsonPath, { name: "package.json" });
             } else {
                 archive.file(folder, { name: folder });
             }

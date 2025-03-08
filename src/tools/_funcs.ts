@@ -578,4 +578,49 @@ export async function openEvalPanel(param=""){
     }
 }
 
+// XOR 加密和解密的通用异或函数
+function xor(inputBytes:Uint8Array, keyBytes:Uint8Array) {
+    const output = new Uint8Array(inputBytes.length);
+    for (let i = 0; i < inputBytes.length; i++) {
+        output[i] = inputBytes[i] ^ keyBytes[i % keyBytes.length];
+    }
+    return output;
+}
+
+// 加密函数
+export function str_encrypt(input:string, key:string) {
+    if(key==null){
+        console.log("key 不能为空")
+        return
+    }
+    // 将输入和密钥转换为字节数组
+    const inputBytes = new TextEncoder().encode(input);
+    const keyBytes = new TextEncoder().encode(key);
+
+    // 调用 xor 进行异或加密
+    const xorResult = xor(inputBytes, keyBytes);
+
+    // 将字节数组转换为 Base64 编码字符串
+    return btoa(String.fromCharCode(...xorResult));
+}
+
+// 解密函数
+export function str_decrypt(base64Input:string, key:string) {
+    if(key==null){
+        console.log("key 不能为空")
+        return
+    }
+    // Base64 解码为字节数组
+    const xorResult = Uint8Array.from(atob(base64Input), c => c.charCodeAt(0));
+
+    // 将密钥转换为字节数组
+    const keyBytes = new TextEncoder().encode(key);
+
+    // 调用 xor 进行异或解密
+    const originalBytes = xor(xorResult, keyBytes);
+
+    // 将解密后的字节数组转换为字符串
+    return new TextDecoder().decode(originalBytes);
+}
+
 }
