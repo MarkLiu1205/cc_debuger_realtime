@@ -144,13 +144,7 @@ async function test_1() {
 }
 
 async function openEvalPanel(event: MouseEvent){
-    const panelId = _funcs.getPluginName()+".eval_panel"
-    
-    if(await Editor.Panel.has(panelId)){
-        Editor.Panel.focus(panelId);
-    }else{
-        await Editor.Panel.open(panelId);
-    }
+    _funcs.openEvalPanel()
 }
 
 async function openDynamicPanel(){

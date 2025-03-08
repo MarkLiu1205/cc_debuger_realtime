@@ -24,7 +24,7 @@ function loadHistory() {
             const data = fs.readFileSync(historyFilePath, 'utf-8');
             history.value = JSON.parse(data).slice(-maxHistoryNum); 
             pageSize.value = history.value.length
-            console.log('加载历史记录:', history.value);
+            // console.log('加载历史记录:', history.value);
             selectHistory(1)
         }
     } catch (err) {
@@ -93,6 +93,13 @@ function onPageSizeChange(size) {
     // console.log('页码数量:', size);
 }
 
+async function setInputStr(str:string){
+    str_input.value = str;
+}
+defineExpose({
+    setInputStr,
+});
+
 </script>
 
 <template>
@@ -100,7 +107,9 @@ function onPageSizeChange(size) {
         <!-- 左侧输入框 -->
         <div class="left-panel">
             <h3>{{ _funcs.getI18nText("text_74") }}</h3>
-            <ui-textarea :value="str_input" @change="onInputChange" :placeholder='_funcs.getI18nText("text_75")'></ui-textarea>
+            <div style="height: 75%;">
+                <ui-textarea :value="str_input" @change="onInputChange" :placeholder='_funcs.getI18nText("text_75")'></ui-textarea>
+            </div>
             <div class="pagination-container" v-if="pageSize > 0">
                 <el-pagination class="pagination" :current-page="pageIndex" :page-count="pageSize" :pager-count="5" @current-change="onPageIndexChange" @size-change="onPageSizeChange"/>
             </div>
@@ -116,7 +125,10 @@ function onPageSizeChange(size) {
         <!-- 右侧结果和历史记录 -->
         <div class="right-panel">
             <h3>执行结果</h3>
-            <ui-label id="id_eval_result" :value="str_result"></ui-label>
+            <div style="height: 75%;">
+                <ui-label style="font-size: 14px;" id="id_eval_result" :value="str_result"></ui-label>
+            </div>
+            
         </div>
     </div>
 </template>
@@ -143,7 +155,8 @@ function onPageSizeChange(size) {
 }
 
 ui-textarea{
-    height: 60%;
+    height: 100%;
+    font-size: 14px;
 }
 
 .pagination-container {
@@ -154,7 +167,7 @@ ui-textarea{
 
 ui-label{
     width: calc(100% - 5px);
-    height: 60%;
+    height: 100%;
     user-select: text;
     border: 1px solid #ddd;
 }

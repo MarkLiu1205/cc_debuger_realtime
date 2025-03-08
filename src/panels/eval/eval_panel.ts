@@ -21,6 +21,11 @@ export default Editor.Panel.define({
             if(this.$.appInst?.checkOnlineInfo!=null){
                 this.$.appInst.checkOnlineInfo(bIsOnline)
             }
+        },
+        setDefaultEvalStr(param:string){
+            if(this.$.appInst?.setInputStr!=null){
+                this.$.appInst.setInputStr(param)
+            }
         }
     },
     ready() {

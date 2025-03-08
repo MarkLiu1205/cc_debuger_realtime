@@ -317,6 +317,15 @@ async function onClick_node (data: NodeTreeItem, node: TreeNode, e: MouseEvent){
 
 const contextMenuRef = ref(null);
 
+const defaultEvalFormat = `
+const scene = cc.director.getScene();
+const _node = scene?.getChildByPath(\"{0}\");
+const _comps = _node.components
+
+return _comps.map(item=>item.__proto__.__classname__)
+
+`
+
 /**右键点击节点项 */
 function onRightClick_node( event: MouseEvent, data: NodeTreeItem, node: TreeNode) {
     ref_nodeTree.value.setCurrentKey(node.key)   
@@ -325,7 +334,14 @@ function onRightClick_node( event: MouseEvent, data: NodeTreeItem, node: TreeNod
     onClick_node(data,node,event)
 
     const menuOptions_node = [
-        { 
+    { 
+            label: "以此为上下文打开eval面板", 
+            action: () => {
+                console.log("----",data.path)
+                const str = _funcs.formatStr(defaultEvalFormat,data.path)
+                _funcs.openEvalPanel(str)
+            }
+        },{ 
             label: _funcs.getI18nText("text_37"), 
             action: () => {
                 _funcs.log_1("Path",data.path)

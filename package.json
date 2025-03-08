@@ -97,6 +97,11 @@
                 "methods": [
                     "onAfterBuild"
                 ]
+            },
+            "setDefaultEvalStr": {
+                "methods": [
+                    "eval_panel.setDefaultEvalStr"
+                ]
             }
         }
     },

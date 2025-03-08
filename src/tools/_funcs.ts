@@ -564,4 +564,18 @@ export function formatDate(fmt:string,stramp?:number): string{
     return fmt;   
 }
 
+export async function openEvalPanel(param=""){
+    const panelId = _funcs.getPluginName()+".eval_panel"
+    
+    if(await Editor.Panel.has(panelId)){
+        Editor.Panel.focus(panelId);
+    }else{
+        await Editor.Panel.open(panelId);
+    }
+
+    if(param){
+        Editor.Message.request(_funcs.getPluginName(),"setDefaultEvalStr",param)
+    }
+}
+
 }
