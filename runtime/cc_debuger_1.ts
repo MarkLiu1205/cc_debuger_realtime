@@ -6,7 +6,19 @@ import * as cc from "cc"
 
 window["__cchyz"] = cc
 
+function isWebSocketSupported() {
+    if (typeof WebSocket === 'function') {
+        return true;
+    }
+    return false;
+}
+
+
 setTimeout(() => {
+    if(!isWebSocketSupported()){
+        console.log("cc_debugger_realtime requires websocket, but websocket is not enabled")
+        return
+    }
     function getGameEnv(){
         let obj = {
             isNative:cc.sys.isNative,
