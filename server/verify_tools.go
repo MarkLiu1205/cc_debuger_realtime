@@ -46,22 +46,24 @@ const (
 )
 
 var (
-	verifyState  = State_none
-	m_authorInfo = map[string]interface{}{
-		"helpDocUrl":  "https://www.cocos.com/products?b=1",
-		"feedbackUrl": "https://www.cocos.com/products?b=2",
-		"qq":          []string{"1451784145", "2273520958"},
-		"qqgroups":    []string{"581563429"},
-		"wechat":      []string{"busky192"},
+	m_verifyState = State_none
+	m_authorInfo  = map[string]interface{}{
+		"githubUrl":     "https://github.com/hyz1992/cc_debuger_realtime_publish.git",
+		"cocosStoreUrl": "https://store.cocos.com/app/search?name=%E8%8A%B1%E5%A4%A9%E7%8B%82%E9%AA%A8",
+		"helpDocUrl":    "https://www.cocos.com/products?b=1",
+		"feedbackUrl":   "https://www.cocos.com/products?b=2",
+		"qq":            []string{"1451784145"},
+		"qqgroups":      []string{"581563429"},
+		"wechat":        []string{"busky192"},
 	}
 )
 
 func isVerified() bool {
-	return verifyState == State_in_trial || verifyState == State_verify_success
+	return m_verifyState == State_in_trial || m_verifyState == State_verify_success
 }
 
 func dealFakeData(msg *Message) {
-	if verifyState == State_verify_success {
+	if m_verifyState == State_verify_success {
 		return
 	}
 	activationCode := ""
@@ -69,21 +71,21 @@ func dealFakeData(msg *Message) {
 
 	verifyInfo := VerifyInfo{
 		EndTime:        0,
-		State:          verifyState,
+		State:          m_verifyState,
 		ActivationCode: activationCode,
 		LatestVersion:  latestVersion,
 		AuthorInfo:     m_authorInfo,
 	}
 
-	if verifyState == State_in_trial { //试用期
+	if m_verifyState == State_in_trial { //试用期
 		endTime := time.Now().Unix() + 3600*25
 		verifyInfo.EndTime = endTime
 
 		msg.VerifyInfo = verifyInfo
 
-	} else if verifyState == State_unverified { //验证失败
+	} else if m_verifyState == State_unverified { //验证失败
 		msg.VerifyInfo = verifyInfo
-	} else if verifyState == State_verify_expired { //激活码过期
+	} else if m_verifyState == State_verify_expired { //激活码过期
 
 		endTime := time.Now().Unix() + 3600*25
 		verifyInfo.EndTime = endTime
@@ -101,19 +103,19 @@ func (s *WebSocketServer) doVerify(conn *websocket.Conn, msg *Message) (interfac
 	} else {
 		return nil, fmt.Errorf("invalid data format")
 	}
-	printInterface(msg.Data)
+	// printInterface(msg.Data)
 
 	if false {
 		ret := msg
 
-		verifyState = State_in_trial
+		m_verifyState = State_in_trial
 
 		endTime := time.Now().Unix() + 3600*25
 		activationCode := "55555"
 		latestVersion := "1.1.0"
 		verifyInfo := map[string]interface{}{
 			"endTime":        endTime,
-			"state":          verifyState,
+			"state":          m_verifyState,
 			"activationCode": activationCode,
 			"latestVersion":  latestVersion,
 			"authorInfo":     m_authorInfo,
@@ -121,7 +123,7 @@ func (s *WebSocketServer) doVerify(conn *websocket.Conn, msg *Message) (interfac
 
 		ret.Data = verifyInfo
 		ret.Type = "response"
-		printInterface(ret.Data)
+		// printInterface(ret.Data)
 		s.writeMessage(conn, ret)
 		return nil, nil
 	}
@@ -130,6 +132,24 @@ func (s *WebSocketServer) doVerify(conn *websocket.Conn, msg *Message) (interfac
 	resp, err := s.sendJSONRequest(verifyEndpoint, msg.Data)
 	if err != nil {
 		return nil, fmt.Errorf("验证请求失败: %w", err)
+	}
+
+	if respMap, ok := resp.(map[string]interface{}); ok {
+		if authorInfo, ok := respMap["authorInfo"].(map[string]interface{}); ok {
+			m_authorInfo = authorInfo
+		}
+		switch state := respMap["state"].(type) {
+		case int:
+			m_verifyState = state
+		case float32:
+			m_verifyState = int(state)
+		case float64:
+			m_verifyState = int(state)
+		default:
+			return nil, fmt.Errorf("unexpected state type: %T", respMap["state"])
+		}
+	} else {
+		return nil, fmt.Errorf("unexpected response format")
 	}
 
 	response := Message{
@@ -196,6 +216,7 @@ func (s *WebSocketServer) sendJSONRequest(endpoint string, data interface{}) (in
 	// 重试逻辑
 	var lastErr error
 	for _, baseURL := range s.baseURLs {
+		// fmt.Println("verify url", baseURL)
 		req, err := http.NewRequest("POST", baseURL+endpoint, bytes.NewBuffer(jsonData))
 		if err != nil {
 			lastErr = fmt.Errorf("请求构造失败 (URL: %s): %w", baseURL, err)

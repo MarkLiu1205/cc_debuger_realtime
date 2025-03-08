@@ -268,6 +268,8 @@ const verifyInfo = reactive<VerifyRespParam>({
     endTime:0,
     latestVersion:"",
     authorInfo:{
+        githubUrl:     "https://github.com/hyz1992/cc_debuger_realtime_publish.git",
+        cocosStoreUrl: "https://store.cocos.com/app/search?name=%E8%8A%B1%E5%A4%A9%E7%8B%82%E9%AA%A8",
         helpDocUrl:"https://www.cocos.com/products?a=1",
         feedbackUrl:"https://www.cocos.com/products?a=2",
         qq:["1451784145"],
@@ -310,7 +312,19 @@ async function onDoVerify(activationCode:string){
         
         await Editor.Profile.setConfig(_funcs.getPluginName(),"activationCode",resp.activationCode)
         for(let k in resp){
-            verifyInfo[k] = resp[k]
+            if(resp[k]!=null){
+                const val = resp[k]
+                if(k=="authorInfo"){
+                    for(let key in val){
+                        if(val[key]!=null){
+                            verifyInfo.authorInfo[key] = val[key]
+                        }
+                    }
+                    
+                }else{
+                    verifyInfo[k] = val
+                }
+            }
         }
         if(resp.state==1){//未激活
 

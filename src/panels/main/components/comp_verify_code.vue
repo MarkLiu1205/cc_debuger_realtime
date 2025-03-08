@@ -49,13 +49,13 @@ function onBtnPayHelp(){
 }
 
 const tipExpired = computed(()=>{
-    const _endTime = verifyInfo.endTime - 8*3600//转为北京时间
+    const _endTime = verifyInfo.endTime
     const dateStr = _funcs.formatDate("yyyy-MM-dd hh:mm",_endTime*1000)
     return _funcs.formatStr(_funcs.getI18nText("text_116"),dateStr)
 })
 
 const tipInTrialing = computed(()=>{
-    const _endTime = verifyInfo.endTime - 8*3600//转为北京时间
+    const _endTime = verifyInfo.endTime
     const dateStr = _funcs.formatDate("yyyy-MM-dd hh:mm",_endTime*1000)
     return _funcs.formatStr(_funcs.getI18nText("text_115"),dateStr)
 })

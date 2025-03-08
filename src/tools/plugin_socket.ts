@@ -612,9 +612,13 @@ class PluginSocket {
             versionName:_funcs.getPluginVersionName(),
         }
         // console.log("------obj",obj)
-        let ret = await this._sendRequest("VerifyActivationCode",obj) as any
-        // console.log("------ret",ret)
-        return ret
+        try{
+            let ret = await this._sendRequest("VerifyActivationCode",obj,"request",30*1000) as any
+            return ret
+        }catch(e){
+            console.error(e)
+            return {statusCode:501,state:1,msg:"验证超时"} as any
+        }
     }
 
     clear(){

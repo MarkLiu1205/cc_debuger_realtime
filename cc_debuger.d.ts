@@ -506,5 +506,7 @@ interface VerifyRespParam{
         qq:Array<string>,
         qqgroups:Array<string>,
         wechat:Array<string>,
+        cocosStoreUrl:string,
+        githubUrl:string,
     }
 }

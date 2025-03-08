@@ -508,10 +508,10 @@ func parseBaseURLs(verifyUrl string) ([]string, error) {
 
 func main() {
 	port := flag.Int("port", 8085, "server port")
-	verifyUrl := flag.String("verifyUrl", "[\"http://106.52.57.191:8080\",\"http://ccdebuger.com:8080\"]", "verifyUrl (单一地址或 JSON 数组)")
+	verifyUrl := flag.String("verifyUrl", "[\"http://ccdebuger.com:8080\",\"http://106.52.57.191:8080\"]", "verifyUrl (单一地址或 JSON 数组)")
 	flag.Parse()
 
-	if true {
+	if false {
 		*port = 8888
 		*verifyUrl = "http://localhost:8080"
 	}

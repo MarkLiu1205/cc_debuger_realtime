@@ -64,8 +64,8 @@ function onToggle(event){
 
 .title{
     display: flex;
-    margin-top: 15px;
-    margin-bottom: 15px;
+    margin-top: 10px;
+    margin-bottom: 5px;
     margin-left: 10px;
     gap: 20px;
 }
@@ -73,6 +73,6 @@ function onToggle(event){
 .item {
     display: flex;
     justify-content: center;
-    margin: 3px;
+    margin: 2px;
 }
 </style>

@@ -37,7 +37,7 @@ class RunTimeSocket {
         this.m_url = url;
         this.m_socket = new WebSocket(url);
         this.m_socket.onopen = () => {
-            console.log('[Runtime] Connected to server');
+            // console.log('[Runtime] Connected to server');
             this._send({ type: 'identify', role: 'runtime' ,name: _getSelfModelName()});
 
         };
@@ -185,7 +185,7 @@ class RunTimeSocket {
                     _data.checkPushAssetInfo()
                     _runtimeSocket.sendPush_checkUpdateSceneTree()
                 }
-                console.log("this.m_isActive",this.m_isActive)
+                // console.log("this.m_isActive",this.m_isActive)
             }
         }
         
