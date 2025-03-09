@@ -25,7 +25,7 @@ function handleClick() {
     if(!curSelectUuid.value){
         return
     }
-    console.log("点击率资源",curSelectUuid.value)
+    // console.log("点击率资源",curSelectUuid.value)
     eventBus.emit("click-asset-in-inspector", curSelectUuid.value);
 }
 

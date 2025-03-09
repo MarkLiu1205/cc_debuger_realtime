@@ -41,7 +41,7 @@ module.exports = {
     text_38: 'View the resources this node depends on',
     text_39: 'Recursively view all dependent resources (including child nodes)',
     text_40: 'No node references this resource',
-    text_41: 'Found {1} nodes',
+    text_41: 'Found {0} nodes',
     text_42: 'Related node references',
     text_43: 'Loading node tree',
     text_44: 'Filter path or uuid',

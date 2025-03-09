@@ -45,7 +45,7 @@ export default Editor.Panel.define({
         app.provide('appRoot', this.$.root);
         app.provide('message', (options) => {
             if (typeof options === 'string') {
-                options = { message: options+"  jjjj99" };
+                options = { message: options};
             }
             options.appendTo = options.appendTo || this.$.root;
             return ElMessage(options);
