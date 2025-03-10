@@ -28,3 +28,8 @@ cache/
 /runtime/cc_debuger_2.js
 /archive
 /runtime/cc_debuger_2_ugly.ts
+app.db
+*.log
+*.exe
+server_mac
+server_linux

@@ -264,8 +264,8 @@ const verifyInfo = reactive<VerifyRespParam>({
     authorInfo:{
         githubUrl:     "https://github.com/hyz1992/cc_debuger_realtime_publish.git",
         cocosStoreUrl: "https://store.cocos.com/app/search?name=%E8%8A%B1%E5%A4%A9%E7%8B%82%E9%AA%A8",
-        helpDocUrl:"https://www.cocos.com/products?a=1",
-        feedbackUrl:"https://www.cocos.com/products?a=2",
+        helpDocUrl:  "https://github.com/hyz1992/cc_debuger.git",
+        feedbackUrl: "https://forum.cocos.org/t/topic/166094",
         qq:["1451784145"],
         qqgroups:["581563429"],
         wechat:["busky192"],

@@ -73,7 +73,21 @@ export const applyBuildParamAfter = async(cfg:SelfBuildParam)=>{
 export const load_ts_to_runtime = async () => {
     try {
         console.log(`[${_funcs.getPluginName()}] Injecting runtime script...`);
-
+        let isAssetDbReady = false
+        for(let i=0;i<120;i++){
+            isAssetDbReady = await Editor.Message.request(
+                "asset-db",
+                "query-ready"
+            );
+            // console.log("isAssetDbReady",isAssetDbReady,i)
+            if(isAssetDbReady){
+                break
+            }
+            await _funcs.waitForSeconds(1)
+        }
+        if(!isAssetDbReady){
+            return
+        }
         {
             const sourceScriptContent = fs.readFileSync(sourceScriptPath_2, 'utf-8');
 
