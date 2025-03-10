@@ -31,5 +31,6 @@ cache/
 app.db
 *.log
 *.exe
+*.exe~
 server_mac
 server_linux

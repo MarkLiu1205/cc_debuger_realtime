@@ -462,6 +462,20 @@ const clearFilterStr = () => {
     str_filter.value = ""
 };
 
+const bAutoFresh = ref(true)
+
+async function handleAutoRefresh() {
+    bAutoFresh.value = !bAutoFresh.value
+    _pluginSocket.setLoopInterval(bAutoFresh.value?1000:0)
+}
+
+async function doRefresh(){
+    let timeBefore = Date.now()
+    await _pluginSocket.updateNodeAndAssetInfo()
+    let timeAfter = Date.now()
+    _funcs.log_1(_funcs.formatStr("主动刷新，用时{0}ms",timeAfter-timeBefore))
+}
+
 </script>
 
 <template>
@@ -493,12 +507,21 @@ const clearFilterStr = () => {
                     ></ui-icon>
                 </div>
                 <div class="searchBar-button-container">
-                    <ui-button type="icon" :tooltip='_funcs.getI18nText("text_45")' @confirm="doExpandAll" v-if="isCollapsed">
-                        <ui-icon value="expand"></ui-icon>
-                    </ui-button>
-                    <ui-button type="icon" :tooltip='_funcs.getI18nText("text_46")' @confirm="doCollapseAll" v-else>
-                        <ui-icon value="collapse"></ui-icon>
-                    </ui-button>
+                    <div style="width: 22px;">
+                        <ui-button type="icon" :tooltip='_funcs.getI18nText("text_45")' @confirm="doExpandAll" v-if="isCollapsed">
+                            <ui-icon value="expand"></ui-icon>
+                        </ui-button>
+                        <ui-button type="icon" :tooltip='_funcs.getI18nText("text_46")' @confirm="doCollapseAll" v-else>
+                            <ui-icon value="collapse"></ui-icon>
+                        </ui-button>
+                    </div>
+                    
+                    <div style="width: 24px;display: flex; justify-content: center;align-items: center;" v-if="!bAutoFresh">
+                        <ui-button type="icon" :tooltip='"点击主动刷新节点树"' @confirm="doRefresh" >
+                            <ui-icon value="refresh"></ui-icon>
+                        </ui-button>
+                    </div>
+                    <ui-checkbox tooltip="是否按时自动刷新节点树" :value="bAutoFresh" @change="handleAutoRefresh">自动刷新</ui-checkbox>
                 </div>
             </div>
             <el-tree-v2 ref="ref_nodeTree"
@@ -545,7 +568,8 @@ const clearFilterStr = () => {
     display: flex;
     justify-content: center; /* 横向居中对齐 */
     align-items: center;
-    width: 30px;
+    gap: 2px;
+    /* width: 30px; */
 }
 
 :deep(.el-tree-node__content) {

@@ -35,7 +35,8 @@ const onMouseDown = (e:MouseEvent) => {
     const startHeight = height_nodeTree.value
 
     const onMouseMove = (moveEvent) => {
-        const parentHeight = ref_parentContainer.value.clientHeight
+        let parentHeight = ref_parentContainer.value.clientHeight
+        parentHeight -= 2
         const newHeight = startHeight + (moveEvent.clientY - startY)
         // 限制最小和最大宽度
         height_nodeTree.value = _funcs.clamp(parentHeight*0.2,parentHeight*0.8,newHeight)
@@ -53,7 +54,8 @@ const onMouseDown = (e:MouseEvent) => {
 
 const updateTreeHeight = () => {
     if (ref_parentContainer.value) {
-        const parentHeight = ref_parentContainer.value.clientHeight
+        let parentHeight = ref_parentContainer.value.clientHeight
+        parentHeight -= 2
         height_nodeTree.value = parentHeight * 0.5
         height_resTree.value = parentHeight * 0.5
     }

@@ -180,6 +180,23 @@ class RunTimeSocket {
             } else if (msg.action === 'getRecursiveDependsOfNode') {
                 const uuid = msg.data;
                 data = _data.getRecursiveDependsOfNode(uuid)
+            } else if (msg.action === 'updateNodeAndAssetInfo') {
+                data = this.updateNodeAndAssetInfo(true)
+            } else if (msg.action === 'setLoopInterval') {
+                data = this._loopFrameTime
+                let time = msg.data;
+                if(typeof time!="number"){
+                    return
+                }
+                if(time==0){
+                    this._bAutoFreshNodeTree = false
+                    return
+                }
+                this._bAutoFreshNodeTree = true
+                this._loopInterval = time
+                
+            } else if (msg.action === 'getLoopFrameTime') {
+                data = this._loopFrameTime
             }
     
             responseData.data = data
@@ -218,8 +235,19 @@ class RunTimeSocket {
         // console.error('[Runtime] WebSocket error:', error);
     }
 
+    private _bAutoFreshNodeTree = true
+    /**主动推送节点资源信息的时间间隔,一定要大于等于1000，不然就不主动推送 */
+    private _loopInterval = 1000;
+    /**主动推送节点资源信息的计时器 */
+    private _loopTimeAcc = 0;
+    /**进行一次推送的事件，用于统计 */
+    private _loopFrameTime = 0;
+    /**上一次进行发送节点资源信息的时间，避免发送过于频繁 */
+    private _lastUpdateTime = 0
+
+    //刷新FPS的计时器
     private _profileTimeAcc = 0
-    loop(dt?:number){
+    loopWithInterval(dt?:number){
         if(!this._checkIsConnect()){
             return
         }
@@ -228,15 +256,38 @@ class RunTimeSocket {
         }
 
         if(dt!=null){
-            this._profileTimeAcc+=dt;
-            if(this._profileTimeAcc>=1000){
+            this._profileTimeAcc += dt;
+            if(this._profileTimeAcc >= 1000){
                 this._profileTimeAcc = 0;
                 this.sendPush_profile()
             }
-        }
 
-        this.sendPush_checkUpdateSceneTree()
+            if(this._bAutoFreshNodeTree){
+                this._loopTimeAcc += dt;
+                if(this._loopInterval>999 && this._loopTimeAcc >= this._loopInterval){
+                    this._loopTimeAcc = 0
+                    this.updateNodeAndAssetInfo()
+                }
+            }
+        }
+    }
+
+    private updateNodeAndAssetInfo(bForce=false){
+        let now = Date.now()
+        if(now-this._lastUpdateTime<this._loopInterval){
+            return
+        }
+        this.sendPush_checkUpdateSceneTree(bForce)
         _data.checkPushAssetInfo()
+        this._lastUpdateTime = Date.now()
+        this._loopFrameTime = this._lastUpdateTime - now;
+        
+        if(this._loopFrameTime>0){
+            let g = 0;
+        }
+        this.sendPush_loopFrameTime(this._loopFrameTime)
+        
+        return this._loopFrameTime
     }
 
     public isReadyForPush(){
@@ -258,11 +309,15 @@ class RunTimeSocket {
         return true
     }
 
-    sendPush_checkUpdateSceneTree(){
+    public sendPush_loopFrameTime(time){
+        return this._sendPush('loopFrameTime', time);
+    }
+
+    sendPush_checkUpdateSceneTree(bForce=false){
         if(!this.isReadyForPush()){
             return false
         }
-        if(_data.searchNodeTree()){
+        if(_data.searchNodeTree()||bForce){
             return this._sendPush( 'updateSceneTree', _data.m_sceneTree );
         }
     }
@@ -370,14 +425,14 @@ class _RuntimeData{
                 }
                 if(map.active!=null){
                     _node.active = map.active
-                    _runtimeSocket?.loop()
+                    _runtimeSocket?.loopWithInterval()
                 }
                 if(map.layer!=null){
                     _node.layer = map.layer
                 }
                 if(map.name!=null){
                     _node.name = map.name
-                    _runtimeSocket?.loop()
+                    _runtimeSocket?.loopWithInterval()
                 }
             }
         }catch(e){
@@ -1842,9 +1897,9 @@ function _initOnce() {
         return ret
     }
 
-    const duration = 1000
+    const duration = 500
     setInterval(() => {
-        _runtimeSocket.loop(duration)
+        _runtimeSocket.loopWithInterval(duration)
     }, duration);
 
     

@@ -270,6 +270,10 @@ class PluginSocket {
         this.listenForPushData<any>(PushAction.profileInfoUpdate,callback,null)
     }
 
+    listenLoopFrameTime(callback:(data:any)=>void){
+        this.listenForPushData<any>(PushAction.loopFrameTime,callback,null)
+    }
+
     private _onWaitRuntimeOnlineResolves:Array<(data:any)=>void> = []
     /**等待runtime上线连接上plugin */
     async waitForRuntimeIsInline(){
@@ -624,6 +628,18 @@ class PluginSocket {
         }
     }
 
+    /**主动刷新节点树信息 */
+    async updateNodeAndAssetInfo(){
+        await this.waitForRuntimeIsInline()
+        return this._sendRequest("updateNodeAndAssetInfo")
+    }
+
+    /**设置自动刷新节点树的时间间隔 */
+    async setLoopInterval(time:number){
+        await this.waitForRuntimeIsInline()
+        return this._sendRequest("setLoopInterval",time)
+    }
+
     clear(){
         this._gameEnvObj = null
         this._nodeLayers = null
@@ -650,6 +666,8 @@ enum PushAction{
     onAssetRefCountChanged = "onAssetRefCountChanged",
     /**刷新drawcall等信息 */
     profileInfoUpdate = "profileInfoUpdate",
+    /**按照定时器主动刷新节点树和资源树的操作的时间，相当于逻辑帧率一样的意义 */
+    loopFrameTime = "loopFrameTime",
 
 }
 

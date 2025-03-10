@@ -13,6 +13,12 @@ _pluginSocket.listenProfileInfo((arr)=>{
     items.value = arr
 })
 
+_pluginSocket.listenLoopFrameTime((frameTime:number)=>{
+    // if(frameTime>0){
+        // console.log("frameTime",frameTime)
+    // }
+})
+
 onMounted(()=>{
     _pluginSocket.requestShowFPS().then((bool:boolean)=>{
         bShow.value = bool
