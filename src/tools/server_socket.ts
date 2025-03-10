@@ -3,19 +3,33 @@ const path = require("path")
 
 import { eventBus } from './_enentBus';
 import { _funcs } from './_funcs';
+const fs = require('fs-extra');
 
 // WebSocket Server class
 class ServerSocket {
     private process: any = null;
 
     private _isStarted = false;
-    start(port: string) {
-        const isWindows = process.platform === 'win32';
-        const executablePath = path.join(
+    async start(port: string) {
+        const isMac = process.platform === 'darwin';
+        const executablePath = path.resolve( // 使用绝对路径避免路径遍历
             _funcs.getCurPluginPath(),
-            isWindows ? 'server/server.exe' : 'server/server'
+            isMac ? 'server/server' : 'server/server.exe'
         );
-        this.process = spawn(executablePath, ['-port', port]);
+
+        // 验证文件存在性
+        try {
+            await fs.access(executablePath); // 使用 fs-extra 的 access 方法
+        } catch (err) {
+            throw new Error(`文件不存在: ${executablePath}`);
+        }
+
+        // 确保权限已设置
+        this.ensureExecutable(executablePath);
+        
+        this.process = spawn(executablePath, ['-port', port],{
+            shell: false, // 避免 Shell 注入风险
+        });
 
         // const serverScript = path.join(_funcs.getCurPluginPath(), 'server/server.js');
         // console.log('serverScript', serverScript);
@@ -43,6 +57,18 @@ class ServerSocket {
         });
     
         console.log('[Server] WebSocket server started.');
+    }
+
+    private async ensureExecutable(executablePath: string) {
+        if (process.platform === 'darwin') {
+            try {
+                // 使用 fs-extra 的 chmod 方法设置权限
+                await fs.chmod(executablePath, 0o755); // 0o755 表示所有者 rwx，其他用户 rx
+                console.log('权限已添加');
+            } catch (err) {
+                throw new Error(`无法修改权限: ${err.message}`);
+            }
+        }
     }
 
     stop() {
