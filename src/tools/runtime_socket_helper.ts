@@ -93,6 +93,7 @@ export const load_ts_to_runtime = async () => {
 
             // 写入文件
             fs.writeFileSync(runtimeScriptPath_2, sourceScriptContent, 'utf-8');
+            console.error("aaaaaaaaa写入",runtimeScriptPath_2)
 
             // 刷新资源
             console.log(`[${_funcs.getPluginName()}] Runtime script written to ${runtimeScriptPath_2}`);

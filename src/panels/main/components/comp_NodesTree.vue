@@ -65,6 +65,9 @@ async function onSel_node(item:NodeTreeItem){
     }
     
     let newVal = await _pluginSocket.getNodeInfo(item.uuid)
+    if(newVal==null){
+        return
+    }
     // console.log(newVal)
     _dataCtx.parseCompAttrInfos(newVal)
     _curSelNodeInfo.value = newVal

@@ -42,8 +42,12 @@ class RunTimeSocket {
 
         };
         this.m_socket.onmessage = (event) => {
-            const msg = JSON.parse(event.data);
-            this._onMessage(msg);
+            try{
+                const msg = JSON.parse(event.data);
+                this._onMessage(msg);
+            }catch(e){
+                console.log("[cc_debuger_realtime] error",e)
+            }
         };
         this.m_socket.onclose = this._onClose.bind(this)
         this.m_socket.onerror = this._onError.bind(this)
@@ -57,22 +61,26 @@ class RunTimeSocket {
     }
 
     private _send(data: any) {
-        const step = 1024 * 10;
-        const jsonStr = JSON.stringify(data);
-        if (jsonStr.length <= step) {
-            this.m_socket?.send(jsonStr);
-        } else {
-            let idx = 0;
-            const total = Math.ceil(jsonStr.length / step);
-            const uniqueId = _getAccId()
-            while (idx < total) {
-                const subStr = jsonStr.substring(idx * step, Math.min((idx + 1) * step, jsonStr.length));
-                const subObj:SplitMsg = { 
-                    isSplit: true, idx: idx + 1, total: total, data: subStr , uniqueId: uniqueId,
+        try{
+            const step = 1024 * 10;
+            const jsonStr = JSON.stringify(data);
+            if (jsonStr.length <= step) {
+                this.m_socket?.send(jsonStr);
+            } else {
+                let idx = 0;
+                const total = Math.ceil(jsonStr.length / step);
+                const uniqueId = _getAccId()
+                while (idx < total) {
+                    const subStr = jsonStr.substring(idx * step, Math.min((idx + 1) * step, jsonStr.length));
+                    const subObj:SplitMsg = { 
+                        isSplit: true, idx: idx + 1, total: total, data: subStr , uniqueId: uniqueId,
+                    }
+                    this.m_socket?.send(JSON.stringify(subObj));
+                    idx += 1;
                 }
-                this.m_socket?.send(JSON.stringify(subObj));
-                idx += 1;
             }
+        }catch(e){
+            console.log("[cc_debuger_realtime] error",e)
         }
     }
     private _spiltMsg:Record<number,Array<SplitMsg>> = {}

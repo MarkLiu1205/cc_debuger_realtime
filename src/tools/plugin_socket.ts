@@ -352,6 +352,9 @@ class PluginSocket {
     async getNodeInfo(uuid:string):Promise<InspectorInfo_Node> {
         await this.waitForRuntimeIsInline() //要先等plugin和runtime都连上服务器
         let info = await this._sendRequest('getNodeInfo', { uuid });
+        if(info==null){
+            return null
+        }
         info = _funcs.roundNumbersToPrecision(info, 2)
         return info as any as InspectorInfo_Node
     }
