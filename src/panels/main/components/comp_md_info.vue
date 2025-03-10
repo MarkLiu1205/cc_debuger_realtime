@@ -19,14 +19,32 @@ const verifyTip = computed(()=>{
         return _funcs.getI18nText("text_118")
     }
 })
-
+//比较版本号
 const isLatestVersion = computed(()=>{
-    return verifyInfo.latestVersion==_funcs.getPluginVersionName()
+    const nowVer = _funcs.getPluginVersionName();
+    verifyInfo.latestVersion;
+    const vArr_self = nowVer.split(".")
+    const vArr_remote = verifyInfo.latestVersion.split(".")
+    for(let i=0;i<vArr_self.length;i++){
+        if(vArr_remote[i]==null){
+            return true
+        }
+        let subV_self = parseInt(vArr_self[i])
+        let subV_remote = parseInt(vArr_remote[i])
+        if(isNaN(subV_remote)){
+            return true
+        }
+        if(subV_self<subV_remote){
+            return false
+        }
+    }
+    return true
 })
 
 const vertionTip = computed(()=>{
     if(isLatestVersion){
-        return _funcs.formatStr(_funcs.getI18nText("text_119"),verifyInfo.latestVersion)
+        const nowVer = _funcs.getPluginVersionName();
+        return _funcs.formatStr(_funcs.getI18nText("text_119"),nowVer)
     }else{
         return _funcs.formatStr(_funcs.getI18nText("text_120"),verifyInfo.latestVersion)
     }
