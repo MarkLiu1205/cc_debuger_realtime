@@ -608,17 +608,25 @@ class PluginSocket {
      * @returns 
      */
     async doVerify(activationCode:string):Promise<VerifyRespParam>{
+        const size = _funcs.getDesignResolutionSize()
         await this.waitSocketOpen()
         let userInfo:Editor.User.UserData = await Editor.User.getData()
+        const engineVer =  await Editor.App.version
 
         let obj = {
             activationCode,
-            cocos_uid:userInfo.cocos_uid,
+            cocos_uid:userInfo.cocos_uid+"",
             email:userInfo.email,
             nickname:userInfo.nickname,
             versionName:_funcs.getPluginVersionName(),
+            platform:process.platform,
+            engineVer:engineVer,
+        } as VerifyReqParam
+        if(size?.width&&size?.height){
+            obj.designSize = `${size.width}x${size.height}`
         }
-        // console.log("------obj",obj)
+        // console.log("------size",size)
+        console.log("------obj",obj)
         try{
             let ret = await this._sendRequest("VerifyActivationCode",obj,"request",30*1000) as any
             return ret

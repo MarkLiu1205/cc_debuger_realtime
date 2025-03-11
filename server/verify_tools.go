@@ -201,8 +201,11 @@ func (s *WebSocketServer) sendJSONRequest(endpoint string, data interface{}) (in
 		switch v := cocosUID.(type) {
 		case string:
 			// 已经是字符串，无需转换
-		case int, int32, int64, float32, float64:
-			requestData["cocos_uid"] = fmt.Sprintf("%v", v)
+		case int, int32, int64:
+			requestData["cocos_uid"] = fmt.Sprintf("%d", v)
+		case float32, float64:
+			uid := v.(float64)
+			requestData["cocos_uid"] = fmt.Sprintf("%d", int(uid))
 		default:
 			return nil, fmt.Errorf("cocos_uid 类型不支持: %T", v)
 		}

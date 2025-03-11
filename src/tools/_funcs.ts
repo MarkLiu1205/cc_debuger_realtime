@@ -623,4 +623,37 @@ export function str_decrypt(base64Input:string, key:string) {
     return new TextDecoder().decode(originalBytes);
 }
 
+    let _designSize = null
+    export async function getStaticsInfo(){
+        const pPath = Editor.Project.path
+        console.log("pPath",pPath)
+        console.log("Editor.Project.tmpDir",Editor.Project.tmpDir)
+        const projPath = path.join(Editor.Project.path,"settings/v2/packages/project.json") 
+
+        const projJson = fs.readJSONSync(projPath)
+        console.log("projJson",projJson)
+         
+        if(this._designSize==null){
+            const cmd = `const {width,height} = cc.view.getDesignResolutionSize();return {width,height}`
+            const size = await this.evalJsInRuntime(cmd)
+            console.log("执行",size)
+        }
+    }
+
+    export function getDesignResolutionSize():{width:number,height:number}{
+        const projPath = path.join(Editor.Project.path,"settings/v2/packages/project.json") 
+        if(fs.existsSync(projPath)){
+            try{
+                const projJson = fs.readJSONSync(projPath)
+                if(projJson?.general?.designResolution){
+                    console.log("projJson?.general?.designResolution",JSON.stringify(projJson?.general?.designResolution))
+                    return projJson?.general?.designResolution
+                }
+            }catch(e){
+    
+            }
+        }
+        return null
+    }
+
 }

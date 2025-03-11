@@ -472,6 +472,12 @@ interface VerifyReqParam{
     nickname:string,
     /**软件版本名称 如1.0.0 */
     versionName:string,
+    /**插件客户端的平台，win32还是darwin */
+    platform:string,
+    /**插件客户端的引擎版本 */
+    engineVer:string,
+    /**用户的设计分辨率 */
+    designSize:string,
 }
 
 enum VerifyState {
