@@ -1080,7 +1080,7 @@ class _RuntimeData{
                     height:val.height,
                 }
             }else if(obj.ctor=="cc.ClickEvent"){
-                val = component[k].map((item:any/**import("cc").EventHandler */)=>JSON.stringify({node:item?.target?.uuid,comp:item?._componentId,handler:item?.handler}))
+                val = val?.map((item:any/**import("cc").EventHandler */)=>JSON.stringify({node:item?.target?.uuid,comp:item?._componentId,handler:item?.handler}))
             }else{
                 if(obj.ctor=="cc.ModelBakeSettings"){
                     let g = 0;
