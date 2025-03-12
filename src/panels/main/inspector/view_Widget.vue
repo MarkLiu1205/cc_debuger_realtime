@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { reactive, ref } from 'vue';
+import { onMounted, reactive, ref } from 'vue';
 
 enum AlignMode {
     ONCE = 0,
@@ -127,6 +127,47 @@ function onSelectChange(event) {
     }
     
 }
+
+onMounted(()=>{
+    // console.log("compModel",compModel)
+    if(compModel.value.isAlignHorizontalCenter){
+        _tabVal_H.value = 2
+    }else{
+        if(compModel.value.isAlignLeft){
+            if(compModel.value.isAlignRight){
+                _tabVal_H.value = 4
+            }else{
+                _tabVal_H.value = 1
+            }
+        }else{
+            if(compModel.value.isAlignRight){
+                _tabVal_H.value = 3
+            }else{
+                _tabVal_H.value = 0
+            }
+        }
+    }
+
+    if(compModel.value.isAlignVerticalCenter){
+        _tabVal_V.value = 2
+    }else{
+        if(compModel.value.isAlignTop){
+            if(compModel.value.isAlignBottom){
+                _tabVal_V.value = 4
+            }else{
+                _tabVal_V.value = 1
+            }
+        }else{
+            if(compModel.value.isAlignBottom){
+                _tabVal_V.value = 3
+            }else{
+                _tabVal_V.value = 0
+            }
+        }
+    }
+    
+})
+
 </script>
 
 <template>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { reactive } from 'vue';
 import comp_selecter_asset from '../components/comp_selecter_asset.vue';
+import { _pluginSocket } from '../../../tools/plugin_socket';
 
 enum AnimationCacheMode {
     REALTIME = 0,
@@ -75,6 +76,10 @@ function onSelect(event) {
     // console.log("eleId",eleId,"sel",sel)
 }
 
+function playCurAni(){
+    _pluginSocket.callFuncOfComp(compModel.value.uuid,"setAnimation",[0,compModel.value.animation,compModel.value.loop])
+}
+
 </script>
 
 <template>
@@ -85,7 +90,7 @@ function onSelect(event) {
         </div>
         <div class="property">
             <label>Skeleton Data:</label>
-            <comp_selecter_asset assetType="cc.sp.SkeletonData"  v-model="compModel.skeletonData"/>
+            <comp_selecter_asset assetType="sp.SkeletonData"  v-model="compModel.skeletonData"/>
         </div>
         <div class="property">
             <label>Default Skin:</label>
@@ -97,11 +102,12 @@ function onSelect(event) {
         </div>
         <div class="property">
             <label>Animation:</label>
-            <ui-select id="id_animation" v-model="compModel.animation" @change="onSelect">
+            <ui-select :class="{anim:true}" id="id_animation" v-model="compModel.animation" @change="onSelect">
                 <option v-for="(mode, index) in compModel.animationArr" :key="mode" :value="mode">
                     {{ mode }}
                 </option>
             </ui-select>
+            <ui-button style="margin-left: 10px;padding-top: 5px;padding-bottom: 5px;"  @click="playCurAni">play</ui-button>
         </div>
         <div class="property">
             <label>Animation Cache Mode:</label>
@@ -153,6 +159,9 @@ function onSelect(event) {
 
 label.long {
     width: 120px;
+}
+ui-select.anim {
+    width: calc((100% - 105px - 60px));
 }
 
 </style>

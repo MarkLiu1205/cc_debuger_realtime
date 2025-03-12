@@ -197,6 +197,9 @@ class RunTimeSocket {
                 
             } else if (msg.action === 'getLoopFrameTime') {
                 data = this._loopFrameTime
+            } else if (msg.action === 'callFuncOfComp') {
+                const {uuid,funcName,args} = msg.data
+                data = _data.callFuncOfComp(uuid,funcName,args)
             }
     
             responseData.data = data
@@ -460,6 +463,12 @@ class _RuntimeData{
     }
 
     async applyCompChange(_comp:any/**import("cc").Component */,map:Record<string,any>){
+        if(_comp instanceof _cc_().Animation){
+            if(map["animation"]){
+                _comp.play(map["animation"])
+                return
+            }
+        }
         for(let key in map){
             const oldV = _comp[key]
             let newV = map[key]
@@ -1112,10 +1121,24 @@ class _RuntimeData{
                 height:comp.height,
             }
         }else if(clsName === "sp.Skeleton"){
-            data["animationArr"] = component["_skeleton"].data.animations.map((item)=>item.name)
-            data["skinArr"] = component["_skeleton"].data.skins.map((item)=>item.name)
+            const _skeleton = component["_skeleton"]
+            data["animationArr"] = _skeleton.data.animations.map((item)=>item.name)
+            data["skinArr"] = _skeleton.data.skins.map((item)=>item.name)
             data["_defaultSkinIndex"] = component["_defaultSkinIndex"]
             data["animation"] = component["animation"]
+        }else if(clsName === "cc.Animation"){
+            data["animationArr"] = component["_clips"].map((item)=>item.name)
+            data["animation"] = component["_defaultClip"].name
+        }else if(clsName === "dragonBones.ArmatureDisplay"){
+            const _armature = component["_armature"]
+            _armature.hasEventListener(null)
+            data["animationArr"] = [..._armature._armatureData.animationNames]
+            data["animationArr"].unshift("<None>")
+            data["animation"] = _armature._armatureData.defaultAnimation.name
+            data["_animationIndex"] = data["animationArr"].indexOf(data["animation"])
+
+            // data["skinArr"] = _armature._armatureData.skins.map((item)=>item.name)
+            // data["_defaultSkinIndex"] = _armature._armatureData.defaultSkin.name
         }
 
         const ret = {
@@ -1132,6 +1155,18 @@ class _RuntimeData{
         }
         return ret 
 
+    }
+
+    callFuncOfComp(uuid,funcName,args){
+        const comp = this.m_compUuidMap[uuid]
+        if(comp==null){
+            return null
+        }
+        const func = comp[funcName]
+        if(func==null){
+            return null
+        }
+        func.apply(comp,args)
     }
 }
 

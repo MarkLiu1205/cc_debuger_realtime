@@ -626,7 +626,7 @@ class PluginSocket {
             obj.designSize = `${size.width}x${size.height}`
         }
         // console.log("------size",size)
-        console.log("------obj",obj)
+        // console.log("------obj",obj)
         try{
             let ret = await this._sendRequest("VerifyActivationCode",obj,"request",30*1000) as any
             return ret
@@ -646,6 +646,12 @@ class PluginSocket {
     async setLoopInterval(time:number){
         await this.waitForRuntimeIsInline()
         return this._sendRequest("setLoopInterval",time)
+    }
+
+    /**调用组件执行函数 */
+    async callFuncOfComp(uuid:string,funcName:string,args:any[] = []){
+        await this.waitForRuntimeIsInline()
+        return this._sendRequest("callFuncOfComp",{uuid,funcName,args})
     }
 
     clear(){

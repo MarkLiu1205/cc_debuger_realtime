@@ -20,7 +20,9 @@ import view_ScrollView from '../inspector/view_Scrollview.vue';
 import view_Graphics from '../inspector/view_Graphics.vue';
 import view_Widget from '../inspector/view_Widget.vue';
 import view_Canvas from '../inspector/view_Canvas.vue';
-import View_ElseComp from '../inspector/view_ElseComp.vue';
+import view_Animation from '../inspector/view_Animation.vue';
+import view_DargonBones from '../inspector/view_DargonBones.vue';
+import view_ElseComp from '../inspector/view_ElseComp.vue';
 import { _dataCtx } from '../../../tools/_dataCtx';
 
 // const compInfo = defineModel<CompInfo_Base>()
@@ -64,7 +66,9 @@ const compAttrs = computed(()=>{
     <view_Widget v-else-if="compInfo!=null && compInfo.typeStr=='cc.Widget'" v-model="(props.compInfo as any)" />
     <view_Skeleton v-else-if="compInfo!=null && compInfo.typeStr=='sp.Skeleton'" v-model="(props.compInfo as any)" />
     <view_Canvas v-else-if="compInfo!=null && compInfo.typeStr=='cc.Canvas'" v-model="(props.compInfo as any)" />
-    <View_ElseComp v-else="compInfo!=null" v-model="(props.compInfo as any)" :compAttrs="compAttrs" />
+    <view_Animation v-else-if="compInfo!=null && compInfo.typeStr=='cc.Animation'" v-model="(props.compInfo as any)" />
+    <view_DargonBones v-else-if="compInfo!=null && compInfo.typeStr=='dragonBones.ArmatureDisplay'" v-model="(props.compInfo as any)" />
+    <view_ElseComp v-else="compInfo!=null" v-model="(props.compInfo as any)" :compAttrs="compAttrs" />
 </template>
 
 <style scoped>
