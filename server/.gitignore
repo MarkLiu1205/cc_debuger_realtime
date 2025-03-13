@@ -1,3 +1,5 @@
 server
-server.exe
-server-linux
+*.exe
+*.wasm
+*.exe~
+server_linux
