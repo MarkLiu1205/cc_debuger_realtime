@@ -3,3 +3,4 @@ server
 *.wasm
 *.exe~
 server_linux
+server.js

@@ -646,7 +646,7 @@ export function str_decrypt(base64Input:string, key:string) {
             try{
                 const projJson = fs.readJSONSync(projPath)
                 if(projJson?.general?.designResolution){
-                    console.log("projJson?.general?.designResolution",JSON.stringify(projJson?.general?.designResolution))
+                    // console.log("projJson?.general?.designResolution",JSON.stringify(projJson?.general?.designResolution))
                     return projJson?.general?.designResolution
                 }
             }catch(e){

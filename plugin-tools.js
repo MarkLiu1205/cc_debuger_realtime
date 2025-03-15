@@ -64,11 +64,10 @@ function move_cc_debuger_2_ugly() {
 }
 
 function deal_server_js(){
-    // 混淆 `server_original.js` 文件
-    const serverFilePath = 'server/server_original.js';
+    // 混淆 `js_server_with_wasm.js` 文件
+    const serverFilePath = 'server/js_server_with_wasm.js';
     const obfuscatedServerFilePath = 'server/server.js';
 
-    // 检查并混淆 `server_original.js` 文件
     if (fs.existsSync(serverFilePath)) {
         const serverCode = fs.readFileSync(serverFilePath, 'utf-8');
         const obfuscatedServerCode = javascriptObfuscator.obfuscate(serverCode, {
@@ -84,12 +83,6 @@ function deal_server_js(){
         fs.writeFileSync(obfuscatedServerFilePath, obfuscatedServerCode, 'utf-8');
         console.log(`Obfuscated: server_original.js -> server.js\n`);
     }
-}
-
-function deal_server_go(){
-    const serverFloder = "server"
-    const serverGoFile = "server.go verify_tools.go"
-    execSync(`cd ${serverFloder} && go build ${serverGoFile}`);
 }
 
 function deal_dist(){
@@ -146,9 +139,9 @@ function packPluginToZip() {
         "builder/",
         "runtime/cc_debuger_1.ts",
         "runtime/cc_debuger_2_ugly.ts",
-        "server/server.exe",
-        "server/server",
-        // "server/server-linux",
+        "server/server.wasm",
+        "server/server.js",
+        "server/wasm/",
         "package.json"
     ];
 
@@ -248,7 +241,7 @@ function cleanNpmCacheSync() {
 function buildServer() {
     const buildBatDir = "server"
     try {
-        execSync(`cd ${buildBatDir} && go build`, { stdio: 'inherit', shell: true });
+        execSync(`cd ${buildBatDir} && build.bat`, { stdio: 'inherit', shell: true });
     } catch (err) {
         console.error(`Failed to execute build script: ${err.message}`);
         process.exit(1);
@@ -268,13 +261,12 @@ if(firstArg=="isClear"){
     deal_cc_debuger_2()
 
     await waitForTime(1)
-    deal_server_go()
-
-    await waitForTime(1)
     deal_dist()
 
     await waitForTime(1)
     packPluginToZip()
+
+    deal_server_js()
 
     console.log('Obfuscation complete!');
     move_cc_debuger_2_ugly()

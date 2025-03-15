@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -17,18 +18,18 @@ import (
 type WebSocketServer struct {
 	port          int
 	upgrader      websocket.Upgrader
-	pluginConn    *websocket.Conn                     // 插件端连接
-	activeRuntime *websocket.Conn                     // 当前活跃运行时连接
-	runtimes      []*RuntimeInfo                      // 所有运行时连接列表
-	connInfo      map[*websocket.Conn]*ConnectionInfo // 连接信息映射（包含写锁）
-	mutex         sync.RWMutex                        // 并发控制锁（改为读写锁）
+	pluginConn    int                     // 插件端连接
+	activeRuntime int                     // 当前活跃运行时连接
+	runtimes      []*RuntimeInfo          // 所有运行时连接列表
+	connInfo      map[int]*ConnectionInfo // 连接信息映射（包含写锁）
+	mutex         sync.RWMutex            // 并发控制锁（改为读写锁）
 	baseURLs      []string
 	httpClient    *http.Client
 }
 
 // 存储运行时连接信息
 type RuntimeInfo struct {
-	conn *websocket.Conn
+	wsId int
 	name string
 }
 
@@ -62,6 +63,14 @@ type Message struct {
 	VerifyInfo VerifyInfo  `json:"verifyInfo,omitempty"`
 }
 
+func fmt_println(a ...any) {
+	if isJsWasm() {
+		console_log(a...)
+	} else {
+		fmt.Println(a...)
+	}
+}
+
 // 构造服务器实例
 func NewWebSocketServer(port int, baseURLs []string) *WebSocketServer {
 	return &WebSocketServer{
@@ -69,7 +78,7 @@ func NewWebSocketServer(port int, baseURLs []string) *WebSocketServer {
 		upgrader: websocket.Upgrader{
 			CheckOrigin: func(r *http.Request) bool { return true },
 		},
-		connInfo: make(map[*websocket.Conn]*ConnectionInfo),
+		connInfo: make(map[int]*ConnectionInfo),
 		baseURLs: baseURLs,
 		httpClient: &http.Client{
 			Timeout: 10 * time.Second,
@@ -80,35 +89,81 @@ func NewWebSocketServer(port int, baseURLs []string) *WebSocketServer {
 // 启动WebSocket服务器
 func (s *WebSocketServer) Start() {
 	http.HandleFunc("/", s.handleConnection)
-	fmt.Printf("\nWebSocket server running on ws://localhost:%d", s.port)
+	fmt_println("WebSocket server running on ws://localhost:", s.port)
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", s.port), nil))
+}
+
+var (
+	_wsAcc    int
+	_wsMap1   map[*websocket.Conn]int = make(map[*websocket.Conn]int)
+	_wsMutex1 sync.Mutex
+
+	_wsMap2   map[int]*websocket.Conn = make(map[int]*websocket.Conn)
+	_wsMutex2 sync.Mutex
+)
+
+func GetIdOfSocket(conn *websocket.Conn) int {
+	_wsMutex1.Lock()
+	defer _wsMutex1.Unlock()
+
+	if id, exists := _wsMap1[conn]; exists {
+		return id
+	}
+
+	_wsAcc++
+	_wsMap1[conn] = _wsAcc
+	_wsMap2[_wsAcc] = conn
+	return _wsAcc
+}
+
+func GetSocketById(wsId int) *websocket.Conn {
+	_wsMutex2.Lock()
+	defer _wsMutex2.Unlock()
+	if conn, exists := _wsMap2[wsId]; exists {
+		return conn
+	}
+	return nil
+}
+
+func GetConnInfoOfWsId(wsId int) (*ConnectionInfo, bool) {
+	s := _server
+	s.mutex.RLock()
+	info, exists := s.connInfo[wsId]
+	s.mutex.RUnlock()
+	return info, exists
 }
 
 // 处理新连接
 func (s *WebSocketServer) handleConnection(w http.ResponseWriter, r *http.Request) {
 	conn, err := s.upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		fmt.Println("Upgrade error:", err)
+		fmt_println("Upgrade error:", err)
 		return
 	}
 
+	wsId := GetIdOfSocket(conn)
+
+	s.OnRealConnection(wsId, r.RemoteAddr, r.URL.Query().Get("port"), "tcp")
+
+	go s.handleMessages(conn)
+}
+
+func (s *WebSocketServer) OnRealConnection(wsId int, ip string, port string, family string) {
+
 	s.mutex.Lock()
-	s.connInfo[conn] = &ConnectionInfo{
-		IP:     r.RemoteAddr,
-		Port:   r.URL.Query().Get("port"),
+	s.connInfo[wsId] = &ConnectionInfo{
+		IP:     ip,
+		Port:   port,
 		Family: "tcp",
 	}
 	s.mutex.Unlock()
 
-	fmt.Printf("\nNew client connected from: %s", r.RemoteAddr)
-	go s.handleMessages(conn)
+	fmt_println("New client connected from: ", ip)
 }
 
 // 安全写入消息（带连接级锁）
-func (s *WebSocketServer) writeMessage(conn *websocket.Conn, msg interface{}) error {
-	s.mutex.RLock()
-	info, exists := s.connInfo[conn]
-	s.mutex.RUnlock()
+func (s *WebSocketServer) writeMessage(wsId int, msg interface{}) error {
+	info, exists := GetConnInfoOfWsId(wsId)
 
 	if !exists {
 		return fmt.Errorf("connection not found")
@@ -126,26 +181,40 @@ func (s *WebSocketServer) writeMessage(conn *websocket.Conn, msg interface{}) er
 	// m, ok := msg.(Message)
 	// if ok {
 	// 	if m.IsSplit {
-	// 		fmt.Println(tipStr, m.Total, m.Idx)
+	// 		fmt_println(tipStr, m.Total, m.Idx)
 	// 	} else {
 	// 		// jsonData, err := json.Marshal(msg)
 	// 		// if err == nil {
 	// 		// 	fmt.Printf("\n%s: %s", tipStr, jsonData)
 	// 		// }
-	// 		fmt.Println(tipStr, m.Type, m.Action)
+	// 		fmt_println(tipStr, m.Type, m.Action)
 	// 	}
 	// }
+	if isJsWasm() {
+		jsonData, err := json.Marshal(msg)
+		if err == nil {
+			sendWithWsId(wsId, string(jsonData))
+		} else {
+			fmt_println("msg is not a string")
+		}
+		info.mu.Unlock()
 
-	ret := conn.WriteJSON(msg)
-	info.mu.Unlock()
+		return nil
+	} else {
+		conn := GetSocketById(wsId)
 
-	return ret
+		ret := conn.WriteJSON(msg)
+		info.mu.Unlock()
+
+		return ret
+	}
 }
 
 // 处理消息接收与路由
 func (s *WebSocketServer) handleMessages(conn *websocket.Conn) {
 	defer func() {
-		s.handleClose(conn)
+		wsId := GetIdOfSocket(conn)
+		s.handleClose(wsId)
 		conn.Close()
 	}()
 
@@ -157,73 +226,77 @@ func (s *WebSocketServer) handleMessages(conn *websocket.Conn) {
 
 		var msg Message
 		if err := json.Unmarshal(msgBytes, &msg); err != nil {
-			fmt.Println("JSON decode error:", err)
+			fmt_println("JSON decode error:", err)
 			continue
 		}
 
 		// // 根据连接类型打印日志
 		// if conn == s.activeRuntime {
 		// 	if msg.IsSplit {
-		// 		fmt.Println("\n从Runtime 发来消息,IsSplit:", msg.Total, msg.Idx)
+		// 		fmt_println("\n从Runtime 发来消息,IsSplit:", msg.Total, msg.Idx)
 		// 	} else {
-		// 		// fmt.Println("\n从Runtime 发来消息:", string(msgBytes))
-		// 		fmt.Println("\n从Runtime 发来消息:", msg.Type, msg.Action)
+		// 		// fmt_println("\n从Runtime 发来消息:", string(msgBytes))
+		// 		fmt_println("\n从Runtime 发来消息:", msg.Type, msg.Action)
 		// 	}
 
 		// } else if conn == s.pluginConn {
-		// 	// fmt.Println("\nPlugin 发来消息:", string(msgBytes))
-		// 	fmt.Println("\nPlugin 发来消息:", msg.Type, msg.Action)
+		// 	// fmt_println("\nPlugin 发来消息:", string(msgBytes))
+		// 	fmt_println("\nPlugin 发来消息:", msg.Type, msg.Action)
 		// }
 
-		s.routeMessage(conn, msg)
+		wsId := GetIdOfSocket(conn)
+		s.routeMessage(wsId, msg)
 	}
 }
 
 // 分发消息
-func (s *WebSocketServer) routeMessage(conn *websocket.Conn, msg Message) {
+func (s *WebSocketServer) routeMessage(wsId int, msg Message) {
 	if msg.Type == "identify" {
-		s.handleIdentify(conn, msg)
+		s.handleIdentify(wsId, msg)
 	} else if msg.IsSplit {
-		s.forwardMessage(conn, msg)
+		s.forwardMessage(wsId, msg)
 	} else if msg.Type == "request" {
-		s.handleRequest(conn, msg)
+		s.handleRequest(wsId, msg)
 	} else if msg.Type == "response" {
-		s.forwardMessage(conn, msg)
+		s.forwardMessage(wsId, msg)
 	} else if msg.Type == "push" {
-		s.handlePush(conn, msg)
+		s.handlePush(wsId, msg)
 	} else {
-		fmt.Printf("\nUnhandled message type: %s", msg.Type)
+		fmt_println("Unhandled message type: ", msg.Type)
 	}
 }
 
 // 处理身份识别消息
-func (s *WebSocketServer) handleIdentify(conn *websocket.Conn, msg Message) {
+func (s *WebSocketServer) handleIdentify(wsId int, msg Message) {
 
 	switch msg.Role {
 	case "runtime":
 		if msg.Name == "" {
-			fmt.Printf("\n[WARN] Empty runtime name from %s", conn.RemoteAddr())
+			info, exists := GetConnInfoOfWsId(wsId)
+			if exists {
+				fmt_println("[WARN] Empty runtime name from ", info.IP)
+			}
 			return
 		}
 		s.mutex.Lock()
-		runtimeName := s.addRuntime(conn, msg.Name)
+		runtimeName := s.addRuntime(wsId, msg.Name)
 		s.mutex.Unlock()
-		fmt.Printf("\nRuntime registered: %s", runtimeName)
+		fmt_println("Runtime registered: ", runtimeName)
 
-		if s.activeRuntime == nil {
-			s.activeRuntime = conn
+		if s.activeRuntime == 0 {
+			s.activeRuntime = wsId
 		}
 
-		if s.pluginConn != nil {
+		if s.pluginConn != 0 {
 			s._doSelectActiveRuntime("")
 			s.sendConnectionUpdate(s.getRuntimeName(s.activeRuntime), true)
 		}
 		s.updateRuntimeList()
 
 	case "plugin":
-		s.pluginConn = conn
-		fmt.Println("Plugin registered")
-		if s.activeRuntime != nil {
+		s.pluginConn = wsId
+		fmt_println("Plugin registered")
+		if s.activeRuntime != 0 {
 			s._doSelectActiveRuntime("")
 			s.sendConnectionUpdate(s.getRuntimeName(s.activeRuntime), true)
 		}
@@ -232,40 +305,40 @@ func (s *WebSocketServer) handleIdentify(conn *websocket.Conn, msg Message) {
 }
 
 // 处理请求消息
-func (s *WebSocketServer) handleRequest(conn *websocket.Conn, msg Message) {
+func (s *WebSocketServer) handleRequest(wsId int, msg Message) {
 	if msg.Action == "checkOtherSideIsInline" {
-		s.handleCheckOnline(conn, msg)
+		s.handleCheckOnline(wsId, msg)
 		return
 	}
 	//校验激活码
-	if conn == s.pluginConn {
+	if wsId == s.pluginConn {
 		if msg.Action == "VerifyActivationCode" {
-			s.doVerify(conn, &msg)
+			s.doVerify(wsId, &msg)
 			return
 		} else if msg.Action == "Statistics" {
-			s.doStatistics(conn, &msg)
+			s.doStatistics(wsId, &msg)
 			return
 		}
 	}
-	if conn == s.pluginConn {
+	if wsId == s.pluginConn {
 		dealFakeData(&msg)
 		if !isVerified() {
 			msg.Type = "response"
-			s.writeMessage(conn, msg)
+			s.writeMessage(wsId, msg)
 			return
 		}
 	}
-	s.forwardMessage(conn, msg)
+	s.forwardMessage(wsId, msg)
 }
 
 // 检查对端是否在线
-func (s *WebSocketServer) handleCheckOnline(conn *websocket.Conn, msg Message) {
+func (s *WebSocketServer) handleCheckOnline(wsId int, msg Message) {
 	var online bool
 	s.mutex.Lock()
-	if conn == s.pluginConn {
-		online = s.activeRuntime != nil
-	} else if conn == s.activeRuntime {
-		online = s.pluginConn != nil
+	if wsId == s.pluginConn {
+		online = s.activeRuntime != 0
+	} else if wsId == s.activeRuntime {
+		online = s.pluginConn != 0
 	}
 	s.mutex.Unlock()
 
@@ -275,68 +348,68 @@ func (s *WebSocketServer) handleCheckOnline(conn *websocket.Conn, msg Message) {
 		RequestID: msg.RequestID,
 		Data:      online,
 	}
-	s.writeMessage(conn, response)
+	s.writeMessage(wsId, response)
 }
 
 // 处理推送消息
-func (s *WebSocketServer) handlePush(conn *websocket.Conn, msg Message) {
+func (s *WebSocketServer) handlePush(wsId int, msg Message) {
 	if msg.Action == "selectActiveRuntime" {
 		s.sendConnectionUpdate(s.getRuntimeName(s.activeRuntime), false)
 		if runtimeName, ok := msg.Data.(string); ok {
 			s._doSelectActiveRuntime(runtimeName)
 			s.sendConnectionUpdate(s.getRuntimeName(s.activeRuntime), true)
 		} else {
-			fmt.Println("Invalid runtime name in selectActiveRuntime")
+			fmt_println("Invalid runtime name in selectActiveRuntime")
 		}
 		return
 	}
-	if conn == s.activeRuntime {
+	if wsId == s.activeRuntime {
 		dealFakeData(&msg)
 	}
-	s.forwardMessage(conn, msg)
+	s.forwardMessage(wsId, msg)
 }
 
 func printMsg(msg *Message) {
 	msgBytes, err := json.MarshalIndent(msg, "", "  ")
 	if err != nil {
-		fmt.Println("Error marshaling msg:", err)
+		fmt_println("Error marshaling msg:", err)
 		return
 	}
-	fmt.Println("Message content:", string(msgBytes))
+	fmt_println("Message content:", string(msgBytes))
 }
 
 // 转发消息到目标连接
-func (s *WebSocketServer) forwardMessage(src *websocket.Conn, msg Message) {
+func (s *WebSocketServer) forwardMessage(srcWsId int, msg Message) {
 	s.mutex.RLock()
-	target := s.getTargetConnection(src)
+	target := s.getTargetConnection(srcWsId)
 	s.mutex.RUnlock()
 
-	if target != nil {
+	if target != 0 {
 		if err := s.writeMessage(target, msg); err != nil {
-			fmt.Printf("\nForward message failed: %v", err)
+			fmt_println("Forward message failed: ", err)
 		}
 	}
 }
 
 // 根据来源判断转发方向
-func (s *WebSocketServer) getTargetConnection(src *websocket.Conn) *websocket.Conn {
+func (s *WebSocketServer) getTargetConnection(src int) int {
 	if src == s.pluginConn {
 		return s.activeRuntime
 	}
 	if src == s.activeRuntime {
 		return s.pluginConn
 	}
-	return nil
+	return 0
 }
 
 // 添加运行时连接
-func (s *WebSocketServer) addRuntime(conn *websocket.Conn, name string) string {
+func (s *WebSocketServer) addRuntime(wsId int, name string) string {
 	// 检查名称冲突
 	if s.getRuntimeByName(name) != nil {
 		name += "_1"
 	}
 	s.runtimes = append(s.runtimes, &RuntimeInfo{
-		conn: conn,
+		wsId: wsId,
 		name: name,
 	})
 	return name
@@ -352,7 +425,7 @@ func (s *WebSocketServer) updateRuntimeList() {
 	pluginConn := s.pluginConn
 	s.mutex.Unlock()
 
-	if pluginConn == nil {
+	if pluginConn == 0 {
 		return
 	}
 
@@ -364,22 +437,22 @@ func (s *WebSocketServer) updateRuntimeList() {
 }
 
 // 优化后的连接关闭处理
-func (s *WebSocketServer) handleClose(conn *websocket.Conn) {
+func (s *WebSocketServer) handleClose(wsId int) {
 
 	// 清理连接信息
 	s.mutex.Lock()
-	delete(s.connInfo, conn)
+	delete(s.connInfo, wsId)
 	s.mutex.Unlock()
 
 	// 处理运行时连接
-	if conn == s.activeRuntime {
+	if wsId == s.activeRuntime {
 		s.sendConnectionUpdate(s.getRuntimeName(s.activeRuntime), false)
 
 		s.mutex.Lock()
-		s.activeRuntime = nil
-		s.removeRuntime(conn)
+		s.activeRuntime = 0
+		s.removeRuntime(wsId)
 
-		fmt.Println("Runtime disconnected")
+		fmt_println("Runtime disconnected")
 		s.mutex.Unlock()
 
 		s.updateRuntimeList()
@@ -387,17 +460,17 @@ func (s *WebSocketServer) handleClose(conn *websocket.Conn) {
 			newName := s.runtimes[0].name
 			if newName != "" {
 				s.sendConnectionUpdate(newName, true)
-				s.activeRuntime = s.runtimes[0].conn
+				s.activeRuntime = s.runtimes[0].wsId
 				msg := Message{Type: "push", Action: "markActive", Data: true}
 				s.writeMessage(s.activeRuntime, msg)
 			}
 		}
-	} else if conn == s.pluginConn {
+	} else if wsId == s.pluginConn {
 		s.mutex.Lock()
-		s.pluginConn = nil
+		s.pluginConn = 0
 		s.mutex.Unlock()
-		fmt.Println("Plugin disconnected")
-		if s.activeRuntime != nil {
+		fmt_println("Plugin disconnected")
+		if s.activeRuntime != 0 {
 			msg := Message{Type: "push", Action: "markActive", Data: false}
 			s.writeMessage(s.activeRuntime, msg)
 		}
@@ -407,9 +480,9 @@ func (s *WebSocketServer) handleClose(conn *websocket.Conn) {
 }
 
 // 从运行时列表移除连接
-func (s *WebSocketServer) removeRuntime(conn *websocket.Conn) {
+func (s *WebSocketServer) removeRuntime(wsId int) {
 	for i := len(s.runtimes) - 1; i >= 0; i-- {
-		if s.runtimes[i].conn == conn {
+		if s.runtimes[i].wsId == wsId {
 			s.runtimes = append(s.runtimes[:i], s.runtimes[i+1:]...)
 		}
 	}
@@ -422,13 +495,13 @@ func (s *WebSocketServer) _doSelectActiveRuntime(name string) {
 	oldRuntime := s.activeRuntime
 	newRuntime := s.activeRuntime
 	if name != "" {
-		newRuntime = s.getRuntimeByName(name).conn
+		newRuntime = s.getRuntimeByName(name).wsId
 	}
 
 	s.activeRuntime = newRuntime
 	s.mutex.Unlock()
 
-	if oldRuntime != nil && oldRuntime != newRuntime {
+	if oldRuntime != 0 && oldRuntime != newRuntime {
 		msg := Message{Type: "push", Action: "markActive", Data: false}
 		s.writeMessage(oldRuntime, msg)
 	}
@@ -438,18 +511,18 @@ func (s *WebSocketServer) _doSelectActiveRuntime(name string) {
 
 // 发送连接状态更新给插件端
 func (s *WebSocketServer) sendConnectionUpdate(name string, bOnline bool) {
-	if s.pluginConn == nil {
+	if s.pluginConn == 0 {
 		return
 	}
 
 	s.mutex.Lock()
 	activeRuntime := s.getRuntimeByName(name)
+	s.mutex.Unlock()
 	if activeRuntime == nil {
-		s.mutex.Unlock()
 		return
 	}
-	info := s.connInfo[activeRuntime.conn]
-	s.mutex.Unlock()
+
+	info, _ := GetConnInfoOfWsId(activeRuntime.wsId)
 
 	s.writeMessage(s.pluginConn, Message{
 		Type:   "push",
@@ -474,9 +547,9 @@ func (s *WebSocketServer) getRuntimeByName(name string) *RuntimeInfo {
 }
 
 // 获取运行时名称
-func (s *WebSocketServer) getRuntimeName(conn *websocket.Conn) string {
+func (s *WebSocketServer) getRuntimeName(wsId int) string {
 	for _, r := range s.runtimes {
-		if r.conn == conn {
+		if r.wsId == wsId {
 			return r.name
 		}
 	}
@@ -506,7 +579,11 @@ func parseBaseURLs(verifyUrl string) ([]string, error) {
 	return []string{verifyUrl}, nil
 }
 
-func main() {
+var (
+	_server *WebSocketServer = nil
+)
+
+func initForExec() {
 	port := flag.Int("port", 8085, "server port")
 	verifyUrl := flag.String("verifyUrl", "[\"http://ccdebuger.com:8080\",\"http://106.52.57.191:8080\"]", "verifyUrl (单一地址或 JSON 数组)")
 	flag.Parse()
@@ -521,6 +598,21 @@ func main() {
 		log.Fatalf("解析 verifyUrl 失败: %v", err)
 	}
 
-	server := NewWebSocketServer(*port, urls)
-	server.Start()
+	_server = NewWebSocketServer(*port, urls)
+	_server.Start()
+}
+
+func isJsWasm() bool {
+	osType := runtime.GOOS
+	return osType == "js"
+}
+
+func main() {
+	fmt_println("osType", runtime.GOOS)
+	if isJsWasm() {
+		registerGoFunc2Js()
+	} else {
+		initForExec()
+	}
+
 }

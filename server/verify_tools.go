@@ -9,8 +9,6 @@ import (
 	"runtime"
 	"strings"
 	"time"
-
-	"github.com/gorilla/websocket"
 )
 
 func test() {
@@ -92,7 +90,7 @@ func dealFakeData(msg *Message) {
 	}
 }
 
-func (s *WebSocketServer) doVerify(conn *websocket.Conn, msg *Message) (interface{}, error) {
+func (s *WebSocketServer) doVerify(wsId int, msg *Message) {
 	if dataMap, ok := msg.Data.(map[string]interface{}); ok {
 		deviceID, err := getDeviceID()
 		if err == nil {
@@ -101,7 +99,7 @@ func (s *WebSocketServer) doVerify(conn *websocket.Conn, msg *Message) (interfac
 			}
 		}
 	} else {
-		return nil, fmt.Errorf("invalid data format")
+		fmt_println(fmt.Errorf("invalid data format"))
 	}
 	// printInterface(msg.Data)
 
@@ -124,78 +122,84 @@ func (s *WebSocketServer) doVerify(conn *websocket.Conn, msg *Message) (interfac
 		ret.Data = verifyInfo
 		ret.Type = "response"
 		// printInterface(ret.Data)
-		s.writeMessage(conn, ret)
-		return nil, nil
+		s.writeMessage(wsId, ret)
+
 	}
 
 	// 直接发送原始JSON数据
-	resp, err := s.sendJSONRequest(verifyEndpoint, msg.Data)
-	if err != nil {
-		return nil, fmt.Errorf("验证请求失败: %w", err)
-	}
-
-	if respMap, ok := resp.(map[string]interface{}); ok {
-		if authorInfo, ok := respMap["authorInfo"].(map[string]interface{}); ok {
-			m_authorInfo = authorInfo
+	s.sendJSONRequest(verifyEndpoint, msg.Data, func(resp interface{}, err error) {
+		if err != nil {
+			fmt_println(fmt.Sprintf("验证请求失败: %s", err.Error()))
+			return
 		}
-		switch state := respMap["state"].(type) {
-		case int:
-			m_verifyState = state
-		case float32:
-			m_verifyState = int(state)
-		case float64:
-			m_verifyState = int(state)
-		default:
-			return nil, fmt.Errorf("unexpected state type: %T", respMap["state"])
-		}
-	} else {
-		return nil, fmt.Errorf("unexpected response format")
-	}
 
-	response := Message{
-		Type:      "response",
-		Action:    msg.Action,
-		RequestID: msg.RequestID,
-		Data:      resp,
-	}
-	s.writeMessage(conn, response)
-	return resp, nil
+		if respMap, ok := resp.(map[string]interface{}); ok {
+			if authorInfo, ok := respMap["authorInfo"].(map[string]interface{}); ok {
+				m_authorInfo = authorInfo
+			}
+			switch state := respMap["state"].(type) {
+			case int:
+				m_verifyState = state
+			case float32:
+				m_verifyState = int(state)
+			case float64:
+				m_verifyState = int(state)
+			default:
+				fmt_println(fmt.Errorf("unexpected state type: %T", respMap["state"]).Error())
+			}
+		} else {
+			fmt_println("unexpected response format")
+		}
+
+		response := Message{
+			Type:      "response",
+			Action:    msg.Action,
+			RequestID: msg.RequestID,
+			Data:      resp,
+		}
+		s.writeMessage(wsId, response)
+	})
+
 }
 
 func printInterface(data interface{}) {
 	// 将 data 序列化为 JSON 字符串并打印
 	dataJSON, err := json.Marshal(data)
 	if err != nil {
-		fmt.Printf("\nFailed to marshal data: %v\n", err)
+		fmt_println("Failed to marshal data: ", err)
 	} else {
-		fmt.Printf("\ndata: %s\n", dataJSON)
+		fmt_println("data: ", string(dataJSON))
 	}
 }
 
-func (s *WebSocketServer) doStatistics(conn *websocket.Conn, msg *Message) (interface{}, error) {
+func (s *WebSocketServer) doStatistics(wsId int, msg *Message) {
 	// 直接发送原始JSON数据
-	resp, err := s.sendJSONRequest(statisticsEndpoint, msg.Data)
-	if err != nil {
-		return nil, fmt.Errorf("统计请求失败: %w", err)
-	}
+	s.sendJSONRequest(statisticsEndpoint, msg.Data, func(resp interface{}, err error) {
+		if err != nil {
+			fmt_println(fmt.Errorf("统计请求失败: %w", err).Error())
+		}
 
-	response := Message{
-		Type:      "response",
-		Action:    msg.Action,
-		RequestID: msg.RequestID,
-		Data:      resp,
-	}
-	s.writeMessage(conn, response)
-	return resp, nil
+		response := Message{
+			Type:      "response",
+			Action:    msg.Action,
+			RequestID: msg.RequestID,
+			Data:      resp,
+		}
+		s.writeMessage(wsId, response)
+	})
 }
 
 // 公共请求方法封装
-func (s *WebSocketServer) sendJSONRequest(endpoint string, data interface{}) (interface{}, error) {
+func (s *WebSocketServer) sendJSONRequest(endpoint string, data interface{}, callback func(result interface{}, err error)) {
+	if isJsWasm() {
+		sendHttpRequestByJs(s.baseURLs, endpoint, data, callback)
+		return
+	}
 	requestData, ok := data.(map[string]interface{})
 	if !ok {
-		return nil, fmt.Errorf("数据格式错误，期望 map[string]interface{}")
+		callback(nil, fmt.Errorf("数据格式错误，期望 map[string]interface{}"))
 	}
-
+	console_log("qqqqq 2")
 	// 确保 cocos_uid 是字符串
 	if cocosUID, exists := requestData["cocos_uid"]; exists {
 		switch v := cocosUID.(type) {
@@ -207,21 +211,22 @@ func (s *WebSocketServer) sendJSONRequest(endpoint string, data interface{}) (in
 			uid := v.(float64)
 			requestData["cocos_uid"] = fmt.Sprintf("%d", int(uid))
 		default:
-			return nil, fmt.Errorf("cocos_uid 类型不支持: %T", v)
+			callback(nil, fmt.Errorf("cocos_uid 类型不支持: %T", v))
 		}
 	}
-
+	console_log("qqqqq 3")
 	jsonData, err := json.Marshal(requestData)
 	if err != nil {
-		return nil, fmt.Errorf("JSON序列化错误: %w", err)
+		callback(nil, fmt.Errorf("JSON序列化错误: %w", err))
 	}
-
+	console_log("qqqqq 4", string(jsonData))
 	// 重试逻辑
 	var lastErr error
 	for _, baseURL := range s.baseURLs {
-		// fmt.Println("verify url", baseURL)
+		fmt_println("verify url", baseURL)
 		req, err := http.NewRequest("POST", baseURL+endpoint, bytes.NewBuffer(jsonData))
 		if err != nil {
+			fmt_println("http err 1", err.Error())
 			lastErr = fmt.Errorf("请求构造失败 (URL: %s): %w", baseURL, err)
 			continue
 		}
@@ -229,11 +234,12 @@ func (s *WebSocketServer) sendJSONRequest(endpoint string, data interface{}) (in
 
 		resp, err := s.httpClient.Do(req)
 		if err != nil {
+			fmt_println("http err 2", err.Error())
 			lastErr = fmt.Errorf("网络请求异常 (URL: %s): %w", baseURL, err)
 			continue
 		}
 		defer resp.Body.Close()
-
+		console_log("qqqqq 5", resp.Status)
 		var result map[string]interface{}
 		if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 			lastErr = fmt.Errorf("响应解析失败 (URL: %s): %w", baseURL, err)
@@ -242,14 +248,15 @@ func (s *WebSocketServer) sendJSONRequest(endpoint string, data interface{}) (in
 		result["statusCode"] = resp.StatusCode
 
 		// 请求成功，返回结果
-		return result, nil
+		callback(result, nil)
+		return
 	}
 
 	// 所有地址都失败，返回最后一个错误
 	if lastErr != nil {
-		return nil, fmt.Errorf("所有地址请求失败: %w", lastErr)
+		callback(nil, fmt.Errorf("所有地址请求失败: %w", lastErr))
 	}
-	return nil, fmt.Errorf("没有可用的 baseURL")
+	callback(nil, fmt.Errorf("没有可用的 baseURL"))
 }
 
 // getDeviceID 获取设备号或唯一标识符

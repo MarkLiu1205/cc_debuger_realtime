@@ -1,5 +1,4 @@
 @echo off
-rem setlocal
 
 rem Build for Windows
 set GOOS=windows
@@ -7,6 +6,8 @@ set GOARCH=amd64
 go build -o server.exe
 echo Build server complete
 
+set GOOS=js
+set GOARCH=wasm
 go env -w GOOS=js GOARCH=wasm
 go build -o server.wasm
 echo Build server.wasm complete
@@ -30,6 +31,3 @@ set GOARCH=arm64
 go build -o server_linux
 
 echo Build server_linux complete
-
-rem endlocal
-pause

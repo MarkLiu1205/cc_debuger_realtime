@@ -185,16 +185,18 @@ class RunTimeSocket {
             } else if (msg.action === 'setLoopInterval') {
                 data = this._loopFrameTime
                 let time = msg.data;
-                if(typeof time!="number"){
-                    return
-                }
-                if(time==0){
-                    this._bAutoFreshNodeTree = false
-                    return
-                }
-                this._bAutoFreshNodeTree = true
-                this._loopInterval = time
                 
+                do{
+                    if(typeof time!="number"){
+                        break
+                    }
+                    if(time==0){
+                        this._bAutoFreshNodeTree = false
+                        break
+                    }
+                    this._bAutoFreshNodeTree = true
+                    this._loopInterval = time
+                }while(0)
             } else if (msg.action === 'getLoopFrameTime') {
                 data = this._loopFrameTime
             } else if (msg.action === 'callFuncOfComp') {

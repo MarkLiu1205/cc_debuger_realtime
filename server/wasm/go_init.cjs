@@ -27,16 +27,22 @@ globalThis.crypto = {
 
 require("./wasm_exec.cjs");
 
-// 加载Go编写的wasm文件
+// js端加载Go编写的wasm文件
 async function loadWasmOfGo(wasmPath) {
   const go = new Go();
   go.argv = [wasmPath];
   go.env = Object.assign({ TMPDIR: require("os").tmpdir() }, process.env);
   go.exit = process.exit;
-  const { instance } = await WebAssembly.instantiate(fs.readFileSync(path.join(__dirname, wasmPath)), go.importObject);
 
-  // 执行 Go WebAssembly 实例
-  go.run(instance)
+  const wasmData = fs.readFileSync(path.join(__dirname, wasmPath));
+
+  const { instance } = await WebAssembly.instantiate(wasmData, go.importObject);
+  go.run(instance);
+
+  // 等待 Go 代码设置 __bWasmLoaded ，设置方式：js.Global().Set("__bWasmLoaded", js.ValueOf(true))
+  while (globalThis.__bWasmLoaded!==true) {
+      await new Promise(resolve => setTimeout(resolve, 10));
+  }
 }
 
 module.exports = {loadWasmOfGo}
