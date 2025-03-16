@@ -228,8 +228,8 @@ computed(()=>{
             <div class="row">
                 <label class="orange">{{ _funcs.getI18nText("text_55") }}</label>
                 <label class="break-word">{{ assetInfo.assetType }}</label>
-                <label class="green" v-if="assetInfo.assetType=='cc.ImageAsset'||assetInfo.assetType=='cc.Texture2D'">(这是自动图集)</label>
-                <label class="green" v-if="assetInfo.assetType=='cc.SpriteFrame'">(已加入自动图集)</label>
+                <!-- <label class="green" v-if="assetInfo.assetType=='cc.ImageAsset'||assetInfo.assetType=='cc.Texture2D'">(这是自动图集)</label>
+                <label class="green" v-if="assetInfo.assetType=='cc.SpriteFrame'">(已加入自动图集)</label> -->
             </div>
             <div class="row" v-if="!isNotInCache">
                 <label class="orange">{{ _funcs.getI18nText("text_56") }}:</label>
