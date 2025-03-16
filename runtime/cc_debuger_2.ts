@@ -11,10 +11,12 @@ function _getAccId(){
 
 interface OneMsg{
     type: string, 
-    action: string; 
+    action?: string; 
     data?: any; 
-    requestId: number;
+    requestId?: number;
     encrypted?:number;
+    role?:string;
+    name?:string;
 }
 
 interface SplitMsg{
@@ -1917,7 +1919,7 @@ function parseKey(segments) {
 }
 
 // XOR 加密和解密的通用异或函数
-function xor(inputBytes:Uint8Array, keyBytes:Uint8Array) {
+function xor(inputBytes:Uint8Array, keyBytes:Uint8Array):Uint8Array {
     const output = new Uint8Array(inputBytes.length);
     for (let i = 0; i < inputBytes.length; i++) {
         output[i] = inputBytes[i] ^ keyBytes[i % keyBytes.length];
@@ -1939,7 +1941,7 @@ function str_encrypt(input:string, key:string) {
     const xorResult = xor(inputBytes, keyBytes);
 
     // 将字节数组转换为 Base64 编码字符串
-    return btoa(String.fromCharCode(...xorResult));
+    return btoa(String.fromCharCode.apply(null, Array.from(xorResult)));
 }
 
 // 解密函数

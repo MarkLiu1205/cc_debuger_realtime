@@ -81,7 +81,7 @@ function deal_server_js(){
         }).getObfuscatedCode();
 
         fs.writeFileSync(obfuscatedServerFilePath, obfuscatedServerCode, 'utf-8');
-        console.log(`Obfuscated: server_original.js -> server.js\n`);
+        console.log(`Obfuscated: js_server_with_wasm.js -> server.js\n`);
     }
 }
 
@@ -263,10 +263,10 @@ if(firstArg=="isClear"){
     await waitForTime(1)
     deal_dist()
 
+    deal_server_js()
+
     await waitForTime(1)
     packPluginToZip()
-
-    deal_server_js()
 
     console.log('Obfuscation complete!');
     move_cc_debuger_2_ugly()
