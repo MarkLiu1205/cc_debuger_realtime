@@ -1913,7 +1913,11 @@ function parseKey(segments) {
         for (let j = 0; j < val.length; j++) {
             newStr += (9 - parseInt(val.charAt(j))).toString();
         }
-        key += parseInt(newStr).toString(16).padStart(8, '0');
+        let hexStr = parseInt(newStr).toString(16);
+        while (hexStr.length < 8) {
+            hexStr = '0' + hexStr;
+        }
+        key += hexStr;
     }
     return key;
 }
