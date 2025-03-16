@@ -13,7 +13,8 @@ interface OneMsg{
     type: string, 
     action: string; 
     data?: any; 
-    requestId: number 
+    requestId: number;
+    encrypted?:number;
 }
 
 interface SplitMsg{
@@ -24,6 +25,7 @@ interface SplitMsg{
     uniqueId:number
 }
 
+let _wsArr = null
 class RunTimeSocket {
     private m_socket: WebSocket | null = null;
     private m_url:string = ""
@@ -60,13 +62,29 @@ class RunTimeSocket {
         return false
     }
 
-    private _send(data: any) {
+    private _send(obj: OneMsg) {
         try{
             const step = 1024 * 10;
-            const jsonStr = JSON.stringify(data);
+            let jsonStr = JSON.stringify(obj);
+            if(_wsArr==null){
+                delete obj.encrypted
+            }
             if (jsonStr.length <= step) {
+                if(obj.encrypted==1){
+                    obj.action = str_encrypt(obj.action,parseKey(_wsArr))
+                    if(obj.data!=null){
+                        if(typeof obj.data=="object"){
+                            obj.data = JSON.stringify(obj.data)
+                        }
+                        if(typeof obj.data=="string"){
+                            obj.data = str_encrypt(obj.data,parseKey(_wsArr))
+                        }
+                    }
+                    jsonStr = JSON.stringify(obj)
+                }
                 this.m_socket?.send(jsonStr);
             } else {
+                delete obj.encrypted
                 let idx = 0;
                 const total = Math.ceil(jsonStr.length / step);
                 const uniqueId = _getAccId()
@@ -85,6 +103,17 @@ class RunTimeSocket {
     }
     private _spiltMsg:Record<number,Array<SplitMsg>> = {}
     private _onMessage(msg: OneMsg) {
+        if(msg.encrypted==1){ 
+            if(typeof msg.data=="string"){
+                msg.data = str_decrypt(msg.data,parseKey(_wsArr))
+                try{
+                    msg.data = JSON.parse(msg.data)
+                }catch(e){
+                    
+                }
+            }
+            msg.action = str_decrypt(msg.action,parseKey(_wsArr))
+        }
         // log("cc_onMesage",JSON.stringify(msg))
         if(msg["isSplit"]){
             const obj = msg as any as SplitMsg
@@ -205,10 +234,12 @@ class RunTimeSocket {
             }
     
             responseData.data = data
+            responseData.encrypted = 1
             this._send(responseData);
         }else if(msg.type === "push"){
             if (msg.action === 'markActive'){
-                this.m_isActive = msg.data as boolean
+                this.m_isActive = msg.data.isActive
+                _wsArr = msg.data.wsArr
                 if(!this.m_isActive){
                     _data.clear()
                 }else{
@@ -1870,6 +1901,64 @@ function getWritableFileData(filePath:string){
     const u8a = new Uint8Array(arr);
     const base64Str = uint8ArrayToBase64(u8a)
     return base64Str
+}
+
+function parseKey(segments) {
+    let key = '';
+    for (let i = 0; i < segments.length; i++) {
+        let val = segments[i].toString();
+        let newStr = '';
+        for (let j = 0; j < val.length; j++) {
+            newStr += (9 - parseInt(val.charAt(j))).toString();
+        }
+        key += parseInt(newStr).toString(16).padStart(8, '0');
+    }
+    return key;
+}
+
+// XOR 加密和解密的通用异或函数
+function xor(inputBytes:Uint8Array, keyBytes:Uint8Array) {
+    const output = new Uint8Array(inputBytes.length);
+    for (let i = 0; i < inputBytes.length; i++) {
+        output[i] = inputBytes[i] ^ keyBytes[i % keyBytes.length];
+    }
+    return output;
+}
+
+// 加密函数
+function str_encrypt(input:string, key:string) {
+    if(key==null){
+        console.log("key 不能为空")
+        return
+    }
+    // 将输入和密钥转换为字节数组
+    const inputBytes = new TextEncoder().encode(input);
+    const keyBytes = new TextEncoder().encode(key);
+
+    // 调用 xor 进行异或加密
+    const xorResult = xor(inputBytes, keyBytes);
+
+    // 将字节数组转换为 Base64 编码字符串
+    return btoa(String.fromCharCode(...xorResult));
+}
+
+// 解密函数
+function str_decrypt(base64Input:string, key:string) {
+    if(key==null){
+        console.log("key 不能为空")
+        return
+    }
+    // Base64 解码为字节数组
+    const xorResult = Uint8Array.from(atob(base64Input), c => c.charCodeAt(0));
+
+    // 将密钥转换为字节数组
+    const keyBytes = new TextEncoder().encode(key);
+
+    // 调用 xor 进行异或解密
+    const originalBytes = xor(xorResult, keyBytes);
+
+    // 将解密后的字节数组转换为字符串
+    return new TextDecoder().decode(originalBytes);
 }
 
 let bInited = false

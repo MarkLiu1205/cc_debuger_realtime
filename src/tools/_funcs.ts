@@ -578,6 +578,40 @@ export async function openEvalPanel(param=""){
     }
 }
 
+// function generateKey() {
+//     let key = '';
+//     for (let i = 0; i < 32; i++) {
+//         key += '0123456789abcdef'.charAt(Math.floor(Math.random() * 16));
+//     }
+
+//     let segments = [];
+//     for (let i = 0; i < 4; i++) {
+//         let val:any = key.slice(i * 8, (i + 1) * 8);
+//         val = parseInt(val, 16).toString();
+//         let newStr = '';
+//         for (let j = 0; j < val.length; j++) {
+//             newStr += (9 - parseInt(val.charAt(j))).toString();
+//         }
+//         val = parseInt(newStr);
+//         segments.push(val);
+//     }
+
+//     return segments;
+// }
+
+export function parseKey(segments) {
+    let key = '';
+    for (let i = 0; i < segments.length; i++) {
+        let val = segments[i].toString();
+        let newStr = '';
+        for (let j = 0; j < val.length; j++) {
+            newStr += (9 - parseInt(val.charAt(j))).toString();
+        }
+        key += parseInt(newStr).toString(16).padStart(8, '0');
+    }
+    return key;
+}
+
 // XOR 加密和解密的通用异或函数
 function xor(inputBytes:Uint8Array, keyBytes:Uint8Array) {
     const output = new Uint8Array(inputBytes.length);
@@ -623,37 +657,37 @@ export function str_decrypt(base64Input:string, key:string) {
     return new TextDecoder().decode(originalBytes);
 }
 
-    let _designSize = null
-    export async function getStaticsInfo(){
-        const pPath = Editor.Project.path
-        console.log("pPath",pPath)
-        console.log("Editor.Project.tmpDir",Editor.Project.tmpDir)
-        const projPath = path.join(Editor.Project.path,"settings/v2/packages/project.json") 
+let _designSize = null
+export async function getStaticsInfo(){
+    const pPath = Editor.Project.path
+    console.log("pPath",pPath)
+    console.log("Editor.Project.tmpDir",Editor.Project.tmpDir)
+    const projPath = path.join(Editor.Project.path,"settings/v2/packages/project.json") 
 
-        const projJson = fs.readJSONSync(projPath)
-        console.log("projJson",projJson)
-         
-        if(this._designSize==null){
-            const cmd = `const {width,height} = cc.view.getDesignResolutionSize();return {width,height}`
-            const size = await this.evalJsInRuntime(cmd)
-            console.log("执行",size)
-        }
+    const projJson = fs.readJSONSync(projPath)
+    console.log("projJson",projJson)
+        
+    if(this._designSize==null){
+        const cmd = `const {width,height} = cc.view.getDesignResolutionSize();return {width,height}`
+        const size = await this.evalJsInRuntime(cmd)
+        console.log("执行",size)
     }
+}
 
-    export function getDesignResolutionSize():{width:number,height:number}{
-        const projPath = path.join(Editor.Project.path,"settings/v2/packages/project.json") 
-        if(fs.existsSync(projPath)){
-            try{
-                const projJson = fs.readJSONSync(projPath)
-                if(projJson?.general?.designResolution){
-                    // console.log("projJson?.general?.designResolution",JSON.stringify(projJson?.general?.designResolution))
-                    return projJson?.general?.designResolution
-                }
-            }catch(e){
-    
+export function getDesignResolutionSize():{width:number,height:number}{
+    const projPath = path.join(Editor.Project.path,"settings/v2/packages/project.json") 
+    if(fs.existsSync(projPath)){
+        try{
+            const projJson = fs.readJSONSync(projPath)
+            if(projJson?.general?.designResolution){
+                // console.log("projJson?.general?.designResolution",JSON.stringify(projJson?.general?.designResolution))
+                return projJson?.general?.designResolution
             }
+        }catch(e){
+
         }
-        return null
     }
+    return null
+}
 
 }

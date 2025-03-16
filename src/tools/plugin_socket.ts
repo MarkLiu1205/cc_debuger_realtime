@@ -9,9 +9,11 @@ function _getAccId(){
 
 interface OneMsg{
     type: string, 
-    action: string; 
+    action?: string; 
     data?: any; 
-    requestId: number;
+    requestId?: number;
+    encrypted?:number;
+    role?:string;
 }
 
 interface SplitMsg{
@@ -103,6 +105,7 @@ class PluginSocket {
             resolve(null)
         })
         this._onOpenResolve = []
+        this.getWsArr()
     }
 
     public getSocketUrl(){
@@ -133,7 +136,19 @@ class PluginSocket {
     }
     
     private _spiltMsg:Record<number,Array<SplitMsg>> = {}
-    private _onMessage(msg: OneMsg) {
+    private async _onMessage(msg: OneMsg) {
+        if(msg.encrypted==1){
+            await this.getWsArr()
+            msg.action = _funcs.str_decrypt(msg.action,_funcs.parseKey(this._wsArr))
+            if(typeof msg.data=="string"){
+                msg.data = _funcs.str_decrypt(msg.data,_funcs.parseKey(this._wsArr))
+                try{
+                    msg.data = JSON.parse(msg.data)
+                }catch(e){
+
+                }
+            }
+        }
         // _funcs.log_1("onMesage",JSON.stringify(msg))
         const verifyInfo = msg["verifyInfo"] as VerifyRespParam;
         if(typeof verifyInfo=="object"){
@@ -293,10 +308,28 @@ class PluginSocket {
         this._sendPush("selectActiveRuntime",name)
     }
 
-    private _send(data: any) {
+    private async _send(obj: OneMsg) {
         const step = 1024 * 10;
-        const jsonStr = JSON.stringify(data);
+        if (obj.data==null){
+            delete obj.data
+        }
+        let jsonStr = JSON.stringify(obj);
         if (jsonStr.length <= step) {
+            if(obj.encrypted==1){
+                await this.getWsArr()
+                obj.action = _funcs.str_encrypt(obj.action,_funcs.parseKey(this._wsArr))
+                if(obj.data!=null){
+                    if(typeof obj.data=="object"){
+                        obj.data = JSON.stringify(obj.data)
+                    }
+                    if(typeof obj.data=="string"){
+                        obj.data = _funcs.str_encrypt(obj.data,_funcs.parseKey(this._wsArr))
+                    }
+                }
+                
+                jsonStr = JSON.stringify(obj)
+                // _funcs.log_1(" send",jsonStr)
+            }
             this.m_socket?.send(jsonStr);
         } else {
             let idx = 0;
@@ -324,13 +357,17 @@ class PluginSocket {
     }
 
     /**发送一个需要返回的socket请求，异步返回结果 */
-    private async _sendRequest<T>(action:string, data:any = null, type:string = 'request',timeout=5000) {
+    private async _sendRequest<T>(action:string, data:any = null, param:{type?:string,timeout?:number,encrypted?:boolean}=null) {
         if (!this.m_socket || this.m_socket.readyState !== WebSocket.OPEN) {
             return Promise.reject(new Error('WebSocket is not connected'));
         }
 
+        let type = param?.type??"request"
+        let timeout = param?.timeout??5000
+        let encrypted = param?.encrypted??false
+
         const requestId = _getAccId()
-        const payload:OneMsg = { type: type, action, data, requestId };
+        const payload:OneMsg = { type: type, action, data, requestId,encrypted:encrypted?1:0 };
         // _funcs.log_1(" send",JSON.stringify(payload))
 
         return new Promise<T>((resolve, reject) => {
@@ -341,7 +378,7 @@ class PluginSocket {
             setTimeout(() => {
                 if (this.m_pendingRequests.has(requestId)) {
                     this.m_pendingRequests.delete(requestId);
-                    reject(new Error(`Request timed out:  ${payload.action}`));
+                    reject(new Error(`Request timed out:  ${action}`));
                 }
             }, timeout); // 5 秒超时
             
@@ -350,12 +387,12 @@ class PluginSocket {
 
     async getRefCount(uuid:string) {
         await this.waitForRuntimeIsInline() //要先等plugin和runtime都连上服务器
-        return this._sendRequest<number>('getRefCount', { uuid });
+        return this._sendRequest<number>('getRefCount', { uuid },{encrypted:true});
     }
 
     async getNodeInfo(uuid:string):Promise<InspectorInfo_Node> {
         await this.waitForRuntimeIsInline() //要先等plugin和runtime都连上服务器
-        let info = await this._sendRequest('getNodeInfo', { uuid });
+        let info = await this._sendRequest('getNodeInfo', { uuid },{encrypted:true});
         if(info==null){
             return null
         }
@@ -370,7 +407,7 @@ class PluginSocket {
      */
     async getNodeOfComp(uuid:string) {
         await this.waitForRuntimeIsInline()
-        let info = await this._sendRequest('getNodeOfComp', { uuid });
+        let info = await this._sendRequest('getNodeOfComp', { uuid },{encrypted:true});
         return info as {
             /**所属节点的名字 */
             name:string,
@@ -391,7 +428,7 @@ class PluginSocket {
      */
     async reqModifyNodeInfo(obj:ChangedNodeInfo){
         await this.waitForRuntimeIsInline()
-        return this._sendRequest("reqModifyNodeInfo",obj)
+        return this._sendRequest("reqModifyNodeInfo",obj,{encrypted:true})
     }
 
     /**
@@ -401,7 +438,7 @@ class PluginSocket {
      */
     async fiterCompsWithType(typeStr:CompType):Promise<Array<{uuid:string,nodeUuid:string}>>{
         await this.waitForRuntimeIsInline()
-        return this._sendRequest("fiterCompsWithType",typeStr)
+        return this._sendRequest("fiterCompsWithType",typeStr,{encrypted:true})
     }
 
     private _nodeLayers:Record<string,number> = null
@@ -424,7 +461,7 @@ class PluginSocket {
             return this._gameEnvObj
         }
         await this.waitForRuntimeIsInline()
-        this._gameEnvObj = await this._sendRequest("getGameEnv","")
+        this._gameEnvObj = await this._sendRequest("getGameEnv","",{encrypted:true})
         return this._gameEnvObj
     }
 
@@ -437,7 +474,7 @@ class PluginSocket {
         }else{
             bool = ""
         }
-        return this._sendRequest("requestShowFPS",bool)
+        return this._sendRequest("requestShowFPS",bool,{encrypted:true})
     }
 
     async requestDynamicAtlasEnable(bool:boolean|string=""):Promise<boolean>{
@@ -449,18 +486,18 @@ class PluginSocket {
         }else{
             bool = ""
         }
-        return this._sendRequest("requestDynamicAtlasEnable",bool)
+        return this._sendRequest("requestDynamicAtlasEnable",bool,{encrypted:true})
     } 
 
     async getDynamicAtlasCount(){
         await this.waitForRuntimeIsInline()
-        return this._sendRequest("getDynamicAtlasCount")
+        return this._sendRequest("getDynamicAtlasCount",null,{encrypted:true})
     }
 
     async getDynamicTextureData(index:number=0):Promise<TexDataInfo>{
         await this.waitForRuntimeIsInline()
         const time_1 = Date.now()
-        let ret = await this._sendRequest("getDynamicTextureData",index,"request",60*1000) as any
+        let ret = await this._sendRequest("getDynamicTextureData",index,{timeout:60*1000}) as any
         const time_2 = Date.now()
         if(ret==null){
             console.error("getDynamicTextureData 错误")
@@ -497,7 +534,7 @@ class PluginSocket {
 
     async getWitablePathFilesInfo():Promise<Array<WritableFileInfo>>{
         await this.waitForRuntimeIsInline()
-        return this._sendRequest("getWitablePathFilesInfo")
+        return this._sendRequest("getWitablePathFilesInfo",null,{encrypted:true})
     }
 
     /**
@@ -506,7 +543,7 @@ class PluginSocket {
      **/
     async getWritableFileData(filePath):Promise<string>{
         await this.waitForRuntimeIsInline()
-        return this._sendRequest("getWritableFileData",filePath)
+        return this._sendRequest("getWritableFileData",filePath,{encrypted:true})
     }
 
     /**
@@ -516,7 +553,7 @@ class PluginSocket {
      */
     async getAssetUsageInScene(uuid:string): Promise<Record<string,Array<string>>>{
         await this.waitForRuntimeIsInline()
-        return this._sendRequest("getAssetUsageInScene",uuid)
+        return this._sendRequest("getAssetUsageInScene",uuid,{encrypted:true})
     }
 
     /**
@@ -526,7 +563,7 @@ class PluginSocket {
      */
     async getAssetUsageInOtherAsset(uuid:string): Promise<Array<string>>{
         await this.waitForRuntimeIsInline()
-        return this._sendRequest("getAssetUsageInOtherAsset",uuid)
+        return this._sendRequest("getAssetUsageInOtherAsset",uuid,{encrypted:true})
     }
 
     /**
@@ -536,7 +573,7 @@ class PluginSocket {
      */
     async getDependsOfAsset(uuid:string): Promise<Array<string>>{
         await this.waitForRuntimeIsInline()
-        return this._sendRequest("getDependsOfAsset",uuid)
+        return this._sendRequest("getDependsOfAsset",uuid,{encrypted:true})
     }
 
     /**
@@ -546,7 +583,7 @@ class PluginSocket {
      */
     async getRecursiveDependsOfAsset(uuid:string): Promise<Array<string>>{
         await this.waitForRuntimeIsInline()
-        return this._sendRequest("getRecursiveDependsOfAsset",uuid)
+        return this._sendRequest("getRecursiveDependsOfAsset",uuid,{encrypted:true})
     }
 
     /**
@@ -556,7 +593,7 @@ class PluginSocket {
      */
     async getDependsOfNode(uuid:string): Promise<Array<string>>{
         await this.waitForRuntimeIsInline()
-        return this._sendRequest("getDependsOfNode",uuid)
+        return this._sendRequest("getDependsOfNode",uuid,{encrypted:true})
     }
 
     /**
@@ -566,13 +603,13 @@ class PluginSocket {
      */
     async getRecursiveDependsOfNode(uuid:string): Promise<Array<string>>{
         await this.waitForRuntimeIsInline()
-        return this._sendRequest("getRecursiveDependsOfNode",uuid)
+        return this._sendRequest("getRecursiveDependsOfNode",uuid,{encrypted:true})
     }
 
     /**获取Texture的纹理数据 */
     async getTextureData(uuid:string):Promise<TexDataInfo>{
         await this.waitForRuntimeIsInline()
-        let ret = await this._sendRequest("getTextureData",uuid,"request",60*1000) as any
+        let ret = await this._sendRequest("getTextureData",uuid,{timeout:60*1000}) as any
         return ret
     }
 
@@ -610,6 +647,7 @@ class PluginSocket {
     async doVerify(activationCode:string):Promise<VerifyRespParam>{
         const size = _funcs.getDesignResolutionSize()
         await this.waitSocketOpen()
+        await this.getWsArr()
         let userInfo:Editor.User.UserData = await Editor.User.getData()
         const engineVer =  await Editor.App.version
 
@@ -628,7 +666,8 @@ class PluginSocket {
         // console.log("------size",size)
         // console.log("------obj",obj)
         try{
-            let ret = await this._sendRequest("VerifyActivationCode",obj,"request",30*1000) as any
+            let ret = await this._sendRequest("VerifyActivationCode",obj,{timeout:30*1000,encrypted:true}) as any
+            // console.log("---------ret",ret)
             return ret
         }catch(e){
             console.error(e)
@@ -639,7 +678,7 @@ class PluginSocket {
     /**主动刷新节点树信息 */
     async updateNodeAndAssetInfo(){
         await this.waitForRuntimeIsInline()
-        return this._sendRequest("updateNodeAndAssetInfo")
+        return this._sendRequest("updateNodeAndAssetInfo",null,{encrypted:true})
     }
 
     /**设置自动刷新节点树的时间间隔 */
@@ -654,9 +693,23 @@ class PluginSocket {
         return this._sendRequest("callFuncOfComp",{uuid,funcName,args})
     }
 
+    private _wsArr = null
+
+    /**加密秘钥 */
+    async getWsArr(){
+        if(this._wsArr){
+            return this._wsArr
+        }
+        await this.waitSocketOpen()
+        this._wsArr = await this._sendRequest("getArr",null)
+        // console.log("---------this._wsArr",this._wsArr)
+        return this._wsArr
+    }
+
     clear(){
         this._gameEnvObj = null
         this._nodeLayers = null
+        this._wsArr = null;
     }
 };
 

@@ -49,6 +49,10 @@ type VerifyInfo struct {
 	AuthorInfo     interface{} `json:"authorInfo,omitempty"`
 }
 
+var (
+	_keyArr []int = []int{}
+)
+
 // 定义消息结构
 type Message struct {
 	Type       string      `json:"type"`
@@ -61,14 +65,7 @@ type Message struct {
 	Total      int         `json:"total,omitempty"`
 	Idx        int         `json:"idx,omitempty"`
 	VerifyInfo VerifyInfo  `json:"verifyInfo,omitempty"`
-}
-
-func fmt_println(a ...any) {
-	if isJsWasm() {
-		console_log(a...)
-	} else {
-		fmt.Println(a...)
-	}
+	Encrypted  int         `json:"encrypted,omitempty"`
 }
 
 // 构造服务器实例
@@ -304,25 +301,57 @@ func (s *WebSocketServer) handleIdentify(wsId int, msg Message) {
 	}
 }
 
+func DecryptMsg(msg *Message) {
+	if msg.Encrypted == 1 {
+		jsonStr := ""
+		if dataStr, ok := msg.Data.(string); ok {
+			jsonStr = Decrypt(dataStr, parseKey(_keyArr))
+			if err := json.Unmarshal([]byte(jsonStr), &msg.Data); err != nil {
+				fmt.Println("JSON Unmarshal error:", err)
+			}
+		}
+		msg.Action = Decrypt(msg.Action, parseKey(_keyArr))
+	}
+}
+
 // 处理请求消息
 func (s *WebSocketServer) handleRequest(wsId int, msg Message) {
-	if msg.Action == "checkOtherSideIsInline" {
+	action := msg.Action
+	if action == "checkOtherSideIsInline" {
 		s.handleCheckOnline(wsId, msg)
 		return
 	}
+	if msg.Encrypted == 1 {
+		action = Decrypt(action, parseKey(_keyArr))
+	} else {
+		if action == "getArr" {
+			msg.Type = "response"
+			msg.Data = _keyArr
+			s.writeMessage(wsId, msg)
+			return
+		}
+	}
+
 	//校验激活码
 	if wsId == s.pluginConn {
-		if msg.Action == "VerifyActivationCode" {
+		if action == "VerifyActivationCode" {
+			if msg.Encrypted == 1 {
+				DecryptMsg(&msg)
+			}
 			s.doVerify(wsId, &msg)
 			return
-		} else if msg.Action == "Statistics" {
+		} else if action == "Statistics" {
+			if msg.Encrypted == 1 {
+				DecryptMsg(&msg)
+			}
 			s.doStatistics(wsId, &msg)
 			return
 		}
 	}
 	if wsId == s.pluginConn {
-		dealFakeData(&msg)
 		if !isVerified() {
+			DecryptMsg(&msg)
+			dealFakeData(&msg)
 			msg.Type = "response"
 			s.writeMessage(wsId, msg)
 			return
@@ -461,7 +490,7 @@ func (s *WebSocketServer) handleClose(wsId int) {
 			if newName != "" {
 				s.sendConnectionUpdate(newName, true)
 				s.activeRuntime = s.runtimes[0].wsId
-				msg := Message{Type: "push", Action: "markActive", Data: true}
+				msg := Message{Type: "push", Action: "markActive", Data: map[string]interface{}{"isActive": true, "wsArr": _keyArr}}
 				s.writeMessage(s.activeRuntime, msg)
 			}
 		}
@@ -471,7 +500,7 @@ func (s *WebSocketServer) handleClose(wsId int) {
 		s.mutex.Unlock()
 		fmt_println("Plugin disconnected")
 		if s.activeRuntime != 0 {
-			msg := Message{Type: "push", Action: "markActive", Data: false}
+			msg := Message{Type: "push", Action: "markActive", Data: map[string]interface{}{"isActive": false}}
 			s.writeMessage(s.activeRuntime, msg)
 		}
 	}
@@ -502,10 +531,10 @@ func (s *WebSocketServer) _doSelectActiveRuntime(name string) {
 	s.mutex.Unlock()
 
 	if oldRuntime != 0 && oldRuntime != newRuntime {
-		msg := Message{Type: "push", Action: "markActive", Data: false}
+		msg := Message{Type: "push", Action: "markActive", Data: map[string]interface{}{"isActive": false}}
 		s.writeMessage(oldRuntime, msg)
 	}
-	msg := Message{Type: "push", Action: "markActive", Data: true}
+	msg := Message{Type: "push", Action: "markActive", Data: map[string]interface{}{"isActive": true, "wsArr": _keyArr}}
 	s.writeMessage(newRuntime, msg)
 }
 
@@ -523,8 +552,7 @@ func (s *WebSocketServer) sendConnectionUpdate(name string, bOnline bool) {
 	}
 
 	info, _ := GetConnInfoOfWsId(activeRuntime.wsId)
-
-	s.writeMessage(s.pluginConn, Message{
+	msg := Message{
 		Type:   "push",
 		Action: "otherSideOnlineChange",
 		Data: map[string]interface{}{
@@ -532,7 +560,8 @@ func (s *WebSocketServer) sendConnectionUpdate(name string, bOnline bool) {
 			"name":      name,
 			"info":      info,
 		},
-	})
+	}
+	s.writeMessage(s.pluginConn, msg)
 
 }
 
@@ -602,12 +631,8 @@ func initForExec() {
 	_server.Start()
 }
 
-func isJsWasm() bool {
-	osType := runtime.GOOS
-	return osType == "js"
-}
-
 func main() {
+	_keyArr = generateKey()
 	fmt_println("osType", runtime.GOOS)
 	if isJsWasm() {
 		registerGoFunc2Js()
