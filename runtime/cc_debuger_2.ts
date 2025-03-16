@@ -106,15 +106,18 @@ class RunTimeSocket {
     private _spiltMsg:Record<number,Array<SplitMsg>> = {}
     private _onMessage(msg: OneMsg) {
         if(msg.encrypted==1){ 
+            msg.action = str_decrypt(msg.action,parseKey(_wsArr))
             if(typeof msg.data=="string"){
                 msg.data = str_decrypt(msg.data,parseKey(_wsArr))
+                let newData = null
                 try{
-                    msg.data = JSON.parse(msg.data)
+                    newData = JSON.parse(msg.data)
+                    msg.data = newData
                 }catch(e){
                     
                 }
             }
-            msg.action = str_decrypt(msg.action,parseKey(_wsArr))
+            
         }
         // log("cc_onMesage",JSON.stringify(msg))
         if(msg["isSplit"]){
@@ -163,18 +166,18 @@ class RunTimeSocket {
                 data = window["getGameEnv"]()
             } else if (msg.action === 'requestShowFPS') {
                 let bool = msg.data
-                if(bool=="true"){
+                if(bool=="true"||bool===true){
                     _cc_().profiler.showStats()
-                }else if(bool=="false"){
+                }else if(bool=="false"||bool===false){
                     _cc_().profiler.hideStats()
                 }
                 data = _cc_().profiler.isShowingStats()
             } else if (msg.action === 'requestDynamicAtlasEnable') {
                 let bool = msg.data
-                if(bool=="true"){
+                if(bool=="true"||bool===true){
                     _cc_().macro.CLEANUP_IMAGE_CACHE = false;
                     _cc_().DynamicAtlasManager.instance.enabled = true
-                }else if(bool=="false"){
+                }else if(bool=="false"||bool===false){
                     _cc_().DynamicAtlasManager.instance.enabled = false
                 }
                 data = _cc_().DynamicAtlasManager.instance.enabled
