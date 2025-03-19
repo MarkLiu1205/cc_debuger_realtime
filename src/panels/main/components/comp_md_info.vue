@@ -20,9 +20,8 @@ const verifyTip = computed(()=>{
     }
 })
 //比较版本号
-const isLatestVersion = computed(()=>{
+function checkCurIsLatestVersion(){
     const nowVer = _funcs.getPluginVersionName();
-    verifyInfo.latestVersion;
     const vArr_self = nowVer.split(".")
     const vArr_remote = verifyInfo.latestVersion.split(".")
     for(let i=0;i<vArr_self.length;i++){
@@ -39,14 +38,14 @@ const isLatestVersion = computed(()=>{
         }
     }
     return true
-})
+}
 
 const vertionTip = computed(()=>{
-    if(isLatestVersion){
-        const nowVer = _funcs.getPluginVersionName();
+    const nowVer = _funcs.getPluginVersionName();
+    if(checkCurIsLatestVersion()){ 
         return _funcs.formatStr(_funcs.getI18nText("text_119"),nowVer)
     }else{
-        return _funcs.formatStr(_funcs.getI18nText("text_120"),verifyInfo.latestVersion)
+        return _funcs.formatStr(_funcs.getI18nText("text_120"),nowVer,verifyInfo.latestVersion)
     }
 })
 
@@ -66,7 +65,8 @@ function onClickGitHub(){
             <label style="font-style: italic;font-weight: bold;">{{ verifyTip }}</label>
         </div>
         <div class="row" v-if="verifyInfo.latestVersion!=''">
-            <label>{{ vertionTip }}</label>
+            <label v-if="checkCurIsLatestVersion()" >{{ vertionTip }}</label>
+            <label v-else style="color: #ff0000;">{{ vertionTip }}</label>
         </div>
         <div class="row">
             <label class="label_1">{{ _funcs.getI18nText("text_121") }}</label>
