@@ -168,14 +168,25 @@ computed(()=>{
     const socketUrl = _pluginSocket.getSocketUrl()
 })
 
+function onClose(){
+    eventBus.emit("close_inspector",assetInfo.value.uuid)
+}
+
+
 </script>
 
 <template>
     <div class="asset-info">
+        
         <div v-if="assetInfo.path=='assets'">
             <div class="row">
                 <label class="orange">{{ _funcs.getI18nText("text_49") }}</label>
                 <label class="break-word">{{ floderStat.totalNum }}</label>
+                <div style="flex-grow: 1; display: flex;flex-direction: row-reverse; gap: 10px; padding-right: 10px;">
+                    <ui-button outline type="danger" @confirm="onClose">
+                        close
+                    </ui-button>
+                </div>
             </div>
             <div class="row">
                 <ui-label class="orange" :tooltip='_funcs.getI18nText("text_50")'>{{ _funcs.getI18nText("text_51") }}</ui-label>
@@ -192,10 +203,20 @@ computed(()=>{
             <div class="row" v-if="assetInfo.isBundleFloder">
                 <label class="orange">{{ _funcs.getI18nText("text_53") }}</label>
                 <label>YES</label>
+                <div style="flex-grow: 1; display: flex;flex-direction: row-reverse; gap: 10px; padding-right: 10px;">
+                    <ui-button outline type="danger" @confirm="onClose">
+                        close
+                    </ui-button>
+                </div>
             </div>
             <div class="row" v-if="!assetInfo.isBundleFloder">
                 <label class="orange">{{ _funcs.getI18nText("text_54") }}</label>
                 <label>{{assetInfo.bundleName??"无"}}</label>
+                <div style="flex-grow: 1; display: flex;flex-direction: row-reverse; gap: 10px; padding-right: 10px;">
+                    <ui-button outline type="danger" @confirm="onClose">
+                        close
+                    </ui-button>
+                </div>
             </div>
             <div class="row">
                 <label class="orange">path:</label>
@@ -214,6 +235,11 @@ computed(()=>{
             <div class="row">
                 <label class="orange">{{ _funcs.getI18nText("text_54") }}</label>
                 <label>{{assetInfo.bundleName??"无"}}</label>
+                <div style="flex-grow: 1; display: flex;flex-direction: row-reverse; gap: 10px; padding-right: 10px;">
+                    <ui-button outline type="danger" @confirm="onClose">
+                        close
+                    </ui-button>
+                </div>
             </div>
             
             <div class="row">

@@ -67,6 +67,7 @@ onMounted(() => {
 
     gap_line.value.addEventListener('mousedown', onMouseDown);
 
+    eventBus.on("close_inspector",onClickOutside)
 });
 
 onUnmounted(() => {
@@ -76,6 +77,7 @@ onUnmounted(() => {
         gap_line.value.removeEventListener('mousedown', onMouseDown)
     }
 
+    eventBus.off("close_inspector",onClickOutside)
 });
 
 function onSel_asset (data: ResTreeItem, node: TreeNode, e: MouseEvent){

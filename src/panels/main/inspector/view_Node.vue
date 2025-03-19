@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue';
 import { _pluginSocket } from '../../../tools/plugin_socket';
+import { eventBus } from '../../../tools/_enentBus';
 
 const enumDesc_Layers = ref<string[]>([])
 const enumsMap = ref({})
@@ -73,6 +74,14 @@ function onSelect(event){
     nodeModel.value.layer = event.target.value
 }
 
+function onClose(){
+    eventBus.emit("close_inspector",nodeModel.value.uuid)
+}
+
+function onShowBorder(){
+
+}
+
 </script>
 
 <template>
@@ -81,16 +90,24 @@ function onSelect(event){
             <ui-checkbox id="id_active" :value="nodeModel.active" @change="onToggle"></ui-checkbox>
 
             <h3 style="padding-right: 10px;">Node: </h3>
-            <div v-if="!editingName" @click="toggleEditingName" style="min-width: 60px;">
+            <div v-if="!editingName" @click="toggleEditingName" class="node-name">
                 <span >{{ nodeModel.name }}</span>
             </div>
-            <ui-input ref="nameInputRef"
+            <ui-input class="node-name" ref="nameInputRef"
                 v-else 
                 v-model="nodeModel.name" 
                 type="text" 
                 @blur="handleNameBlur" 
                 @keydown.enter="handleNameBlur" 
             />
+            <div style="flex-grow: 1; display: flex;flex-direction: row-reverse; gap: 10px; ">
+                <ui-button outline type="danger" @confirm="onClose">
+                    close
+                </ui-button>
+                <ui-button outline type="primary" @confirm="onShowBorder">
+                    border
+                </ui-button>
+            </div>
         </div>
 
         <div class="property">
@@ -136,6 +153,9 @@ function onSelect(event){
 
 ui-num-input {
     width: calc((100% - 15px*2) / 3);
+}
+.node-name {
+    width: calc((100% - 250px));
 }
 
 </style>
