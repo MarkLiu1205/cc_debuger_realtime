@@ -1,3 +1,5 @@
+import { UITransform } from "cc";
+
 const _cc_ = function(){
     return window["__cchyz"]
 }
@@ -236,6 +238,9 @@ class RunTimeSocket {
             } else if (msg.action === 'callFuncOfComp') {
                 const {uuid,funcName,args} = msg.data
                 data = _data.callFuncOfComp(uuid,funcName,args)
+            } else if (msg.action === 'showBorderOfNode') {
+                const uuid = msg.data
+                _data.showBorderOfNode(uuid)
             }
     
             responseData.data = data
@@ -1206,6 +1211,127 @@ class _RuntimeData{
         }
         func.apply(comp,args)
     }
+
+    /**显示节点的边框 */
+    showBorderOfNode(uuid:string){
+        const node = this.m_nodeUuidMap[uuid]
+        if(node==null){
+            return
+        }
+        let trans:UITransform = node.getComponent(_cc_().UITransform);
+        let parentTrans = this.makePersistCanvasNode()
+        let worldPt = trans.node.getWorldPosition()
+
+        const pt = parentTrans.convertToNodeSpaceAR(_cc_().v3(worldPt.x,worldPt.y,0))
+        const size = trans.contentSize
+        const anchorPt = trans.anchorPoint
+
+        const tmpParent = createNode(node.name)
+        tmpParent.parent = parentTrans.node;
+
+        tmpParent.setPosition(pt)
+
+        let graphics = createGraphicsNode(node.name)
+        graphics.node.parent = tmpParent
+        graphics.clear()
+        graphics.lineWidth = 6
+        graphics.strokeColor = _cc_().color(255,0,0)
+
+        let left = -size.width*anchorPt.x
+        let right = size.width*(1-anchorPt.x)
+
+        let bottom = -size.height*anchorPt.y
+        let top = size.height*(1-anchorPt.y)
+        
+        graphics.moveTo(left,bottom)
+
+        graphics.lineTo(right,bottom)
+        graphics.lineTo(right,top)
+        graphics.lineTo(left,top)
+        graphics.lineTo(left,bottom)
+        graphics.close()
+
+        graphics.stroke()
+        
+        _cc_().tween(tmpParent)
+            .set({scale:_cc_().v3(1,1,1)})
+            .to(0.15,{scale:_cc_().v3(1.2,1.2,1.2)}).to(0.15,{scale:_cc_().v3(1,1,1)}).union().repeat(3)
+            .delay(5)
+            .removeSelf()
+            .start()
+    }
+
+    private _globalNode = null;
+    private _touchNode = null;
+    makePersistCanvasNode(){
+        if(this._globalNode==null){
+            this._globalNode = new (_cc_().Node)("_debuger_canvas");
+            this._globalNode.setSiblingIndex(100); 
+            this._globalNode.layer = _cc_().Layers.Enum.UI_2D;
+            let canvas = this._globalNode.addComponent(_cc_().Canvas);
+            canvas.alignCanvasWithScreen = true;
+
+            let trans = this._globalNode.getComponent(_cc_().UITransform) || this._globalNode.addComponent(_cc_().UITransform);
+       
+            let widget = _addWidget(this._globalNode)
+
+            _cc_().director.addPersistRootNode(this._globalNode);
+
+            this._touchNode = createNode("touch_layer")
+            this._touchNode.parent = this._globalNode
+            _addWidget(this._touchNode)
+
+            this._touchNode.on(_cc_().NodeEventType.TOUCH_START, this.onTouchEvent, this);
+            this._touchNode.on(_cc_().NodeEventType.TOUCH_MOVE, this.onTouchEvent, this);
+            this._touchNode.on(_cc_().NodeEventType.TOUCH_END, this.onTouchEvent, this);
+
+            this._touchNode.active = false
+        }
+        return this._globalNode.getComponent(_cc_().UITransform)
+    }
+
+    onTouchEvent(event){
+        let isPass = true
+        if (isPass) {
+            event.preventSwallow = true;
+        }else{
+            event.preventSwallow = false;
+            event.propagationImmediateStopped = true;
+            event.propagationStopped = true
+        }
+        
+        let pt = event.getUILocation();
+        let _node = event.target;
+        let trans = _node.getComponent(_cc_().UITransform);
+
+        pt = trans.convertToNodeSpaceAR(_cc_().v3(pt.x,pt.y,0)) as any;
+        console.log("-------pt",pt.x,pt.y)
+    }
+}
+
+function createNode(name=null){
+    let _node = new (_cc_().Node)(name??"Node");
+    let trans = _node.addComponent(_cc_().UITransform)
+    return trans.node
+}
+
+function createGraphicsNode(name=""){
+    let _node = createNode("graphics_"+name)
+    let graphics = _node.addComponent(_cc_().Graphics)
+    return graphics
+}
+
+function _addWidget(node) {
+    let widget = node.getComponent(_cc_().Widget)||node.addComponent(_cc_().Widget);
+    widget.isAlignLeft = true;
+    widget.isAlignRight = true;
+    widget.isAlignTop = true;
+    widget.isAlignBottom = true;
+    widget.left = 0;
+    widget.right = 0;
+    widget.top = 0;
+    widget.bottom = 0;
+    return widget
 }
 
 let compAttrMaps = null
@@ -1984,6 +2110,9 @@ function _initOnce() {
     _runtimeSocket.initSocket(wsUrl);
 
     _data.initAssetForPush()
+    setTimeout(()=>{
+        _data.makePersistCanvasNode()
+    },1000)
     
     const _addRef = _cc_().Asset.prototype.addRef
     const _decRef = _cc_().Asset.prototype.decRef

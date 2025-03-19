@@ -690,7 +690,7 @@ class PluginSocket {
     /**调用组件执行函数 */
     async callFuncOfComp(uuid:string,funcName:string,args:any[] = []){
         await this.waitForRuntimeIsInline()
-        return this._sendRequest("callFuncOfComp",{uuid,funcName,args})
+        return this._sendRequest("callFuncOfComp",{uuid,funcName,args},{encrypted:true})
     }
 
     private _wsArr = null
@@ -704,6 +704,12 @@ class PluginSocket {
         this._wsArr = await this._sendRequest("getArr",null)
         // console.log("---------this._wsArr",this._wsArr)
         return this._wsArr
+    }
+
+    /**显示节点的边框 */
+    async showBorderOfNode(uuid:string){
+        await this.waitForRuntimeIsInline()
+        return this._sendRequest("showBorderOfNode",uuid,{encrypted:true})
     }
 
     clear(){

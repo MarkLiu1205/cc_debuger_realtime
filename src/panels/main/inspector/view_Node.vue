@@ -79,7 +79,7 @@ function onClose(){
 }
 
 function onShowBorder(){
-
+    _pluginSocket.showBorderOfNode(nodeModel.value.uuid)
 }
 
 </script>
