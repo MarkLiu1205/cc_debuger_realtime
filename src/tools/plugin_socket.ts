@@ -70,6 +70,7 @@ class PluginSocket {
 
             this.m_socket.onclose = () => {
                 _funcs.log_1(' Disconnected from server');
+                this._runtimeIsOnline = false
 
                 const action = PushAction.otherSideOnlineChange
                 const obj = {
@@ -197,6 +198,7 @@ class PluginSocket {
             }
             if(msg.action === PushAction.otherSideOnlineChange){
                 let {bIsOnline,name} = msg.data
+                this._runtimeIsOnline = bIsOnline
                 if(bIsOnline){
                     if(this._onWaitRuntimeOnlineResolves){
                         for(let resolve of this._onWaitRuntimeOnlineResolves){
@@ -234,6 +236,8 @@ class PluginSocket {
         }
     }
 
+    /**运行时是否在线 */
+    private _runtimeIsOnline = false
     /**
      * 监听运行时的在线情况
      */
@@ -293,6 +297,10 @@ class PluginSocket {
     /**等待runtime上线连接上plugin */
     async waitForRuntimeIsInline(){
         await this.waitSocketOpen()
+        if(this._runtimeIsOnline){
+            return Promise.resolve(true)
+        }
+
         return new Promise(async (resolve, reject) => {
             let ret:boolean = await this._sendRequest('checkOtherSideIsInline')
             if(ret){
