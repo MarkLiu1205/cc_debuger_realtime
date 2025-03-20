@@ -725,6 +725,10 @@ class PluginSocket {
         this._nodeLayers = null
         this._wsArr = null;
     }
+
+    async getSearchPaths(){
+        return this._sendRequest("getSearchPaths",null,{encrypted:true})
+    }
 };
 
 enum PushAction{

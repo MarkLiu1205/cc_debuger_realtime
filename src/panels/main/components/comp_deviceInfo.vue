@@ -95,6 +95,12 @@ async function onEditConfirmAddress(event){
     
 }
 
+async function onPrintSearchPaths(){
+    let paths = await _pluginSocket.getSearchPaths()
+    _funcs.log_1("SearchPaths",paths)
+    showToast("已获取到搜索路径，请查看控制台日志")
+}
+
 </script>
 
 <template>
@@ -111,7 +117,7 @@ async function onEditConfirmAddress(event){
                 @blur="handleNameBlur" 
                 @keydown.enter="onEditConfirmAddress" 
             />
-            <ui-button v-if="!bAddressEditFocus" style="padding-top: 5px;padding-bottom: 5px;margin-left: 10px;" @click="onFocusEditAddress">{{ _funcs.getI18nText("text_2") }}</ui-button>
+            <ui-button v-if="!bAddressEditFocus" style="padding-top: 2px;padding-bottom: 2px;margin-left: 10px;" @click="onFocusEditAddress">{{ _funcs.getI18nText("text_2") }}</ui-button>
         </div>
         <div class="row">
             <label>{{ _funcs.getI18nText("text_20") }}</label>
@@ -151,6 +157,9 @@ async function onEditConfirmAddress(event){
             <div class="row" v-if="gameEnvObj.CC_JSB">
                 <label>writablePath:</label>
                 <label class="blue scrollable">{{ gameEnvObj.writablePath }}</label>
+            </div>
+            <div class="row" v-if="gameEnvObj.CC_JSB">
+                <ui-button @click="onPrintSearchPaths">SearchPaths</ui-button>
             </div>
         </div>
     </div>

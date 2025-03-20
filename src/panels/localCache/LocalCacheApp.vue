@@ -90,6 +90,12 @@ async function getWritableFileData(filePath:string){
     return u8a
 }
 
+async function onPrintSearchPaths(){
+    let paths = await Editor.Message.request(_funcs.getPluginName(),"callMainPanelFunc","_pluginSocket","getSearchPaths")
+    _funcs.log_1("SearchPaths",paths)
+    showToast("已获取到搜索路径，请查看控制台日志")
+}
+
 </script>
 
 <template>
@@ -106,6 +112,7 @@ async function getWritableFileData(filePath:string){
             </div>
             <div style="height: 40px;justify-content: center;align-items: center;" >
                 <el-button type="success" @click="syncSelectFile" :disabled="(!curSelItem||curSelItem.isFloder)||bIsSyncing">{{ _funcs.getI18nText("text_85") }}</el-button>
+                <el-button type="success" @click="onPrintSearchPaths">{{ "打印搜索路径" }}</el-button>
             </div>
             <div class="tree-container">
                 <el-tree-v2 

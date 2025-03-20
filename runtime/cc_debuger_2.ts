@@ -241,6 +241,8 @@ class RunTimeSocket {
             } else if (msg.action === 'showBorderOfNode') {
                 const uuid = msg.data
                 _data.showBorderOfNode(uuid)
+            } else if (msg.action === 'getSearchPaths') {
+                data = _data.getSearchPaths()
             }
     
             responseData.data = data
@@ -1299,6 +1301,14 @@ class _RuntimeData{
 
         pt = trans.convertToNodeSpaceAR(_cc_().v3(pt.x,pt.y,0)) as any;
         console.log("-------pt",pt.x,pt.y)
+    }
+
+    getSearchPaths(){
+        if(!_cc_().sys.isNative){
+            return ""
+        }
+        let paths = _cc_().native.fileUtils.getSearchPaths()
+        return paths
     }
 }
 
