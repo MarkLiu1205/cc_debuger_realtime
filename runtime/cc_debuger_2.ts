@@ -1,4 +1,4 @@
-import { UITransform } from "cc";
+
 
 const _cc_ = function(){
     return window["__cchyz"]
@@ -1218,13 +1218,12 @@ class _RuntimeData{
         if(node==null){
             return
         }
-        let trans:UITransform = node.getComponent(_cc_().UITransform);
+        let trans = node.getComponent(_cc_().UITransform);
         let parentTrans = this.makePersistCanvasNode()
         let worldPt = trans.node.getWorldPosition()
 
         const pt = parentTrans.convertToNodeSpaceAR(_cc_().v3(worldPt.x,worldPt.y,0))
-        const size = trans.contentSize
-        const anchorPt = trans.anchorPoint
+        let {left,right,top,bottom} = getNodeRect(node)
 
         const tmpParent = createNode(node.name)
         tmpParent.parent = parentTrans.node;
@@ -1236,12 +1235,6 @@ class _RuntimeData{
         graphics.clear()
         graphics.lineWidth = 6
         graphics.strokeColor = _cc_().color(255,0,0)
-
-        let left = -size.width*anchorPt.x
-        let right = size.width*(1-anchorPt.x)
-
-        let bottom = -size.height*anchorPt.y
-        let top = size.height*(1-anchorPt.y)
         
         graphics.moveTo(left,bottom)
 
@@ -1332,6 +1325,31 @@ function _addWidget(node) {
     widget.top = 0;
     widget.bottom = 0;
     return widget
+}
+
+function getNodeRect(node,parentScale = null){
+    let trans = node.getComponent(_cc_().UITransform);
+
+    let size = trans.contentSize
+    const anchorPt = trans.anchorPoint
+
+    if(parentScale==null){
+        let _scale = node.getScale()
+        let _parent = node.parent
+        while(_parent){
+            _scale = _scale.multiply(_parent.getScale())
+            _parent = _parent.parent
+        }
+        parentScale = _scale
+    }
+    size = _cc_().size(size.width*parentScale.x,size.height*parentScale.y)
+
+    let left = -size.width*anchorPt.x
+    let right = size.width*(1-anchorPt.x)
+
+    let bottom = -size.height*anchorPt.y
+    let top = size.height*(1-anchorPt.y)
+    return {left,right,top,bottom}
 }
 
 let compAttrMaps = null
