@@ -43,8 +43,14 @@ function deal_cc_debuger_2(){
                 stringArrayThreshold: 0.75,
             }).getObfuscatedCode();
 
-            const uglyJsCode = `const jsStr = \`${obfuscatedJsCode}\`\ntry{\n    const _func = new Function(jsStr)\n    _func()\n}catch(e){\n    console.log(e)\n}`
-            fs.writeFileSync(jsFilePath, uglyJsCode, 'utf-8');
+            let pakoPath = "src/tools/pako.min.js"
+            let pakoStr = fs.readFileSync(pakoPath,"utf-8")
+
+            let uglyJsCode = `const jsStr = \`${obfuscatedJsCode}\`\ntry{\n    const _func = new Function(jsStr)\n    _func()\n}catch(e){\n    console.log(e)\n}\n\n`
+            
+            let pakoJsCode = `const pakoStr = \`${pakoStr}\`\ntry{\n    const _func = new Function(pakoStr)\n    _func()\n}catch(e){\n    console.log(e)\n}\n\n`
+            
+            fs.writeFileSync(jsFilePath, pakoJsCode+uglyJsCode, 'utf-8');
             console.log(`Obfuscated: ${jsFilePath}\n`);
         }
     }

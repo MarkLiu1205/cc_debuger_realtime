@@ -622,10 +622,10 @@ function xor(inputBytes:Uint8Array, keyBytes:Uint8Array) {
 }
 
 // 加密函数
-export function str_encrypt(input:string, key:string) {
-    if(key==null){
-        console.log("key 不能为空")
-        return
+export function str_encrypt(input: string, key: string) {
+    if (key == null) {
+        console.log("key 不能为空");
+        return;
     }
     // 将输入和密钥转换为字节数组
     const inputBytes = new TextEncoder().encode(input);
@@ -634,18 +634,33 @@ export function str_encrypt(input:string, key:string) {
     // 调用 xor 进行异或加密
     const xorResult = xor(inputBytes, keyBytes);
 
-    // 将字节数组转换为 Base64 编码字符串
-    return btoa(String.fromCharCode(...xorResult));
+    // 将字节数组分块转换为 Base64 编码字符串
+    const chunkSize = 0x8000; // 每次处理 32768 个字节
+    let result = '';
+    for (let i = 0; i < xorResult.length; i += chunkSize) {
+        const chunk = xorResult.subarray(i, i + chunkSize);
+        result += String.fromCharCode.apply(null, Array.from(chunk));
+    }
+
+    return btoa(result);
 }
 
 // 解密函数
-export function str_decrypt(base64Input:string, key:string) {
-    if(key==null){
-        console.log("key 不能为空")
-        return
+export function str_decrypt(base64Input: string, key: string) {
+    if (key == null) {
+        console.log("key 不能为空");
+        return;
     }
     // Base64 解码为字节数组
-    const xorResult = Uint8Array.from(atob(base64Input), c => c.charCodeAt(0));
+    const binaryString = atob(base64Input);
+    const chunkSize = 0x8000; // 每次处理 32768 个字节
+    const xorResult = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i += chunkSize) {
+        const chunk = binaryString.slice(i, i + chunkSize);
+        for (let j = 0; j < chunk.length; j++) {
+            xorResult[i + j] = chunk.charCodeAt(j);
+        }
+    }
 
     // 将密钥转换为字节数组
     const keyBytes = new TextEncoder().encode(key);
@@ -655,6 +670,16 @@ export function str_decrypt(base64Input:string, key:string) {
 
     // 将解密后的字节数组转换为字符串
     return new TextDecoder().decode(originalBytes);
+}
+
+/**压缩字符串 */
+export function pako_deflate(str:string){
+    return pako.deflate(str, { to: 'string' });
+}
+
+/**解压字符串 */
+export function pako_inflate(str:string){
+    return pako.inflate(str, { to: 'string' });
 }
 
 let _designSize = null
@@ -691,3 +716,31 @@ export function getDesignResolutionSize():{width:number,height:number}{
 }
 
 }
+
+declare var pako: any;
+
+function _initPako(){
+    if(globalThis.pako!=null){
+        return
+    }
+    let pakoPath = path.join(_funcs.getCurPluginPath(), "src/tools/", "pako.min.js");
+    let pakoStr = fs.readFileSync(pakoPath,"utf-8")
+    
+    try{
+        const _func = new Function(pakoStr)
+        _func()
+    
+        let originalStr = `-----AAAAA11111BBBBB22222===`
+    
+        const data = pako.deflate(originalStr, { to: 'string' });
+        const inflated = pako.inflate(data, { to: 'string' });
+    
+        console.log(data.length)
+        console.log(inflated)
+    
+    }catch(e){
+        console.log(e)
+    }
+}
+
+_initPako()

@@ -140,7 +140,7 @@ async function test_1() {
     const localIp = _funcs.getLocalIpv4IP()
     console.log("localIp",localIp)
 
-    _pluginSocket.doVerify("kkkkkkk")
+    _pluginSocket.testPako()
 }
 
 async function openEvalPanel(event: MouseEvent){

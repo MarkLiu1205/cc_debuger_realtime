@@ -1,5 +1,4 @@
 
-
 const _cc_ = function(){
     return window["__cchyz"]
 }
@@ -74,7 +73,7 @@ class RunTimeSocket {
                 delete obj.encrypted
             }
             if (jsonStr.length <= step) {
-                if(obj.encrypted==1){
+                if(obj.encrypted == 1){
                     obj.action = str_encrypt(obj.action,parseKey(_wsArr))
                     if(obj.data!=null){
                         if(typeof obj.data=="object"){
@@ -85,15 +84,32 @@ class RunTimeSocket {
                         }
                     }
                     jsonStr = JSON.stringify(obj)
+                }else if(obj.encrypted == 2){
+                    obj.action = pako.deflate(obj.action, { to: 'string' });
+                    if(obj.data!=null){
+                        if(typeof obj.data=="object"){
+                            obj.data = JSON.stringify(obj.data)
+                        }
+                        if(typeof obj.data=="string"){
+                            obj.data = pako.deflate(obj.data, { to: 'string' });
+                        }
+                    }
+                    jsonStr = JSON.stringify(obj)
                 }
                 this.m_socket?.send(jsonStr);
             } else {
-                delete obj.encrypted
+                if(obj.encrypted == 2){
+                    jsonStr = pako.deflate(jsonStr, { to: 'string' });
+                }else{
+                    delete obj.encrypted
+                }
+
                 let idx = 0;
                 const total = Math.ceil(jsonStr.length / step);
                 const uniqueId = _getAccId()
                 while (idx < total) {
                     const subStr = jsonStr.substring(idx * step, Math.min((idx + 1) * step, jsonStr.length));
+                    const xx = str_encrypt(subStr,parseKey(_wsArr))
                     const subObj:SplitMsg = { 
                         isSplit: true, idx: idx + 1, total: total, data: subStr , uniqueId: uniqueId,
                     }
@@ -107,7 +123,7 @@ class RunTimeSocket {
     }
     private _spiltMsg:Record<number,Array<SplitMsg>> = {}
     private _onMessage(msg: OneMsg) {
-        if(msg.encrypted==1){ 
+        if(msg.encrypted == 1){ 
             msg.action = str_decrypt(msg.action,parseKey(_wsArr))
             if(typeof msg.data=="string"){
                 msg.data = str_decrypt(msg.data,parseKey(_wsArr))
@@ -119,7 +135,16 @@ class RunTimeSocket {
                     
                 }
             }
-            
+        }else if(msg.encrypted == 2){
+            msg.action = pako.inflate(msg.action, { to: 'string' });
+            if(typeof msg.data=="string"){
+                msg.data = pako.inflate(msg.data, { to: 'string' });
+                try{
+                    let newData = JSON.parse(msg.data)
+                    msg.data = newData
+                }catch(e){
+                }
+            }            
         }
         // log("cc_onMesage",JSON.stringify(msg))
         if(msg["isSplit"]){
@@ -243,6 +268,10 @@ class RunTimeSocket {
                 _data.showBorderOfNode(uuid)
             } else if (msg.action === 'getSearchPaths') {
                 data = _data.getSearchPaths()
+            } else if (msg.action === 'testPako') {
+                const xxxStr = msg.data
+                const xx = pako.inflate(xxxStr, { to: 'string' })
+                let g = 0;
             }
     
             responseData.data = data
@@ -353,7 +382,9 @@ class RunTimeSocket {
         if(!this.isReadyForPush()){
             return false
         }
-        this._send({ type: 'push', action, data });
+        const obj:OneMsg = { type: 'push', action, data }
+        obj.encrypted = 2
+        this._send(obj);
         return true
     }
 
@@ -1037,6 +1068,48 @@ class _RuntimeData{
             }
         }
         return true;
+    }
+
+    private _diffNodeTrees(tree1: any/**NodeTreeItem */, tree2: any/**NodeTreeItem */) {
+        const added: any[] = [];
+        const modified: { uuid: string, changes: Partial<any> }[] = [];
+        const deleted: string[] = [];
+    
+        const compareTrees = (node1: any, node2: any, parentUuid: string) => {
+            if (!node1 && node2) {
+                added.push({ ...node2, parentUuid });
+                return;
+            }
+            if (node1 && !node2) {
+                deleted.push(node1.uuid);
+                return;
+            }
+            const changes: Partial<any> = {};
+            if (node1.uuid !== node2.uuid) changes.uuid = node2.uuid;
+            if (node1.name !== node2.name) changes.name = node2.name;
+            if (node1.active !== node2.active) changes.active = node2.active;
+            if (Object.keys(changes).length > 0) {
+                modified.push({ uuid: node2.uuid, changes });
+            }
+    
+            const maxLength = Math.max(node1.children.length, node2.children.length);
+            for (let i = 0; i < maxLength; i++) {
+                compareTrees(node1.children[i], node2.children[i], node2.uuid);
+            }
+        };
+    
+        compareTrees(tree1, tree2, '');
+    
+        // 去重删除的节点，保留父节点
+        const uniqueDeleted = new Set<string>();
+        deleted.forEach(uuid => {
+            const parentUuid = this.m_nodeUuidMap[uuid]?.parent?.uuid;
+            if (!parentUuid || !deleted.includes(parentUuid)) {
+                uniqueDeleted.add(uuid);
+            }
+        });
+    
+        return { added, modified, deleted: Array.from(uniqueDeleted) };
     }
     
     /**
@@ -2089,10 +2162,10 @@ function xor(inputBytes:Uint8Array, keyBytes:Uint8Array):Uint8Array {
 }
 
 // 加密函数
-function str_encrypt(input:string, key:string) {
-    if(key==null){
-        console.log("key 不能为空")
-        return
+function str_encrypt(input: string, key: string) {
+    if (key == null) {
+        console.log("key 不能为空");
+        return;
     }
     // 将输入和密钥转换为字节数组
     const inputBytes = new TextEncoder().encode(input);
@@ -2101,18 +2174,33 @@ function str_encrypt(input:string, key:string) {
     // 调用 xor 进行异或加密
     const xorResult = xor(inputBytes, keyBytes);
 
-    // 将字节数组转换为 Base64 编码字符串
-    return btoa(String.fromCharCode.apply(null, Array.from(xorResult)));
+    // 将字节数组分块转换为 Base64 编码字符串
+    const chunkSize = 0x8000; // 每次处理 32768 个字节
+    let result = '';
+    for (let i = 0; i < xorResult.length; i += chunkSize) {
+        const chunk = xorResult.subarray(i, i + chunkSize);
+        result += String.fromCharCode.apply(null, Array.from(chunk));
+    }
+
+    return btoa(result);
 }
 
 // 解密函数
-function str_decrypt(base64Input:string, key:string) {
-    if(key==null){
-        console.log("key 不能为空")
-        return
+function str_decrypt(base64Input: string, key: string) {
+    if (key == null) {
+        console.log("key 不能为空");
+        return;
     }
     // Base64 解码为字节数组
-    const xorResult = Uint8Array.from(atob(base64Input), c => c.charCodeAt(0));
+    const binaryString = atob(base64Input);
+    const chunkSize = 0x8000; // 每次处理 32768 个字节
+    const xorResult = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i += chunkSize) {
+        const chunk = binaryString.slice(i, i + chunkSize);
+        for (let j = 0; j < chunk.length; j++) {
+            xorResult[i + j] = chunk.charCodeAt(j);
+        }
+    }
 
     // 将密钥转换为字节数组
     const keyBytes = new TextEncoder().encode(key);
