@@ -1,4 +1,4 @@
-
+declare var pako:any
 const _cc_ = function(){
     return window["__cchyz"]
 }
@@ -25,7 +25,8 @@ interface SplitMsg{
     idx:number,
     total:number,
     data:string,
-    uniqueId:number
+    uniqueId:number,
+    encrypted:number,
 }
 
 let _wsArr = null
@@ -109,9 +110,8 @@ class RunTimeSocket {
                 const uniqueId = _getAccId()
                 while (idx < total) {
                     const subStr = jsonStr.substring(idx * step, Math.min((idx + 1) * step, jsonStr.length));
-                    const xx = str_encrypt(subStr,parseKey(_wsArr))
                     const subObj:SplitMsg = { 
-                        isSplit: true, idx: idx + 1, total: total, data: subStr , uniqueId: uniqueId,
+                        isSplit: true, idx: idx + 1, total: total, data: subStr, uniqueId: uniqueId, encrypted: obj.encrypted
                     }
                     this.m_socket?.send(JSON.stringify(subObj));
                     idx += 1;
@@ -396,7 +396,8 @@ class RunTimeSocket {
         if(!this.isReadyForPush()){
             return false
         }
-        if(_data.searchNodeTree()||bForce){
+        const obj = _data.searchNodeTree()
+        if(bForce || obj.newScene!=null || obj.added.length>0 || obj.deleted.length>0 || obj.modified.length>0){
             return this._sendPush( 'updateSceneTree', _data.m_sceneTree );
         }
     }
@@ -1076,6 +1077,9 @@ class _RuntimeData{
         const deleted: string[] = [];
     
         const compareTrees = (node1: any, node2: any, parentUuid: string) => {
+            if(!node1 && !node2){
+                return
+            }
             if (!node1 && node2) {
                 added.push({ ...node2, parentUuid });
                 return;
@@ -1084,8 +1088,12 @@ class _RuntimeData{
                 deleted.push(node1.uuid);
                 return;
             }
+            if (node1.uuid !== node2.uuid){
+                deleted.push(node1.uuid);
+                added.push({ ...node2, parentUuid });
+                return
+            }
             const changes: Partial<any> = {};
-            if (node1.uuid !== node2.uuid) changes.uuid = node2.uuid;
             if (node1.name !== node2.name) changes.name = node2.name;
             if (node1.active !== node2.active) changes.active = node2.active;
             if (Object.keys(changes).length > 0) {
@@ -1109,14 +1117,14 @@ class _RuntimeData{
             }
         });
     
-        return { added, modified, deleted: Array.from(uniqueDeleted) };
+        return {newScene:null, added, modified, deleted: Array.from(uniqueDeleted) };
     }
     
     /**
      * 搜索当前场景的节点树
      * @returns 是否与上次搜索结果不同
      */
-    public searchNodeTree(): boolean {
+    public searchNodeTree() {
         this.m_nodeUuidMap = {}
         this.m_compUuidMap = {}
 
@@ -1132,18 +1140,29 @@ class _RuntimeData{
             path: "",
             isSceneNode: true,
         }
+        let _time1 = Date.now()
         this._fillNodeTree(this.m_sceneTree, sceneNode.children);
+        let _time2 = Date.now()
         
         this.m_nodeUuidMap[this.m_sceneTree.uuid] = sceneNode;
-        if (lastSceneTree === null) {
-            return true;
+        if (lastSceneTree === null || this.m_sceneTree.name !== lastSceneTree.name) {
+            return {newScene:this.m_sceneTree, added: [], modified: [], deleted: []};
         }
+
+        let _time3 = Date.now()
+        const ret = this._diffNodeTrees(lastSceneTree, this.m_sceneTree);
+        let _time4 = Date.now()
+        // console.log("fillNodeTree:",_time2-_time1,"diffNodeTrees:",_time4-_time3)
+        return ret
     
-        return !this._compareNodeTrees(lastSceneTree, this.m_sceneTree);
+        // return !this._compareNodeTrees(lastSceneTree, this.m_sceneTree);
     }
 
     getNodeInfo(uuid:string){
         const node = this.m_nodeUuidMap[uuid]
+        if(node==null){
+            return null
+        }
         const nodeInfo:any/**InspectorInfo_Node */ = {
             uuid: node?.uuid??"",
             active: node.active,
