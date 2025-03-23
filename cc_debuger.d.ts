@@ -64,14 +64,25 @@ type AssetType = string
 
 /**节点树信息 */
 interface NodeTreeItem{
-    name:string
-    uuid:TypeUUID
-    children:NodeTreeItem[]
-    active:boolean
+    name:string,
+    uuid:TypeUUID,
+    childrenMap:Record<string,NodeTreeItem>,
+    active:boolean,
     activeInHierarchy:boolean
     parentUuid:TypeUUID,
     path:string,
+    siblingIndex:number,
     isSceneNode?:boolean,
+
+    _children?:Array<NodeTreeItem>,
+}
+
+/**节点树的修改信息 */
+interface NodeTreeDiffInfo{
+    newScene?:NodeTreeItem,
+    deleted:Array<TypeUUID>,
+    modified:Array<{uuid:TypeUUID,changes:{name?:string,active?:boolea,siblingIndex?:number}}>,
+    added:Array<NodeTreeItem>,
 }
 
 type HexColor = string

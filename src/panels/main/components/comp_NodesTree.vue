@@ -26,32 +26,18 @@ const emit = defineEmits([
 ])
 
 const treeProp_node:TreeOptionProps = {
-  value: 'key',
+  value: '_key',
   label: 'name',
-  children: 'children',
+  children: '_children',
 }
 
 const nodeTree_datas = ref<Array<NodeTreeItem>>([]);
-const allParendKeys = []//所有有子节点的节点的key列表，用于一键展开
 
-function _updateNodeTreeKeys(node:NodeTreeItem){
-    allParendKeys.length = 0
-    function traverse(node: NodeTreeItem) {
-        node["key"] = node.path+""+node.uuid
-        allParendKeys.push(node["key"])
-        if (node.children) {
-            node.children.forEach(child => traverse(child));
-        }
-    }
-    traverse(node)
-}
-
-_pluginSocket.listenSceneNodeTree((data)=>{
+_pluginSocket.listenSceneNodeTree((info:NodeTreeDiffInfo)=>{
     // _funcs.log_1("节点树变化：",JSON.stringify(data,null,2))
-    if(data){
-        _updateNodeTreeKeys(data)
-        _dataCtx.curNodeTreeInfo = data
-        nodeTree_datas.value = [_dataCtx.curNodeTreeInfo]
+    if(info){
+        _dataCtx._dealWithNodeTreeDiffInfo(info)
+        nodeTree_datas.value = [..._dataCtx.curNodeTreeInfo]
     }
 })
 
@@ -244,19 +230,19 @@ onUnmounted(() => {
 });
 
 function on_click_in_inspector_node(uuid: string) {
-    const info = _dataCtx.getTreeNodeInfoWithUuid(uuid);
-    const key = info ? info["key"] : null;
+    const info = _dataCtx.getCcNodeInfoWithUuid(uuid);
+    const _key = info ? info["_key"] : null;
 
-    if (!key) return;
-    shakeTreeItem(key); // 触发抖动动画
+    if (!_key) return;
+    shakeTreeItem(_key); // 触发抖动动画
     const tree = ref_nodeTree.value;
     if (!tree) return;
-    const nodeItem = tree.getNode(key);
+    const nodeItem = tree.getNode(_key);
     if (!nodeItem) {
-        console.warn("节点未找到:", key);
+        console.warn("节点未找到:", _key);
         return;
     }
-    // console.log("目标节点:", nodeItem);
+    console.log("目标节点:", nodeItem);
     // 递归展开所有父节点
     let parent = nodeItem.parent;
     while (parent) {
@@ -422,7 +408,7 @@ async function onFilterStrChange(newVal:string,oldVal?:string){
                 
             }else{
                 const nodePaths = arr.map((nodeUuid)=>{
-                    return _dataCtx.getTreeNodeInfoWithUuid(nodeUuid)?.path
+                    return _dataCtx.getCcNodeInfoWithUuid(nodeUuid)?.path
                 })
                 _funcs.log_1(_funcs.getI18nText("text_42"),nodePaths)
                 showToast(_funcs.formatStr(_funcs.getI18nText("text_41"),nodePaths.length))
@@ -443,7 +429,7 @@ function doExpandAll() {
     isCollapsed.value = false;
     if (ref_nodeTree.value) {
 
-        ref_nodeTree.value.setExpandedKeys(allParendKeys);
+        ref_nodeTree.value.setExpandedKeys(_dataCtx.allParendKeys);
     }
 }
 
@@ -538,7 +524,7 @@ async function doRefresh(){
                 <template #default="{ node }">
                     <ui-label 
                         class="nodeItem" 
-                        :class="{ 'shake-animation': shakingNodeKey === node.data.key, noActive: !node.data.activeInHierarchy }"
+                        :class="{ 'shake-animation': shakingNodeKey === node.data._key, noActive: !node.data.activeInHierarchy }"
                     >
                         {{ node.label }}
                     </ui-label>

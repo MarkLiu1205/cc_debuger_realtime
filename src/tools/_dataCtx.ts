@@ -17,7 +17,92 @@ class _DataContext{
     }
 
     /**节点树 */
-    public curNodeTreeInfo:NodeTreeItem = null
+    public curNodeTreeInfo:Array<NodeTreeItem> = []
+
+    public allParendKeys = []//所有有子节点的节点的key列表，用于一键展开
+
+    /**处理节点树改变信息 */
+    _dealWithNodeTreeDiffInfo(info:NodeTreeDiffInfo){
+        this.allParendKeys.length = 0
+        let traverse = (node: NodeTreeItem)=> {
+            node["_key"] = node.path+""+node.uuid
+            this.allParendKeys.push(node["_key"])
+            if (node.childrenMap) {
+                const arr = node._children = Object.values(node.childrenMap)
+                arr.sort((a,b)=>a.siblingIndex-b.siblingIndex)
+                arr.forEach(child => traverse(child));
+            }
+        }
+        if(info.newScene){
+            traverse(info.newScene)
+        }
+        if(info.added){
+            for(let i=0;i<info.added.length;i++){
+                traverse(info.added[i])
+            }
+        }
+
+        let updateActive = (node: NodeTreeItem,active:boolean)=>{
+            node.active = active
+            let parentActive = this.getCcNodeInfoWithUuid(node.parentUuid)?.activeInHierarchy??true
+            node.activeInHierarchy = parentActive && node.active
+
+            function traverse(node: NodeTreeItem,parentActive:boolean) {
+                node.activeInHierarchy = parentActive && node.active
+                if (node.childrenMap) {
+                    for(let uuid in node.childrenMap){
+                        let child = node.childrenMap[uuid]
+                        traverse(child,node.activeInHierarchy)
+                    }
+                }
+            }
+            traverse(node,active)
+        }
+
+        if(info.newScene){
+            _dataCtx.curNodeTreeInfo = [info.newScene]
+        }else{
+            if(info.added){
+                for(let obj of info.added){
+                    let node = this.getCcNodeInfoWithUuid(obj.parentUuid)
+                    if(node){
+                        if(node.childrenMap==null){
+                            node.childrenMap = {}
+                        }
+                        node.childrenMap[obj.uuid] = obj
+                        node._children.push(obj)
+                        node._children.sort((a,b)=>a.siblingIndex-b.siblingIndex)
+                    }
+                }
+            }
+            if(info.deleted){
+                for(let uuid of info.deleted){
+                    let node = this.getCcNodeInfoWithUuid(uuid)
+                    if(node){
+                        let parent = this.getCcNodeInfoWithUuid(node.parentUuid)
+                        if(parent){
+                            delete parent.childrenMap[uuid]
+                            parent._children = parent._children.filter((item)=>item.uuid!=uuid)
+                        }
+                    }
+                }
+            }
+            if(info.modified){
+                for(let obj of info.modified){
+                    let node = this.getCcNodeInfoWithUuid(obj.uuid)
+                    if(node){
+                        for(let k in obj.changes){
+                            node[k] = obj.changes[k]
+                            if(k=="active"){
+                                updateActive(node,obj.changes[k])
+                            }
+                        }
+                    }
+                }
+                
+            }
+        }
+    }
 
     private _curSelectNodeUuid:TypeUUID = ""
     private _nodeInspectorInfoMap:Record<TypeUUID,InspectorInfo_Node> = {}
@@ -99,7 +184,7 @@ class _DataContext{
             for(let i=0;i<arr.length;i++){
                 const resObj = arr[i]
                 let uuid = resObj.uuid
-                let hasRecord = this.getResNodeInfoWithUuid(uuid)
+                let hasRecord = this.getAssetItemInfoWithUuid(uuid)
                 
                 if(hasRecord){
                     
@@ -313,35 +398,39 @@ class _DataContext{
      * @param uuid 
      * @returns 
      */
-    getTreeNodeInfoWithUuid(uuid:string):NodeTreeItem{
-        if(this.curNodeTreeInfo==null){
+    getCcNodeInfoWithUuid(uuid:string):NodeTreeItem{
+        if(this.curNodeTreeInfo==null||this.curNodeTreeInfo.length==0){
             return null
         }
-        if(this.curNodeTreeInfo.uuid==uuid){
-            return this.curNodeTreeInfo
-        }
-        for(let obj of this.curNodeTreeInfo.children){
-            function traverse(node: NodeTreeItem) {
-                // console.log(node.uuid,node.uuid == uuid)
-                // console.log("path",node.path)
-                if(node.uuid == uuid){
-                    return node
-                }
-                if (node.children) {
-                    for(let child of node.children){
-                        let ret = traverse(child)
-                        if(ret){
-                            return ret
+        
+        for(let tree of this.curNodeTreeInfo){
+            if(tree.uuid==uuid){
+                return tree
+            }
+            for(let obj of tree._children){
+                function traverse(node: NodeTreeItem) {
+                    // console.log(node.uuid,node.uuid == uuid)
+                    // console.log("path",node.path)
+                    if(node.uuid == uuid){
+                        return node
+                    }
+                    if (node._children) {
+                        for(let child of node._children){
+                            let ret = traverse(child)
+                            if(ret){
+                                return ret
+                            }
                         }
                     }
                 }
-            }
-
-            let ret = traverse(obj)
-            if(ret){
-                return ret
+    
+                let ret = traverse(obj)
+                if(ret){
+                    return ret
+                }
             }
         }
+        
         return null
     }
 
@@ -350,7 +439,7 @@ class _DataContext{
      * @param uuid 
      * @returns 
      */
-    getResNodeInfoWithUuid(uuid:string):ResTreeItem{
+    getAssetItemInfoWithUuid(uuid:string):ResTreeItem{
         if(this.m_asset_map[uuid]){
             return this.m_asset_map[uuid]
         }
@@ -381,7 +470,7 @@ class _DataContext{
     clear(){
         this.m_asset_map = {}
         this._assetTreeInfo = []
-        this.curNodeTreeInfo = null;
+        this.curNodeTreeInfo = [];
         this._curSelectNodeUuid = null;
         this._compAttrMap = {}
         this.m_bundles = {}

@@ -54,7 +54,7 @@ async function openSelecterDlg(event: MouseEvent) {
         const arr = await _pluginSocket.fiterCompsWithType(props.compType);
         // console.log("组件列表", arr);
         const nodeArr = arr.map((item) => {
-            const node = _dataCtx.getTreeNodeInfoWithUuid(item.nodeUuid);
+            const node = _dataCtx.getCcNodeInfoWithUuid(item.nodeUuid);
             return {
                 name: node.name,
                 path: node.path,

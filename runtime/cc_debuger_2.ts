@@ -397,8 +397,10 @@ class RunTimeSocket {
             return false
         }
         const obj = _data.searchNodeTree()
-        if(bForce || obj.newScene!=null || obj.added.length>0 || obj.deleted.length>0 || obj.modified.length>0){
-            return this._sendPush( 'updateSceneTree', _data.m_sceneTree );
+        if(bForce){
+            return this._sendPush( 'updateSceneTree', {newScene:_data.m_sceneTree})
+        }else if(obj.newScene!=null || obj.added.length>0 || obj.deleted.length>0 || obj.modified.length>0){
+            return this._sendPush( 'updateSceneTree', obj );
         }
     }
 
@@ -505,14 +507,14 @@ class _RuntimeData{
                 }
                 if(map.active!=null){
                     _node.active = map.active
-                    _runtimeSocket?.loopWithInterval()
+                    _runtimeSocket?.sendPush_checkUpdateSceneTree()
                 }
                 if(map.layer!=null){
                     _node.layer = map.layer
                 }
                 if(map.name!=null){
                     _node.name = map.name
-                    _runtimeSocket?.loopWithInterval()
+                    _runtimeSocket?.sendPush_checkUpdateSceneTree()
                 }
             }
         }catch(e){
@@ -1040,11 +1042,12 @@ class _RuntimeData{
             const childTree: any/**NodeTreeItem */ = {
                 name: child.name,
                 uuid: child?.uuid??"",
-                children: [],
+                childrenMap: {},
                 active: child.active,
                 activeInHierarchy: child.activeInHierarchy,
                 parentUuid: child.parent?.uuid??"",
-                path: childPath
+                path: childPath,
+                siblingIndex: child.getSiblingIndex(),
             }
             this.m_nodeUuidMap[child.uuid] = child;
             //@ts-ignore
@@ -1052,7 +1055,7 @@ class _RuntimeData{
                 this.m_compUuidMap[comp.uuid] = comp
             })
             this._fillNodeTree(childTree, child.children, childPath);
-            treeObj.children.push(childTree);
+            treeObj.childrenMap[childTree.uuid] = (childTree);
 
         }
     }
@@ -1088,36 +1091,39 @@ class _RuntimeData{
                 deleted.push(node1.uuid);
                 return;
             }
-            if (node1.uuid !== node2.uuid){
-                deleted.push(node1.uuid);
-                added.push({ ...node2, parentUuid });
-                return
+
+            const keys1 = Object.keys(node1.childrenMap);
+            const keys2 = Object.keys(node2.childrenMap);
+
+            for(let uuid of keys1){
+                if(!keys2.includes(uuid)){
+                    deleted.push(uuid);
+                }
             }
-            const changes: Partial<any> = {};
-            if (node1.name !== node2.name) changes.name = node2.name;
-            if (node1.active !== node2.active) changes.active = node2.active;
-            if (Object.keys(changes).length > 0) {
-                modified.push({ uuid: node2.uuid, changes });
-            }
-    
-            const maxLength = Math.max(node1.children.length, node2.children.length);
-            for (let i = 0; i < maxLength; i++) {
-                compareTrees(node1.children[i], node2.children[i], node2.uuid);
+            for(let uuid of keys2){
+                if(!keys1.includes(uuid)){
+                    added.push({ ...node2.childrenMap[uuid], parentUuid: node2.uuid });
+                }else{
+                    const child1 = node1.childrenMap[uuid];
+                    const child2 = node2.childrenMap[uuid];
+                    const changes: Partial<any> = {};
+           
+                    if (child1.name !== child2.name) changes.name = child2.name;
+                    if (child1.active !== child2.active) changes.active = child2.active;
+                    if (child1.siblingIndex !== child2.siblingIndex) changes.siblingIndex = child2.siblingIndex;
+                    if (Object.keys(changes).length > 0) {
+                        modified.push({ uuid: child2.uuid, changes });
+                    }
+                    
+                    compareTrees(child1, child2, node2.uuid);
+                }
+
             }
         };
     
         compareTrees(tree1, tree2, '');
     
-        // 去重删除的节点，保留父节点
-        const uniqueDeleted = new Set<string>();
-        deleted.forEach(uuid => {
-            const parentUuid = this.m_nodeUuidMap[uuid]?.parent?.uuid;
-            if (!parentUuid || !deleted.includes(parentUuid)) {
-                uniqueDeleted.add(uuid);
-            }
-        });
-    
-        return {newScene:null, added, modified, deleted: Array.from(uniqueDeleted) };
+        return {newScene:null, added, modified, deleted };
     }
     
     /**
@@ -1133,12 +1139,13 @@ class _RuntimeData{
         this.m_sceneTree = {
             name: sceneNode.name,
             uuid: sceneNode?.uuid??"",
-            children: [],
             active: true,
             activeInHierarchy: true,
             parentUuid: "",
             path: "",
             isSceneNode: true,
+            siblingIndex: 0,
+            childrenMap: {},
         }
         let _time1 = Date.now()
         this._fillNodeTree(this.m_sceneTree, sceneNode.children);
@@ -1146,7 +1153,7 @@ class _RuntimeData{
         
         this.m_nodeUuidMap[this.m_sceneTree.uuid] = sceneNode;
         if (lastSceneTree === null || this.m_sceneTree.name !== lastSceneTree.name) {
-            return {newScene:this.m_sceneTree, added: [], modified: [], deleted: []};
+            return {newScene:this.m_sceneTree, added: [], modified: [], deleted: []}; 
         }
 
         let _time3 = Date.now()
@@ -1345,7 +1352,15 @@ class _RuntimeData{
             .to(0.15,{scale:_cc_().v3(1.2,1.2,1.2)}).to(0.15,{scale:_cc_().v3(1,1,1)}).union().repeat(3)
             .delay(5)
             .removeSelf()
+            .delay(0.1)
+            .call(()=>{
+                _runtimeSocket.sendPush_checkUpdateSceneTree()
+            })
             .start()
+
+        setTimeout(() => {
+            _runtimeSocket.sendPush_checkUpdateSceneTree()
+        }, 100);
     }
 
     private _globalNode = null;

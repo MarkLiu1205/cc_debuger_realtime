@@ -34,7 +34,7 @@ const nodeLists = computed(() => {
     return arr;
 });
 
-function flattenTree(item: NodeTreeItem) {
+function flattenTree(items: Array<NodeTreeItem>) {
     const result = [];
 
     function traverse(node: NodeTreeItem) {
@@ -45,12 +45,14 @@ function flattenTree(item: NodeTreeItem) {
                 uuid: node.uuid,
             });
         }
-        if (node.children) {
-            node.children.forEach(child => traverse(child));
+        if (node._children) {
+            node._children.forEach(child => traverse(child));
         }
     }
 
-    traverse(item)
+    for(let item of items){
+        traverse(item);
+    }
     return result;
 }
 

@@ -36,13 +36,13 @@ const emit = defineEmits([
 const treeProp_res = computed(()=>{
     if(_isTreeMode.value){
         return {
-            value: 'key',
+            value: '_key',
             label: 'name',
             children: 'children',
         }
     }else{
         return {
-            value: 'key',
+            value: '_key',
             label: 'path',
             children: 'children',
         }
@@ -54,7 +54,7 @@ const resTree_datas = ref<ResTreeItem[]>([])
 
 function _updateNodeTreeKeys(arr:Array<ResTreeItem>){
     function traverse(node: ResTreeItem) {
-        node["key"] = node.path+""+node.uuid
+        node["_key"] = node.path+""+node.uuid
         if (node.children) {
             node.children.forEach(child => traverse(child));
         }
@@ -117,16 +117,16 @@ onUnmounted(() => {
 });
 
 function on_click_in_inspector_asset(uuid: string){
-    const info = _dataCtx.getResNodeInfoWithUuid(uuid)
-    const key = info ? info["key"] : null;
+    const info = _dataCtx.getAssetItemInfoWithUuid(uuid)
+    const _key = info ? info["_key"] : null;
 
-    if (!key) return;
-    shakeTreeItem(key); // 触发抖动动画
+    if (!_key) return;
+    shakeTreeItem(_key); // 触发抖动动画
     const tree = ref_resTree.value;
     if (!tree) return;
-    const nodeItem = tree.getNode(key);
+    const nodeItem = tree.getNode(_key);
     if (!nodeItem) {
-        console.warn("资源未找到:", key);
+        console.warn("资源未找到:", _key);
         return;
     }
     // 递归展开所有父节点
@@ -181,7 +181,7 @@ async function onFilterStrChange(newVal:string,oldVal?:string){
                 
             }else{
                 const nodePaths = arr.map((nodeUuid)=>{
-                    return _dataCtx.getResNodeInfoWithUuid(nodeUuid)?.path
+                    return _dataCtx.getAssetItemInfoWithUuid(nodeUuid)?.path
                 })
                 _funcs.log_1(_funcs.getI18nText("text_23"),nodePaths)
                 showToast(_funcs.formatStr(_funcs.getI18nText("text_22"),nodePaths.length))
@@ -509,7 +509,7 @@ const clearFilterStr = () => {
                     <ui-icon color="red" :value="node.data.icon"></ui-icon>
 
                     <ui-label 
-                        :class="{ 'shake-animation': shakingNodeKey === node.data.key }"
+                        :class="{ 'shake-animation': shakingNodeKey === node.data._key }"
                     >
                         {{ _isTreeMode?node.label:node.data.url }}
                     </ui-label>

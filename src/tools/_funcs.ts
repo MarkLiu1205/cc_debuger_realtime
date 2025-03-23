@@ -730,13 +730,6 @@ function _initPako(){
         const _func = new Function(pakoStr)
         _func()
     
-        let originalStr = `-----AAAAA11111BBBBB22222===`
-    
-        const data = pako.deflate(originalStr, { to: 'string' });
-        const inflated = pako.inflate(data, { to: 'string' });
-    
-        console.log(data.length)
-        console.log(inflated)
     
     }catch(e){
         console.log(e)
