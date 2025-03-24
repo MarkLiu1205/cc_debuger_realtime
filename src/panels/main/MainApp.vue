@@ -12,6 +12,7 @@ import comp_left_tree_panel from './components/comp_left_tree_panel.vue';
 import { eventBus } from '../../tools/_enentBus';
 import comp_profiler from './components/comp_profiler.vue';
 import comp_md_info from './components/comp_md_info.vue';
+import comp_func_buttons from './components/comp_func_buttons.vue';
 import comp_deviceInfo from './components/comp_deviceInfo.vue';
 import view_asset_info from './components/view_asset_info.vue';
 
@@ -129,58 +130,6 @@ function doOpenRuntimePreview() {
     _funcs.openWebSiteUrl(runtimePreviewUrl.value)
 }
 
-async function test_1() {
-    // let isLoggedIn = await Editor.User.isLoggedIn()
-    // console.log("是否登录",isLoggedIn)
-    let data:Editor.User.UserData = await Editor.User.getData()
-    console.log("用户数据",data)
-
-    // const lists = await _pluginSocket.getWitablePathFilesInfo()
-    // console.log("可写目录",JSON.stringify(lists,null,2))
-    const localIp = _funcs.getLocalIpv4IP()
-    console.log("localIp",localIp)
-
-    _pluginSocket.testPako()
-}
-
-async function openEvalPanel(event: MouseEvent){
-    _funcs.openEvalPanel()
-}
-
-async function openDynamicPanel(){
-    const panelId = _funcs.getPluginName()+".dynamicTexture_panel"
-    
-    if(await Editor.Panel.has(panelId)){
-        Editor.Panel.focus(panelId);
-    }else{
-        await Editor.Panel.open(panelId);
-    }
-}
-
-async function openLogPanel(){
-    const panelId = _funcs.getPluginName()+".log_panel"
-    
-    if(await Editor.Panel.has(panelId)){
-        Editor.Panel.focus(panelId);
-    }else{
-        await Editor.Panel.open(panelId);
-    }
-}
-
-async function openLocalCachePanel(){
-    const gameEnvObj = await _pluginSocket.getGameEnv()
-    if(!gameEnvObj.isNative){
-        showToast(_funcs.getI18nText("text_12"))
-        return
-    }
-    const panelId = _funcs.getPluginName()+".localCache_panel"
-    
-    if(await Editor.Panel.has(panelId)){
-        Editor.Panel.focus(panelId);
-    }else{
-        await Editor.Panel.open(panelId);
-    }
-}
 const serverAddress_connected = ref("")
 const serverAddress_connecting = ref("")
 
@@ -438,13 +387,7 @@ function onJumpTrial(){
                     <Inspector_Node v-if="_curSelNodeInfo!=null" v-model="_curSelNodeInfo"/>
                     <view_asset_info v-else-if="_curSelResItem!=null" v-model="_curSelResItem"/>
                     <div v-else class="defaultInfo">
-                        <div class="button-grid" >
-                            <el-button  @click="openEvalPanel">{{ _funcs.getI18nText("text_8") }}</el-button>
-                            <el-button  @click="openDynamicPanel">{{ _funcs.getI18nText("text_9") }}</el-button>
-                            <el-button  @click="openLogPanel">{{ _funcs.getI18nText("text_10") }}</el-button>
-                            <el-button  @click="openLocalCachePanel">{{ _funcs.getI18nText("text_11") }}</el-button>
-                            <!-- <el-button  @click="test_1">测试</el-button> -->
-                        </div>
+                        <comp_func_buttons/>
                         <comp_deviceInfo/>
                         <comp_profiler/>
                         <comp_md_info/>
