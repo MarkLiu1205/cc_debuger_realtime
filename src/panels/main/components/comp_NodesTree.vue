@@ -42,6 +42,7 @@ _pluginSocket.listenSceneNodeTree((info:NodeTreeDiffInfo)=>{
 })
 
 const _curSelNodeInfo = ref<InspectorInfo_Node>(null)
+const _curSelUuid = ref("")
 
 async function onSel_node(item:NodeTreeItem){
     if(item==null){
@@ -49,6 +50,7 @@ async function onSel_node(item:NodeTreeItem){
         emit('onSel_node', null);
         return null
     }
+    _curSelUuid.value = item.uuid
     
     let newVal = await _pluginSocket.getNodeInfo(item.uuid)
     if(newVal==null){
@@ -60,7 +62,6 @@ async function onSel_node(item:NodeTreeItem){
     _dataCtx.setCurSelectNodeInfo(JSON.parse(JSON.stringify(newVal)))
 
     emit('onSel_node', newVal);
-    return newVal
 }
 
 watch(_curSelNodeInfo, (newVal,old) => {
@@ -205,6 +206,7 @@ function handleClickOutside(event) {
 
 function checkCancelSelect(){
     if(_curSelNodeInfo.value){
+        _curSelUuid.value = ""
         _curSelNodeInfo.value = null
         ref_nodeTree.value.setCurrentKey(null)   
         nextTick(() => {
@@ -284,11 +286,12 @@ onUnmounted(() => {
 });
 
 const customClass_Node = (nodeData): string => {
-  return nodeData.uuid === _curSelNodeInfo.value?.uuid ? 'custom-current' : ''
+  return nodeData.uuid === _curSelUuid.value ? 'custom-current' : ''
 }
 async function onClick_node (data: NodeTreeItem, node: TreeNode, e: MouseEvent){
     if(_curSelNodeInfo.value?.uuid == data.uuid){
         if(ref_nodeTree.value){            
+            _curSelUuid.value = ""
             _curSelNodeInfo.value = null
             ref_nodeTree.value.setCurrentKey(null)   
             nextTick(() => {
@@ -319,6 +322,7 @@ return _comps.map(item=>item.__proto__.__classname__)
 function onRightClick_node( event: MouseEvent, data: NodeTreeItem, node: TreeNode) {
     ref_nodeTree.value.setCurrentKey(node.key)   
     
+    _curSelUuid.value = data.uuid
     _curSelNodeInfo.value = null
     onClick_node(data,node,event)
 
