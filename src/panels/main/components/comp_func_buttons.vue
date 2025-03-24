@@ -3,6 +3,7 @@
 import { computed, inject, onMounted, ref } from 'vue';
 import { _funcs } from '../../../tools/_funcs';
 import { _pluginSocket } from '../../../tools/plugin_socket';
+import { ElButton, ElImage, ElMessage, ElInput } from "element-plus";
 
 const showToast = inject<ToastParam>("message")
 

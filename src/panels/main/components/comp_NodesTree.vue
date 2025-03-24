@@ -44,6 +44,7 @@ _pluginSocket.listenSceneNodeTree((info:NodeTreeDiffInfo)=>{
 const _curSelNodeInfo = ref<InspectorInfo_Node>(null)
 const _curSelUuid = ref("")
 
+let _timeOutId:any = 0
 async function onSel_node(item:NodeTreeItem){
     if(item==null){
         _curSelNodeInfo.value = null
@@ -54,7 +55,8 @@ async function onSel_node(item:NodeTreeItem){
 
     let newVal: InspectorInfo_Node = null
 
-    setTimeout(() => {
+    clearTimeout(_timeOutId)
+    _timeOutId = setTimeout(() => {
         if(newVal==null){
             emit('onSel_node', {isLoading:true});
         }

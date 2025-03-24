@@ -79,7 +79,7 @@ function deal_server_js(){
         const obfuscatedServerCode = javascriptObfuscator.obfuscate(serverCode, {
             compact: true,
             controlFlowFlattening: false,
-            deadCodeInjection: true,
+            deadCodeInjection: false,
             stringArray: true,
             rotateStringArray: true,
             stringArrayEncoding: ['base64'],
@@ -122,9 +122,9 @@ function deal_dist(){
             const obfuscatedCode = javascriptObfuscator.obfuscate(code, {
                 compact: true,
                 controlFlowFlattening: false,
-                deadCodeInjection: true,
-                stringArray: true,
-                rotateStringArray: true,
+                deadCodeInjection: false,
+                stringArray: false,
+                rotateStringArray: false,
                 stringArrayEncoding: ['base64'],
                 stringArrayThreshold: 0.75,
             }).getObfuscatedCode();
@@ -148,6 +148,7 @@ function packPluginToZip() {
         "server/server.wasm",
         "server/server.js",
         "server/wasm/",
+        "src/tools/pako.min.js",
         "package.json"
     ];
 
