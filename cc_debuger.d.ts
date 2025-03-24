@@ -100,6 +100,7 @@ interface NodeInfo{
 
 interface InspectorInfo_Node extends NodeInfo{
     components:Array<CompInfo_Base>;
+    isLoading?:boolean,
 }
 
 interface CompInfo_Base{

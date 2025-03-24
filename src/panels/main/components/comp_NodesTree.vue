@@ -51,8 +51,15 @@ async function onSel_node(item:NodeTreeItem){
         return null
     }
     _curSelUuid.value = item.uuid
-    
-    let newVal = await _pluginSocket.getNodeInfo(item.uuid)
+
+    let newVal: InspectorInfo_Node = null
+
+    setTimeout(() => {
+        if(newVal==null){
+            emit('onSel_node', {isLoading:true});
+        }
+    }, 10);
+    newVal = await _pluginSocket.getNodeInfo(item.uuid)
     if(newVal==null){
         return
     }

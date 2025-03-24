@@ -16,8 +16,13 @@ function updateInfo(index, newInfo) {
 </script>
 
 <template>
-    <label v-if="nodeInfo==null">XXXX: {{ "没有" }}</label>
-    <div class="inspector_container" v-if="nodeInfo!=null">
+    <div v-if="nodeInfo?.isLoading" style="display: flex;flex-direction: column;align-items: center;justify-content: center; height: 100%; overflow-y: auto;">
+        <div style="display: flex; flex-direction: row; margin-bottom: 5px;align-items: center;justify-content: center;">
+            <h3>{{ "正在请求节点数据" }}</h3>
+            <ui-loading style="margin-left: 10px;"></ui-loading>
+        </div>
+    </div>
+    <div class="inspector_container" v-else>
         
         <view_Node v-model="nodeInfo" />
         <CompWrapper v-for="(info, index) in nodeInfo.components"
