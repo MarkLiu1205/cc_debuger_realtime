@@ -261,6 +261,9 @@ console.log("param",args);
 const firstArg = args[0];
 if(firstArg=="isClear"){
     cleanNpmCacheSync()
+}else if(firstArg=="ugly"){
+    deal_cc_debuger_2()
+    move_cc_debuger_2_ugly()
 }else{
     buildServer()
 
