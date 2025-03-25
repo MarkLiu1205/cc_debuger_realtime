@@ -12,23 +12,21 @@ async function waitForTime(sec) {
     })
 }
 
-function deal_cc_debuger_2(){
-    // TODO: 先使用 tsc 编译 cc_debuger_2.ts 再进行混淆
+async function deal_cc_debuger_2(retryCount = 0) {
     const tsFilePath = 'runtime/cc_debuger_2.ts';
     const jsFilePath = 'runtime/cc_debuger_2_ugly.ts';
 
     if (fs.existsSync(jsFilePath)) {
-        fs.removeSync(jsFilePath)
+        fs.removeSync(jsFilePath);
     }
     if (fs.existsSync(tsFilePath)) {
         console.log(`Compiling TypeScript file: ${tsFilePath}`);
         try {
             execSync(`tsc ${tsFilePath} --outFile ${jsFilePath}`, { stdio: 'inherit' });
             console.log(`Compiled: ${tsFilePath} -> ${jsFilePath}`);
-
-            
         } catch (error) {
-            // console.error(`TypeScript compilation failed: ${error.message}`);
+            console.error(`TypeScript compilation failed: ${error.message}`);
+            return;
         }
 
         if (fs.existsSync(jsFilePath)) {
@@ -42,15 +40,26 @@ function deal_cc_debuger_2(){
                 stringArrayEncoding: ['base64'],
                 stringArrayThreshold: 0.75,
             }).getObfuscatedCode();
+            // 验证混淆后的代码
+            try {
+                eval(obfuscatedJsCode);
+            } catch (e) {
+                console.error(`Obfuscated code validation failed: ${e.message}`);
+                if (retryCount < 5) {
+                    console.log("重新混淆cc_debuger_2.ts");
+                    await waitForTime(1);
+                    await deal_cc_debuger_2(retryCount + 1);
+                } else {
+                    console.error("重试次数过多，停止重试");
+                }
+                return;
+            }
 
-            let pakoPath = "src/tools/pako.min.js"
-            let pakoStr = fs.readFileSync(pakoPath,"utf-8")
-
-            let uglyJsCode = `const jsStr = \`${obfuscatedJsCode}\`\ntry{\n    const _func = new Function(jsStr)\n    _func()\n}catch(e){\n    console.log(e)\n}\n\n`
-            
-            let pakoJsCode = `const pakoStr = \`${pakoStr}\`\ntry{\n    const _func = new Function(pakoStr)\n    _func()\n}catch(e){\n    console.log(e)\n}\n\n`
-            
-            fs.writeFileSync(jsFilePath, pakoJsCode+uglyJsCode, 'utf-8');
+            let uglyJsCode = `const jsStr = \`${obfuscatedJsCode}\`;\ntry {\n    eval(jsStr);\n} catch (e) {\n    console.log(e);\n}\n\n`;
+            let pakoPath = "src/tools/pako.min.js";
+            let pakoStr = fs.readFileSync(pakoPath, "utf-8");
+            let pakoJsCode = `const pakoStr = \`${pakoStr}\`;\ntry {\n    eval(pakoStr);\n} catch (e) {\n    console.log(e);\n}\n\n`;
+            fs.writeFileSync(jsFilePath, pakoJsCode + uglyJsCode, 'utf-8');
             console.log(`Obfuscated: ${jsFilePath}\n`);
         }
     }
@@ -262,13 +271,15 @@ const firstArg = args[0];
 if(firstArg=="isClear"){
     cleanNpmCacheSync()
 }else if(firstArg=="ugly"){
-    deal_cc_debuger_2()
+    await deal_cc_debuger_2()
     move_cc_debuger_2_ugly()
 }else{
     buildServer()
 
     await waitForTime(1)
-    deal_cc_debuger_2()
+    await deal_cc_debuger_2()
+
+    move_cc_debuger_2_ugly()
 
     await waitForTime(1)
     deal_dist()
@@ -279,5 +290,5 @@ if(firstArg=="isClear"){
     packPluginToZip()
 
     console.log('Obfuscation complete!');
-    move_cc_debuger_2_ugly()
+    
 }

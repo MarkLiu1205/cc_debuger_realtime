@@ -1,6 +1,6 @@
 declare var pako:any
 const _cc_ = function(){
-    return window["__cchyz"]
+    return globalThis["__cchyz"]
 }
 
 let _data:_RuntimeData = null;
@@ -190,7 +190,7 @@ class RunTimeSocket {
                 const uuid = msg.data.uuid;
                 data = _data.getNodeOfComp(uuid)
             } else if (msg.action === 'getGameEnv') {
-                data = window["getGameEnv"]()
+                data = globalThis["getGameEnv"]()
             } else if (msg.action === 'requestShowFPS') {
                 let bool = msg.data
                 if(bool=="true"||bool===true){
@@ -2059,9 +2059,9 @@ function _getSelfModelName() {
 }
 
 function interceptLog(){
-    let _handleLog = window["cc_debuger_handleLog"]
+    let _handleLog = globalThis["cc_debuger_handleLog"]
     if(!_handleLog){
-        window["cc_debuger_handleLog"] = _handleLog = function (level: any/**LogLevel */, args: any[]) {
+        globalThis["cc_debuger_handleLog"] = _handleLog = function (level: any/**LogLevel */, args: any[]) {
             const message = args.map((a) => {
                 if(typeof a === "object"){
                     try{
@@ -2089,14 +2089,14 @@ function interceptLog(){
         }
     }
     
-    if(!window["cc_debuger_log_intercepted"]){
-        window["cc_debuger_log_intercepted"] = true;
+    if(!globalThis["cc_debuger_log_intercepted"]){
+        globalThis["cc_debuger_log_intercepted"] = true;
         ["log", "warn", "error"].forEach(level => {
             const originalMethod = console[level];
     
             console[level] = (...args) => {
-                if(window["cc_debuger_handleLog"]){
-                    window["cc_debuger_handleLog"](level, args);
+                if(globalThis["cc_debuger_handleLog"]){
+                    globalThis["cc_debuger_handleLog"](level, args);
                     originalMethod.apply(console, args);
                 }
             };
@@ -2107,8 +2107,8 @@ function interceptLog(){
 
 function _getImageAssetUrl(asset:any/**import("cc").ImageAsset */){
     if(_cc_().sys.isBrowser && asset.nativeUrl){
-        const baseUrl = window.location.origin; // http://192.168.1.17:7456
-        const fullPath = window.location.pathname; // /web-desktop/web-desktop/index.html
+        const baseUrl = globalThis.location.origin; // http://192.168.1.17:7456
+        const fullPath = globalThis.location.pathname; // /web-desktop/web-desktop/index.html
         const subPath = fullPath.substring(0, fullPath.lastIndexOf('/') + 1); // /web-desktop/web-desktop/
 
         const imgSrc = `${baseUrl}${subPath}${asset.nativeUrl}`;
@@ -2254,7 +2254,7 @@ function _initOnce() {
         return
     }
     bInited = true
-    const wsUrl = window["__cc_debuger_wsUrl"]
+    const wsUrl = globalThis["__cc_debuger_wsUrl"]
     _data = new _RuntimeData();
     _runtimeSocket = new RunTimeSocket();
     _runtimeSocket.initSocket(wsUrl);
@@ -2325,4 +2325,4 @@ function _initOnce() {
     interceptLog()
 }
 
-window["__cc_debuger__initOnce"] = _initOnce
+globalThis["__cc_debuger__initOnce"] = _initOnce
