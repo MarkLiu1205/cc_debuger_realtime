@@ -1,6 +1,6 @@
 
 <script lang="ts" setup>
-import { onMounted, ref } from 'vue';
+import { onMounted, onUnmounted, ref } from 'vue';
 import { _pluginSocket } from '../../../tools/plugin_socket';
 import { _funcs } from '../../../tools/_funcs';
 
@@ -9,20 +9,35 @@ const isLoading = ref(false)
 
 let items = ref<any[]>([]);
 
-_pluginSocket.listenProfileInfo((arr)=>{
-    items.value = arr
-})
 
-_pluginSocket.listenLoopFrameTime((frameTime:number)=>{
-    // if(frameTime>0){
-        // console.log("frameTime",frameTime)
-    // }
-})
+let _cancelFor_onProfileInfoChange:()=>void = null
+let _cancelFor_onLoopFrameTimeChange:()=>void = null
 
 onMounted(()=>{
+    _cancelFor_onProfileInfoChange = _pluginSocket.listenProfileInfo((arr)=>{
+        items.value = arr
+    })
+
+    _cancelFor_onLoopFrameTimeChange = _pluginSocket.listenLoopFrameTime((frameTime:number)=>{
+        // if(frameTime>0){
+            // console.log("frameTime",frameTime)
+        // }
+    })
+
     _pluginSocket.requestShowFPS().then((bool:boolean)=>{
         bShow.value = bool
     })
+})
+
+onUnmounted(()=>{
+    if(_cancelFor_onProfileInfoChange){
+        _cancelFor_onProfileInfoChange()
+        _cancelFor_onProfileInfoChange = null;
+    }
+    if(_cancelFor_onLoopFrameTimeChange){
+        _cancelFor_onLoopFrameTimeChange()
+        _cancelFor_onLoopFrameTimeChange = null;
+    }
 })
 
 function onToggle(event){

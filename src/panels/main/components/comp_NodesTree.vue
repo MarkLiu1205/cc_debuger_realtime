@@ -33,11 +33,24 @@ const treeProp_node:TreeOptionProps = {
 
 const nodeTree_datas = ref<Array<NodeTreeItem>>([]);
 
-_pluginSocket.listenSceneNodeTree((info:NodeTreeDiffInfo)=>{
+function onNodeTreeChanges(info:NodeTreeDiffInfo){
     // _funcs.log_1("节点树变化：",JSON.stringify(data,null,2))
     if(info){
         _dataCtx._dealWithNodeTreeDiffInfo(info)
         nodeTree_datas.value = [..._dataCtx.curNodeTreeInfo]
+    }
+}
+
+let _cancelFor_onSceneNodeTree:()=>void = null
+
+onMounted(()=>{
+    _cancelFor_onSceneNodeTree = _pluginSocket.listenSceneNodeTree(onNodeTreeChanges)
+})
+
+onUnmounted(()=>{
+    if(_cancelFor_onSceneNodeTree){
+        _cancelFor_onSceneNodeTree()
+        _cancelFor_onSceneNodeTree = null
     }
 })
 

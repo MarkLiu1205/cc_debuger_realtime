@@ -1,6 +1,6 @@
 
 <script lang="ts" setup>
-import { inject, nextTick, onMounted, ref } from 'vue';
+import { inject, nextTick, onMounted, onUnmounted, ref } from 'vue';
 import { _pluginSocket } from '../../../tools/plugin_socket';
 import { _funcs } from '../../../tools/_funcs';
 
@@ -12,8 +12,10 @@ const gameEnvObj = ref<GameEnvParam>(null)
 
 const dynamicTextureEnabled = ref(false)
 
+let _cancelFor_onlineInfoChanged:()=>void = null
+let _cancelFor_onRuntimeListChange:()=>void = null
 onMounted(()=>{
-    _pluginSocket.listenRuntimeOnlineInfo((info:OnlineInfo)=>{
+    _cancelFor_onlineInfoChanged = _pluginSocket.listenRuntimeOnlineInfo((info:OnlineInfo)=>{
         // console.log("2在线刷新----",info)
         curInfo.value = info
         if(nameArr.value==null){
@@ -25,7 +27,7 @@ onMounted(()=>{
         })
     })
 
-    _pluginSocket.listenRuntimeList((arr:Array<string>)=>{
+    _cancelFor_onRuntimeListChange = _pluginSocket.listenRuntimeList((arr:Array<string>)=>{
         nameArr.value = arr
     })
 
@@ -36,6 +38,17 @@ onMounted(()=>{
     _pluginSocket.requestDynamicAtlasEnable("").then((enabled:boolean)=>{
         dynamicTextureEnabled.value = enabled
     })
+})
+
+onUnmounted(()=>{
+    if(_cancelFor_onlineInfoChanged){
+        _cancelFor_onlineInfoChanged()
+        _cancelFor_onlineInfoChanged = null
+    }
+    if(_cancelFor_onRuntimeListChange){
+        _cancelFor_onRuntimeListChange()
+        _cancelFor_onRuntimeListChange = null
+    }
 })
 
 function onSelect(event){

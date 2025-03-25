@@ -28,7 +28,7 @@ const bundleNames = ref([])
 const _curSelNodeInfo = ref<InspectorInfo_Node>()
 const _curSelResItem = ref<ResTreeItem>()
 
-_pluginSocket.listenRuntimeOnlineInfo((info)=>{
+function _onlineInfoChanged(info:OnlineInfo){
     // console.log("1在线刷新----",info)
     isRuntimeOffline.value = !info.bIsOnline
     if(!info.bIsOnline){
@@ -39,17 +39,43 @@ _pluginSocket.listenRuntimeOnlineInfo((info)=>{
         _dataCtx.clear()
     }
     Editor.Message.request(_funcs.getPluginName(),"onRuntimeOnlineState",info.bIsOnline)
-})
+}
 
-_pluginSocket.listenRuntimeList((nameArr)=>{
-    _funcs.log_1("runtime 列表：",JSON.stringify(nameArr))
-})
-
-
-_pluginSocket.listenSceneLaunched((name)=>{
+function _onSceneLaunched(name){
     _funcs.log_1("场景切换",name)
     _curSelNodeInfo.value = null
     _curSelResItem.value = null
+}
+
+function _onRuntimeListChange(nameArr: string[]){
+    _funcs.log_1("runtime 列表：",JSON.stringify(nameArr))
+}
+
+let _cancelFor_onlineInfoChanged:()=>void = null
+let _cancelFor_onRuntimeListChange:()=>void = null
+let _cancelFor_onSceneLaunched:()=>void = null
+
+onMounted(()=>{
+    _cancelFor_onlineInfoChanged = _pluginSocket.listenRuntimeOnlineInfo(_onlineInfoChanged)
+
+    _cancelFor_onRuntimeListChange = _pluginSocket.listenRuntimeList(_onRuntimeListChange)
+
+    _cancelFor_onSceneLaunched = _pluginSocket.listenSceneLaunched(_onSceneLaunched)
+})
+
+onUnmounted(()=>{
+    if(_cancelFor_onlineInfoChanged){
+        _cancelFor_onlineInfoChanged()
+        _cancelFor_onlineInfoChanged = null
+    }
+    if(_cancelFor_onRuntimeListChange){
+        _cancelFor_onRuntimeListChange()
+        _cancelFor_onRuntimeListChange = null
+    }
+    if(_cancelFor_onSceneLaunched){
+        _cancelFor_onSceneLaunched()
+        _cancelFor_onSceneLaunched = null
+    }
 })
 
 const width_left_panel = ref(window.innerWidth * 0.5); 
@@ -147,16 +173,19 @@ defineExpose({
     setSocketAddress,
 });
 
+function _onSocketStateChanged(bIsConnected){
+    isConnectingServer.value = !bIsConnected
+    serverAddress_connected.value = _pluginSocket.getSocketUrl()
+}
+
+let _cancelForSocketState:()=>void = null
 onMounted(()=>{
     isConnectingServer.value = !_pluginSocket.checkIsConnect()
-    // _pluginSocket.waitSocketOpen().then(()=>{
-    //     serverAddress_connected.value = _pluginSocket.getSocketUrl()
-    //     isConnectingServer.value = false
-    // })
-    _pluginSocket.listenForSocketState((bIsConnected)=>{
-        isConnectingServer.value = !bIsConnected
-        serverAddress_connected.value = _pluginSocket.getSocketUrl()
-    })
+    _pluginSocket.listenForSocketState(_onSocketStateChanged)
+})
+
+onUnmounted(()=>{
+    _pluginSocket.cancelForSocketState(_onSocketStateChanged)
 })
 
 const onFocusEditAddress = () => {

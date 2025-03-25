@@ -1,6 +1,6 @@
 
 <script lang="ts" setup>
-import { computed, nextTick, onMounted, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import { _pluginSocket } from '../../../tools/plugin_socket';
 import { _dataCtx } from '../../../tools/_dataCtx';
 import { eventBus } from '../../../tools/_enentBus';
@@ -18,6 +18,7 @@ const isDownloadingTempPath = ref(false)
 //临时预览地址（即在asset-db中查询不到，必须实时下载的）
 const tempPreviewPath = ref("")
 
+let _cancelFor_onRuntimeOnlineInfoChange:()=>void = null
 onMounted(()=>{
     // console.log("assetInfo",assetInfo.value.assetType,assetInfo.value.refCount)
     if(assetInfo.value==null){
@@ -29,7 +30,7 @@ onMounted(()=>{
         isNotInCache.value = false
     }
 
-    _pluginSocket.listenRuntimeOnlineInfo(async (info:OnlineInfo)=>{
+    _cancelFor_onRuntimeOnlineInfoChange = _pluginSocket.listenRuntimeOnlineInfo(async (info:OnlineInfo)=>{
         // console.log("3在线刷新----",info)
         if(info.bIsOnline){
             const ip = info?.info?.IP;
@@ -46,6 +47,13 @@ onMounted(()=>{
         
         curOnlineInfo.value = info
     })
+})
+
+onUnmounted(()=>{
+    if(_cancelFor_onRuntimeOnlineInfoChange){
+        _cancelFor_onRuntimeOnlineInfoChange()
+        _cancelFor_onRuntimeOnlineInfoChange = null
+    }
 })
 
 watch(assetInfo,(newVal,oldVal)=>{

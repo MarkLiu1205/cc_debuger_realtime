@@ -64,16 +64,27 @@ function _updateNodeTreeKeys(arr:Array<ResTreeItem>){
     }
 }
 
-_pluginSocket.listenAssetAdded((arr:Array<ResMemInfo>)=>{
-    if(arr==null){
-        return
-    }
-    // console.log("获取到新增资源",JSON.stringify(arr))
-    _dataCtx.mark_using_uuids(arr,() => {
-        resTree_datas.value = [..._dataCtx.getResTree_datas()]
-        _updateNodeTreeKeys(resTree_datas.value)
-        updateRealAssetsData()
+
+let _cancelFor_onAssetAdded:()=>void = null
+onMounted(()=>{
+    _cancelFor_onAssetAdded = _pluginSocket.listenAssetAdded((arr:Array<ResMemInfo>)=>{
+        if(arr==null){
+            return
+        }
+        // console.log("获取到新增资源",JSON.stringify(arr))
+        _dataCtx.mark_using_uuids(arr,() => {
+            resTree_datas.value = [..._dataCtx.getResTree_datas()]
+            _updateNodeTreeKeys(resTree_datas.value)
+            updateRealAssetsData()
+        })
     })
+})
+
+onUnmounted(()=>{
+    if(_cancelFor_onAssetAdded){
+        _cancelFor_onAssetAdded()
+        _cancelFor_onAssetAdded = null
+    }
 })
 
 const ref_container_resTree = ref(null);

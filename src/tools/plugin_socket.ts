@@ -136,6 +136,12 @@ class PluginSocket {
         callback(this.checkIsConnect())
     }
 
+    cancelForSocketState(callback:(bIsConnected:boolean)=>void){
+        if(this._socketStateCallbacks.includes(callback)){
+            this._socketStateCallbacks.splice(this._socketStateCallbacks.indexOf(callback))
+        }
+    }
+
     private async _send(obj: OneMsg) {
         const step = 1024 * 10;
         if (obj.data==null){
@@ -262,7 +268,9 @@ class PluginSocket {
             this._on_push_dataMap[msg.action] = msg.data
             if(this._onChangeForPushData[msg.action]?.length>0){//表示注册过了监听
                 for(let cb of this._onChangeForPushData[msg.action]){
-                    cb(msg.data)
+                    if(cb){
+                        cb(msg.data)
+                    }
                 }
             }
             if(msg.action === PushAction.otherSideOnlineChange){
@@ -291,6 +299,10 @@ class PluginSocket {
         if(data!=null&&callback){
             callback(data)
         }
+
+        return ()=>{
+            this.cancelPushListener(pushAction,callback)
+        }
     }
 
     /**取消监听 */
@@ -300,6 +312,7 @@ class PluginSocket {
             for(let i=arr.length-1;i>=0;i--){
                 if(arr[i]==callback){
                     delete arr[i]
+                    break
                 }
             }
         }
@@ -311,55 +324,55 @@ class PluginSocket {
      * 监听运行时的在线情况
      */
     listenRuntimeOnlineInfo(callback:(info:OnlineInfo)=>void){
-        this.listenForPushData(PushAction.otherSideOnlineChange,callback)
+        return this.listenForPushData(PushAction.otherSideOnlineChange,callback)
     }
 
     /**
      * 监听所有在线runtime列表名称
      */
     listenRuntimeList(callback:(nameArr:Array<string>)=>void){
-        this.listenForPushData<Array<string>>(PushAction.pushRuntimeList,callback,[])
+        return this.listenForPushData<Array<string>>(PushAction.pushRuntimeList,callback,[])
     }
 
     /**
      * 监听节点树的变化
      */
     listenSceneNodeTree(callback:(data:any)=>void){
-        this.listenForPushData<any>(PushAction.updateSceneTree,callback,null)
+        return this.listenForPushData<any>(PushAction.updateSceneTree,callback,null)
     }
 
     /**
      * 监听场景切换变化
      */
     listenSceneLaunched(callback:(data:any)=>void){
-        this.listenForPushData<any>(PushAction.sceneLaunched,callback,null)
+        return this.listenForPushData<any>(PushAction.sceneLaunched,callback,null)
     }
 
     /**
      * 监听运行时日志
      */
     listenRuntimeLog(callback:(data:any)=>void){
-        this.listenForPushData<any>(PushAction.onRuntimeLog,callback,null)
+        return this.listenForPushData<any>(PushAction.onRuntimeLog,callback,null)
     }
 
     listenAssetAdded(callback:(data:any)=>void){
-        this.listenForPushData<any>(PushAction.onAssetAdded,callback,null)
+        return this.listenForPushData<any>(PushAction.onAssetAdded,callback,null)
     }
 
     listenAssetRemoved(callback:(data:any)=>void){
-        this.listenForPushData<any>(PushAction.onAssetRemoved,callback,null)
+        return this.listenForPushData<any>(PushAction.onAssetRemoved,callback,null)
     }
 
     listenAssetRefCountChanged(callback:(data:any)=>void){
-        this.listenForPushData<any>(PushAction.onAssetRefCountChanged,callback,null)
+        return this.listenForPushData<any>(PushAction.onAssetRefCountChanged,callback,null)
     }
 
     listenProfileInfo(callback:(data:any)=>void){
-        this.listenForPushData<any>(PushAction.profileInfoUpdate,callback,null)
+        return this.listenForPushData<any>(PushAction.profileInfoUpdate,callback,null)
     }
 
     listenLoopFrameTime(callback:(data:any)=>void){
-        this.listenForPushData<any>(PushAction.loopFrameTime,callback,null)
+        return this.listenForPushData<any>(PushAction.loopFrameTime,callback,null)
     }
 
     private _onWaitRuntimeOnlineResolves:Array<(data:any)=>void> = []
