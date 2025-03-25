@@ -40,9 +40,12 @@ async function deal_cc_debuger_2(retryCount = 0) {
                 stringArrayEncoding: ['base64'],
                 stringArrayThreshold: 0.75,
             }).getObfuscatedCode();
+
+            let uglyJsCode = `const jsStr = \`${obfuscatedJsCode}\`;\ntry{\n    const _func = new Function(jsStr)\n    _func()\n}catch(e){\n    console.log(e)\n}\n\n`
             // 验证混淆后的代码
             try {
-                eval(obfuscatedJsCode);
+                let _func = new Function(uglyJsCode);
+                _func();
             } catch (e) {
                 console.error(`Obfuscated code validation failed: ${e.message}`);
                 if (retryCount < 5) {
@@ -55,10 +58,13 @@ async function deal_cc_debuger_2(retryCount = 0) {
                 return;
             }
 
-            let uglyJsCode = `const jsStr = \`${obfuscatedJsCode}\`;\ntry {\n    eval(jsStr);\n} catch (e) {\n    console.log(e);\n}\n\n`;
+            
             let pakoPath = "src/tools/pako.min.js";
             let pakoStr = fs.readFileSync(pakoPath, "utf-8");
-            let pakoJsCode = `const pakoStr = \`${pakoStr}\`;\ntry {\n    eval(pakoStr);\n} catch (e) {\n    console.log(e);\n}\n\n`;
+            
+            
+            let pakoJsCode = `const pakoStr = \`${pakoStr}\`\ntry{\n    const _func = new Function(pakoStr)\n    _func()\n}catch(e){\n    console.log(e)\n}\n\n`
+            
             fs.writeFileSync(jsFilePath, pakoJsCode + uglyJsCode, 'utf-8');
             console.log(`Obfuscated: ${jsFilePath}\n`);
         }

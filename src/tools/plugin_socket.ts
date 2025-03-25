@@ -84,12 +84,16 @@ class PluginSocket {
                 }
                 if(this._onChangeForPushData[action]?.length>0){//表示注册过了监听
                     for(let cb of this._onChangeForPushData[action]){
-                        cb(obj)
+                        if(typeof cb=="function"){
+                            cb(obj)
+                        }
                     }
                 }
 
                 for(let cb of this._socketStateCallbacks){
-                    cb(false)
+                    if(typeof cb=="function"){
+                        cb(false)
+                    }
                 }
 
                 setTimeout(() => {
