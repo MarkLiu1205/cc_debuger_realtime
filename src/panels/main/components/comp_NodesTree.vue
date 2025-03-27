@@ -42,9 +42,25 @@ function onNodeTreeChanges(info:NodeTreeDiffInfo){
 }
 
 let _cancelFor_onSceneNodeTree:()=>void = null
+let _cancelFor_onMousePickNode:()=>void = null
 
 onMounted(()=>{
     _cancelFor_onSceneNodeTree = _pluginSocket.listenSceneNodeTree(onNodeTreeChanges)
+    _cancelFor_onMousePickNode = _pluginSocket.listenMousePickNodeAchanged((uuid)=>{
+
+        const data = _dataCtx.getCcNodeInfoWithUuid(uuid)
+        const _key = data ? data["_key"] : null;
+
+        if (!_key) return;
+
+        ref_nodeTree.value.setCurrentKey(_key)   
+    
+        _curSelUuid.value = data.uuid
+        _curSelNodeInfo.value = null
+        onClick_node(data,null,null)
+
+        on_click_in_inspector_node(uuid)
+    })
 })
 
 onUnmounted(()=>{
@@ -52,13 +68,17 @@ onUnmounted(()=>{
         _cancelFor_onSceneNodeTree()
         _cancelFor_onSceneNodeTree = null
     }
+    if(_cancelFor_onMousePickNode){
+        _cancelFor_onMousePickNode()
+        _cancelFor_onMousePickNode = null
+    }
 })
 
 const _curSelNodeInfo = ref<InspectorInfo_Node>(null)
 const _curSelUuid = ref("")
 
 let _timeOutId:any = 0
-async function onSel_node(item:NodeTreeItem){
+async function _onSelect_node(item:NodeTreeItem){
     if(item==null){
         _curSelNodeInfo.value = null
         emit('onSel_node', null);
@@ -235,7 +255,7 @@ function checkCancelSelect(){
             ref_nodeTree.value?.setCurrentKey(null); // 确保 UI 重新渲染
         });
         
-        onSel_node(null)
+        _onSelect_node(null)
     }
 }
 
@@ -266,7 +286,7 @@ function on_click_in_inspector_node(uuid: string) {
         console.warn("节点未找到:", _key);
         return;
     }
-    console.log("目标节点:", nodeItem);
+    // console.log("目标节点:", nodeItem);
     // 递归展开所有父节点
     let parent = nodeItem.parent;
     while (parent) {
@@ -320,11 +340,11 @@ async function onClick_node (data: NodeTreeItem, node: TreeNode, e: MouseEvent){
                 ref_nodeTree.value?.setCurrentKey(null); // 确保 UI 重新渲染
             });
             
-            onSel_node(null)
+            _onSelect_node(null)
         }
     }else{
 
-        onSel_node(data)
+        _onSelect_node(data)
     }
 
 }
@@ -481,6 +501,17 @@ async function handleAutoRefresh() {
     _pluginSocket.setLoopInterval(bAutoFresh.value?1000:0)
 }
 
+async function handlePickMode(event) {
+    const bool = event.target.value
+    await _pluginSocket.setIsPickMode(bool)
+    if(bool){
+        _funcs.log_1("设置为PickMode成功")
+    }else{
+        _funcs.log_1("已取消PickMode")
+    }
+    
+}
+
 async function doRefresh(){
     let timeBefore = Date.now()
     await _pluginSocket.updateNodeAndAssetInfo()
@@ -533,7 +564,8 @@ async function doRefresh(){
                             <ui-icon value="refresh"></ui-icon>
                         </ui-button>
                     </div>
-                    <ui-checkbox tooltip="是否按时自动刷新节点树" :value="bAutoFresh" @change="handleAutoRefresh">自动刷新</ui-checkbox>
+                    <ui-checkbox tooltip="是否按时自动刷新节点树" :value="bAutoFresh" @change="handleAutoRefresh" v-if="false">自动刷新</ui-checkbox>
+                    <ui-checkbox tooltip="是否开启pickMode" @change="handlePickMode">PickMode</ui-checkbox>
                 </div>
             </div>
             <el-tree-v2 ref="ref_nodeTree"

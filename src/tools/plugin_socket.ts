@@ -379,6 +379,10 @@ class PluginSocket {
         return this.listenForPushData<any>(PushAction.loopFrameTime,callback,null)
     }
 
+    listenMousePickNodeAchanged(callback:(uuid:string)=>void){
+        return this.listenForPushData<any>(PushAction.onMousePickNode,callback,null)
+    }
+
     private _onWaitRuntimeOnlineResolves:Array<(data:any)=>void> = []
     /**等待runtime上线连接上plugin */
     async waitForRuntimeIsInline(){
@@ -771,6 +775,10 @@ class PluginSocket {
         return this._sendRequest("getSearchPaths",null,{encrypted:1})
     }
 
+    async setIsPickMode(bool:boolean){
+        return this._sendRequest("setIsPickMode",bool,{encrypted:1})
+    }
+
     async testPako(){
         // let ret1 = await this._sendRequest("testPako","",{encrypted:false})
         let originalStr = `AAAAA11111BBBBB22222`
@@ -816,6 +824,8 @@ enum PushAction{
     profileInfoUpdate = "profileInfoUpdate",
     /**按照定时器主动刷新节点树和资源树的操作的时间，相当于逻辑帧率一样的意义 */
     loopFrameTime = "loopFrameTime",
+    /**pick模式下，鼠标选中节点 */
+    onMousePickNode = "onMousePickNode",
 
 }
 

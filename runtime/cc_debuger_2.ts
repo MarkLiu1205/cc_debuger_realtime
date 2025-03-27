@@ -1,3 +1,5 @@
+
+
 declare var pako:any
 const _cc_ = function(){
     return globalThis["__cchyz"]
@@ -268,10 +270,14 @@ class RunTimeSocket {
                 _data.showBorderOfNode(uuid)
             } else if (msg.action === 'getSearchPaths') {
                 data = _data.getSearchPaths()
-            } else if (msg.action === 'testPako') {
-                const xxxStr = msg.data
-                const xx = pako.inflate(xxxStr, { to: 'string' })
-                let g = 0;
+            } else if (msg.action === 'setIsPickMode') {
+                let bool = msg.data
+                if(bool=="true"||bool===true){
+                    _data.setIsPickMode(true)
+                }else if(bool=="false"||bool===false){
+                    _data.setIsPickMode(false)
+                }
+                data = ""
             }
     
             responseData.data = data
@@ -460,6 +466,11 @@ class RunTimeSocket {
             return this._sendPush( 'profileInfoUpdate', arr);
         }
     }
+
+    /**pick模式下，鼠标选中节点 */
+    sendPush_pickNode(uuid){
+        return this._sendPush( 'onMousePickNode', uuid);
+    }
 }
 
 
@@ -640,6 +651,7 @@ class _RuntimeData{
         this.m_compUuidMap = {}
         this.m_curSceneName = ""
         this.m_hasSendCompAttrsMap = {}
+        this.setIsPickMode(false)
     }
 
     /**从assetManager.assets初始化需要同步的资源 */
@@ -1035,6 +1047,12 @@ class _RuntimeData{
         return ret
     }
 
+    /**
+     * 递归填充节点树
+     * @param treeObj 
+     * @param children 
+     * @param parentPath 
+     */
     private _fillNodeTree(treeObj: any/**NodeTreeItem */, children: Array<any/**import("cc").Node */>, parentPath: string = '') {
         for (let i = 0; i < children.length; i++) {
             const child = children[i];
@@ -1163,6 +1181,47 @@ class _RuntimeData{
         return ret
     
         // return !this._compareNodeTrees(lastSceneTree, this.m_sceneTree);
+    }
+
+    private _getAllNodeRects(ret:Array<any>=null,treeObj: any = null, children: Array<any/**import("cc").Node */> = null, parentScaleX=1, parentScaleY=1) {
+        if(ret==null||treeObj==null){
+            const sceneNode: any/**import("cc").Scene */ = _cc_().director.getScene();
+            treeObj = {
+                name: sceneNode.name,
+                uuid: sceneNode?.uuid??"",
+                pt:sceneNode.getWorldPosition(),
+                anchorMargin:{left:0,right:0,top:0,bottom:0},
+            }
+            children = sceneNode.children
+            ret = []
+        }
+        if(treeObj.isRendererNode){
+            ret.push(treeObj)
+        }
+        
+        for (let i = 0; i < children.length; i++) {
+            const child = children[i];
+            if(!child.activeInHierarchy||!child.active){
+                continue
+            }
+            if(child.getComponent(_cc_().UITransform)==null){
+                continue
+            }
+            if(child==this._globalNode){
+                continue
+            }
+            let isRendererNode = child.getComponent(_cc_().UIRenderer)!=null
+            const obj: any = {
+                name: child.name,
+                isRendererNode,
+                uuid: child?.uuid??"",
+                pt:child.getWorldPosition(),
+                anchorMargin:_getNodeMarginOfAnchorPt(child),
+            }
+            
+            this._getAllNodeRects(ret,obj, child.children, parentScaleX*child.scale.x, parentScaleY*child.scale.y);
+        }
+        return ret
     }
 
     getNodeInfo(uuid:string){
@@ -1314,9 +1373,12 @@ class _RuntimeData{
     }
 
     /**显示节点的边框 */
-    showBorderOfNode(uuid:string){
+    showBorderOfNode(uuid:string,noAnim=false){
         const node = this.m_nodeUuidMap[uuid]
         if(node==null){
+            return
+        }
+        if(!_cc_().isValid(node)){
             return
         }
         let trans = node.getComponent(_cc_().UITransform);
@@ -1324,7 +1386,7 @@ class _RuntimeData{
         let worldPt = trans.node.getWorldPosition()
 
         const pt = parentTrans.convertToNodeSpaceAR(_cc_().v3(worldPt.x,worldPt.y,0))
-        let {left,right,top,bottom} = getNodeRect(node)
+        let rect = _getNodeMarginOfAnchorPt(node)
 
         const tmpParent = createNode(node.name)
         tmpParent.parent = parentTrans.node;
@@ -1334,44 +1396,56 @@ class _RuntimeData{
         let graphics = createGraphicsNode(node.name)
         graphics.node.parent = tmpParent
         graphics.clear()
-        graphics.lineWidth = 6
+        graphics.lineWidth = 3
         graphics.strokeColor = _cc_().color(255,0,0)
         
-        graphics.moveTo(left,bottom)
+        graphics.moveTo(rect.left,rect.bottom)
 
-        graphics.lineTo(right,bottom)
-        graphics.lineTo(right,top)
-        graphics.lineTo(left,top)
-        graphics.lineTo(left,bottom)
+        graphics.lineTo(rect.right,rect.bottom)
+        graphics.lineTo(rect.right,rect.top)
+        graphics.lineTo(rect.left,rect.top)
+        graphics.lineTo(rect.left,rect.bottom)
         graphics.close()
 
         graphics.stroke()
-        
-        _cc_().tween(tmpParent)
-            .set({scale:_cc_().v3(1,1,1)})
-            .to(0.15,{scale:_cc_().v3(1.2,1.2,1.2)}).to(0.15,{scale:_cc_().v3(1,1,1)}).union().repeat(3)
-            .delay(5)
+        let _tw = _cc_().tween(tmpParent)
+        if(!noAnim){
+            _tw.set({scale:_cc_().v3(1,1,1)})
+                .to(0.15,{scale:_cc_().v3(1.2,1.2,1.2)}).to(0.15,{scale:_cc_().v3(1,1,1)}).union().repeat(3)
+            _tw.delay(5)
             .removeSelf()
             .delay(0.1)
             .call(()=>{
                 _runtimeSocket.sendPush_checkUpdateSceneTree()
             })
             .start()
+        }
 
         setTimeout(() => {
             _runtimeSocket.sendPush_checkUpdateSceneTree()
         }, 100);
+
+        return graphics
     }
 
     private _globalNode = null;
     private _touchNode = null;
     makePersistCanvasNode(){
         if(this._globalNode==null){
+            let _uiCamera = null
+            let canvasArr = _cc_().director.getScene().getComponentsInChildren(_cc_().Canvas)
+            for(let canvas of canvasArr){
+                if(canvas.cameraComponent && canvas.node.name!="_debuger_canvas"){
+                    _uiCamera = canvas.cameraComponent
+                    break
+                }
+            }
             this._globalNode = new (_cc_().Node)("_debuger_canvas");
             this._globalNode.setSiblingIndex(100); 
             this._globalNode.layer = _cc_().Layers.Enum.UI_2D;
             let canvas = this._globalNode.addComponent(_cc_().Canvas);
             canvas.alignCanvasWithScreen = true;
+            canvas.cameraComponent = _uiCamera
 
             let trans = this._globalNode.getComponent(_cc_().UITransform) || this._globalNode.addComponent(_cc_().UITransform);
        
@@ -1379,35 +1453,106 @@ class _RuntimeData{
 
             _cc_().director.addPersistRootNode(this._globalNode);
 
-            this._touchNode = createNode("touch_layer")
-            this._touchNode.parent = this._globalNode
-            _addWidget(this._touchNode)
-
-            this._touchNode.on(_cc_().NodeEventType.TOUCH_START, this.onTouchEvent, this);
-            this._touchNode.on(_cc_().NodeEventType.TOUCH_MOVE, this.onTouchEvent, this);
-            this._touchNode.on(_cc_().NodeEventType.TOUCH_END, this.onTouchEvent, this);
-
-            this._touchNode.active = false
+            // _cc_().input.on(_cc_().Input.EventType.MOUSE_MOVE, this._onMouseMove, this);
+            
+            if(!_cc_().sys.isMobile&&_cc_().sys.isBrowser&&_cc_().game.canvas){
+                _cc_().game.canvas.addEventListener('mousemove', this._onCanvasMouseMove.bind(this));
+                _cc_().game.canvas.addEventListener('mouseup', this._onCanvasMouseUp.bind(this));
+            }
+            
         }
         return this._globalNode.getComponent(_cc_().UITransform)
     }
 
-    onTouchEvent(event){
-        let isPass = true
-        if (isPass) {
-            event.preventSwallow = true;
+    private _timeIdAutoPick:any = 0
+    private m_isPickMode = false
+    setIsPickMode(isPick:boolean){
+        this.m_isPickMode = isPick
+        clearInterval(this._timeIdAutoPick)
+        if(isPick){
+            this._timeIdAutoPick = setInterval(()=>{
+                this._allNodeRectInfo = this._getAllNodeRects()
+                // console.log(this._allNodeRectInfo.map(item=>item.name))
+            },1000)
+            this._allNodeRectInfo = this._getAllNodeRects()
         }else{
-            event.preventSwallow = false;
-            event.propagationImmediateStopped = true;
-            event.propagationStopped = true
+            if(_cc_().isValid(this._lastGraphics)){
+                this._lastGraphics.node.destroy()
+            }
+            this._lastGraphics = null
         }
         
-        let pt = event.getUILocation();
-        let _node = event.target;
-        let trans = _node.getComponent(_cc_().UITransform);
+    }
 
-        pt = trans.convertToNodeSpaceAR(_cc_().v3(pt.x,pt.y,0)) as any;
-        console.log("-------pt",pt.x,pt.y)
+    _onCanvasMouseUp(event:MouseEvent){
+        if(!this.m_isPickMode){
+            return
+        }
+        const uuid = this._lastHoverNodeUuid
+        if(uuid==null){
+            return
+        }
+        // console.log("点击",this.m_nodeUuidMap[uuid].name)
+        _runtimeSocket.sendPush_pickNode(uuid)
+    }
+
+    private _allNodeRectInfo = []
+    private _lastHoverNodeUuid = null;
+    private _lastGraphics = null;
+    _onCanvasMouseMove(event:MouseEvent){
+        if(!this.m_isPickMode){
+            return
+        }
+        
+        let canvasRect = _cc_().game.canvas.getBoundingClientRect()
+        let _touchX = event.clientX - canvasRect.x
+        let _touchY = canvasRect.height - (event.clientY - canvasRect.y)
+
+        if(!(_touchX>0&&_touchX<canvasRect.width&&_touchY>0&&_touchY<canvasRect.height)){
+            return
+        }
+        // console.log("-----------a",_touchX,_touchY)
+        
+        let tmpObj = null
+
+        let allArr = this._allNodeRectInfo
+        for(let i=allArr.length-1;i>=0;i--){
+            let item = allArr[i]
+            let rect = item.anchorMargin
+            let pt = item.pt
+            
+            if(_touchX-pt.x>=rect.left&&_touchX-pt.x<=rect.right&&_touchY-pt.y>=rect.bottom&&_touchY-pt.y<=rect.top){
+                // console.log("touch node:",item.name)
+                tmpObj = item
+                break
+            }
+        }
+        if(this._lastHoverNodeUuid!=null){
+            if(tmpObj==null){
+                this._lastHoverNodeUuid = null
+                //TODO隐藏节点框
+                // console.log("1 touch node: null")
+                if(_cc_().isValid(this._lastGraphics)){
+                    this._lastGraphics.node.destroy()
+                }
+                this._lastGraphics = null
+            }else if(tmpObj.uuid!=this._lastHoverNodeUuid){
+                this._lastHoverNodeUuid = tmpObj.uuid
+                //TODO隐藏上一个节点框，显示新的节点框
+                // console.log("2 touch node:",tmpObj.name)
+
+                if(_cc_().isValid(this._lastGraphics)){
+                    this._lastGraphics.node.destroy()
+                }
+                this._lastGraphics = this.showBorderOfNode(tmpObj.uuid,true)
+            }
+        }else if(tmpObj!=null){
+            this._lastHoverNodeUuid = tmpObj.uuid
+            //TODO显示新的节点框
+            // console.log("3 touch node:",tmpObj.name)
+
+            this._lastGraphics = this.showBorderOfNode(tmpObj.uuid,true)
+        }
     }
 
     getSearchPaths(){
@@ -1444,7 +1589,8 @@ function _addWidget(node) {
     return widget
 }
 
-function getNodeRect(node,parentScale = null){
+/**获取节点的锚点相对于上下左右边界的距离 */
+function _getNodeMarginOfAnchorPt(node,parentScale = null){
     let trans = node.getComponent(_cc_().UITransform);
 
     let size = trans.contentSize
