@@ -1,5 +1,4 @@
 
-
 declare var pako:any
 const _cc_ = function(){
     return globalThis["__cchyz"]
@@ -1432,20 +1431,32 @@ class _RuntimeData{
     private _touchNode = null;
     makePersistCanvasNode(){
         if(this._globalNode==null){
-            let _uiCamera = null
-            let canvasArr = _cc_().director.getScene().getComponentsInChildren(_cc_().Canvas)
-            for(let canvas of canvasArr){
-                if(canvas.cameraComponent && canvas.node.name!="_debuger_canvas"){
-                    _uiCamera = canvas.cameraComponent
-                    break
-                }
-            }
+            
             this._globalNode = new (_cc_().Node)("_debuger_canvas");
             this._globalNode.setSiblingIndex(100); 
             this._globalNode.layer = _cc_().Layers.Enum.UI_2D;
             let canvas = this._globalNode.addComponent(_cc_().Canvas);
             canvas.alignCanvasWithScreen = true;
-            canvas.cameraComponent = _uiCamera
+
+            const _updateCamera = ()=>{
+                let _uiCamera = null
+                let _canvasArr = _cc_().director.getScene().getComponentsInChildren(_cc_().Canvas)
+                for(let _cvs of _canvasArr){
+                    if(_cvs.cameraComponent && _cvs.node.name!="_debuger_canvas"){
+                        _uiCamera = _cvs.cameraComponent
+                        break
+                    }
+                }
+                canvas.cameraComponent = _uiCamera
+            }
+            _updateCamera()
+            _cc_().director.on(_cc_().Director.EVENT_BEFORE_SCENE_LAUNCH, () => {
+                canvas.cameraComponent = null
+            })
+            _cc_().director.on(_cc_().Director.EVENT_AFTER_SCENE_LAUNCH, () => {
+                _updateCamera()
+            })
+            
 
             let trans = this._globalNode.getComponent(_cc_().UITransform) || this._globalNode.addComponent(_cc_().UITransform);
        
