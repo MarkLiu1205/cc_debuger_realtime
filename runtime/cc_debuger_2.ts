@@ -1268,7 +1268,7 @@ class _RuntimeData{
             const obj = map[k]
             let val = component[k]
             if(obj.type=="cc.Node"||obj.type=="cc.Component"||obj.type=="cc.Asset"){
-                val = val?.uuid??""
+                val = val?.uuid??val?._uuid??""
             }else if(obj.type=="cc.Color"){
                 val = val.toHEX()
             }else if(obj.type=="cc.Size"){
