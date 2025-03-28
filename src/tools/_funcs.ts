@@ -17,11 +17,23 @@ export function getPluginName(){
 }
 
 export function getPluginVersionName(){
-    return packageJSON.version
-}
-
-export function getPluginVersionNumber(){
-    return packageJSON.package_version
+    const verTxt = getCurPluginPath()+"/version.txt"
+    let versionStr = fs.readFileSync(verTxt)
+    if(versionStr.toString){
+        versionStr = versionStr.toString()
+    }
+    
+    if(typeof versionStr=="string"){
+        versionStr = versionStr.trim()
+        const versionRegex = /^\d+(\.\d+)*$/;
+        if(!versionRegex.test(versionStr)){
+            versionStr = packageJSON.version
+        }
+    }else{
+        versionStr = packageJSON.version
+    }
+    
+    return versionStr
 }
 
 /**

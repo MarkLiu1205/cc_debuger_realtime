@@ -164,7 +164,8 @@ function packPluginToZip() {
         "server/server.js",
         "server/wasm/",
         "src/tools/pako.min.js",
-        "package.json"
+        "package.json",
+        "version.txt",
     ];
 
     let obj = JSON.parse(fs.readFileSync("package.json"));
