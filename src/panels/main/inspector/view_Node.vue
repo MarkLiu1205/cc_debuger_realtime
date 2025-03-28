@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue';
+import { computed, inject, nextTick, onMounted, reactive, ref, watch } from 'vue';
 import { _pluginSocket } from '../../../tools/plugin_socket';
 import { eventBus } from '../../../tools/_enentBus';
+
+const showToast = inject<ToastParam>("message")
 
 const enumDesc_Layers = ref<string[]>([])
 const enumsMap = ref({})
@@ -78,8 +80,11 @@ function onClose(){
     eventBus.emit("close_inspector",nodeModel.value.uuid)
 }
 
-function onShowBorder(){
-    _pluginSocket.showBorderOfNode(nodeModel.value.uuid)
+async function onShowBorder(){
+    let ret = await _pluginSocket.showBorderOfNode(nodeModel.value.uuid)
+    if(ret==-3){
+        showToast("目标节点没有有UItransform组件","error")
+    }
 }
 
 </script>

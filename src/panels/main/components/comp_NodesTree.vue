@@ -44,6 +44,8 @@ function onNodeTreeChanges(info:NodeTreeDiffInfo){
 let _cancelFor_onSceneNodeTree:()=>void = null
 let _cancelFor_onMousePickNode:()=>void = null
 
+const bCanOpenPickMode = ref(false)
+
 onMounted(()=>{
     _cancelFor_onSceneNodeTree = _pluginSocket.listenSceneNodeTree(onNodeTreeChanges)
     _cancelFor_onMousePickNode = _pluginSocket.listenMousePickNodeAchanged((uuid)=>{
@@ -60,6 +62,10 @@ onMounted(()=>{
         onClick_node(data,null,null)
 
         on_click_in_inspector_node(uuid)
+    })
+
+    _pluginSocket.getGameEnv().then((obj)=>{
+        bCanOpenPickMode.value = !obj.isMobile&&obj.isBrowser
     })
 })
 
@@ -565,7 +571,7 @@ async function doRefresh(){
                         </ui-button>
                     </div>
                     <ui-checkbox tooltip="是否按时自动刷新节点树" :value="bAutoFresh" @change="handleAutoRefresh" v-if="false">自动刷新</ui-checkbox>
-                    <ui-checkbox tooltip="是否开启pickMode" @change="handlePickMode">PickMode</ui-checkbox>
+                    <ui-checkbox tooltip="是否开启pickMode" v-if="bCanOpenPickMode" @change="handlePickMode">PickMode</ui-checkbox>
                 </div>
             </div>
             <el-tree-v2 ref="ref_nodeTree"

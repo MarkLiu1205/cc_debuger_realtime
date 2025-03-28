@@ -266,7 +266,10 @@ class RunTimeSocket {
                 data = _data.callFuncOfComp(uuid,funcName,args)
             } else if (msg.action === 'showBorderOfNode') {
                 const uuid = msg.data
-                _data.showBorderOfNode(uuid)
+                let code = _data.showBorderOfNode(uuid)
+                if(typeof code=="number"){
+                    data = code
+                }
             } else if (msg.action === 'getSearchPaths') {
                 data = _data.getSearchPaths()
             } else if (msg.action === 'setIsPickMode') {
@@ -1225,7 +1228,7 @@ class _RuntimeData{
 
     getNodeInfo(uuid:string){
         const node = this.m_nodeUuidMap[uuid]
-        if(node==null){
+        if(node==null||!_cc_().isValid(node)){
             return null
         }
         const nodeInfo:any/**InspectorInfo_Node */ = {
@@ -1244,6 +1247,9 @@ class _RuntimeData{
     private _getComponentsInfo(node: any/**import("cc").Node */) {
         const componentsInfo:Array<any/**CompInfo_Base */> = [];
         const components = node.components;
+        if(components==null){
+            return componentsInfo
+        }
 
         for (const component of components) {
             const info = this._getComponentProperties(component)
@@ -1375,12 +1381,15 @@ class _RuntimeData{
     showBorderOfNode(uuid:string,noAnim=false){
         const node = this.m_nodeUuidMap[uuid]
         if(node==null){
-            return
+            return -1
         }
         if(!_cc_().isValid(node)){
-            return
+            return -2
         }
         let trans = node.getComponent(_cc_().UITransform);
+        if(trans==null){
+            return -3
+        }
         let parentTrans = this.makePersistCanvasNode()
         let worldPt = trans.node.getWorldPosition()
 
@@ -1393,9 +1402,10 @@ class _RuntimeData{
         tmpParent.setPosition(pt)
 
         let graphics = createGraphicsNode(node.name)
+        graphics.node.layer = node.layer??node._layer
         graphics.node.parent = tmpParent
         graphics.clear()
-        graphics.lineWidth = 3
+        graphics.lineWidth = 3/Math.min(_cc_().view.getScaleX(),1)
         graphics.strokeColor = _cc_().color(255,0,0)
         
         graphics.moveTo(rect.left,rect.bottom)
@@ -1452,6 +1462,7 @@ class _RuntimeData{
             _updateCamera()
             _cc_().director.on(_cc_().Director.EVENT_BEFORE_SCENE_LAUNCH, () => {
                 canvas.cameraComponent = null
+                this._allNodeRectInfo = []
             })
             _cc_().director.on(_cc_().Director.EVENT_AFTER_SCENE_LAUNCH, () => {
                 _updateCamera()
@@ -1522,8 +1533,12 @@ class _RuntimeData{
         if(!(_touchX>0&&_touchX<canvasRect.width&&_touchY>0&&_touchY<canvasRect.height)){
             return
         }
+        let viewScaleX = _cc_().view.getScaleX()
+        let viewScaleY = _cc_().view.getScaleY()
+
         // console.log("-----------a",_touchX,_touchY)
-        
+        _touchX /= viewScaleX
+        _touchY /= viewScaleY
         let tmpObj = null
 
         let allArr = this._allNodeRectInfo
@@ -1543,8 +1558,8 @@ class _RuntimeData{
                 this._lastHoverNodeUuid = null
                 //TODO隐藏节点框
                 // console.log("1 touch node: null")
-                if(_cc_().isValid(this._lastGraphics)){
-                    this._lastGraphics.node.destroy()
+                if(_cc_().isValid(this._lastGraphics?.node?.parent)){
+                    this._lastGraphics.node.parent.destroy()
                 }
                 this._lastGraphics = null
             }else if(tmpObj.uuid!=this._lastHoverNodeUuid){
@@ -1552,8 +1567,8 @@ class _RuntimeData{
                 //TODO隐藏上一个节点框，显示新的节点框
                 // console.log("2 touch node:",tmpObj.name)
 
-                if(_cc_().isValid(this._lastGraphics)){
-                    this._lastGraphics.node.destroy()
+                if(_cc_().isValid(this._lastGraphics?.node?.parent)){
+                    this._lastGraphics?.node?.parent?.destroy()
                 }
                 this._lastGraphics = this.showBorderOfNode(tmpObj.uuid,true)
             }
