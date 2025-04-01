@@ -1294,37 +1294,39 @@ class _RuntimeData{
 
     /**获取资源的详情 */
     async getSpriteFrameInfo(uuid){
-        let ret = {} as any
-        let asset = _cc_().assetManager.assets.get(uuid)
-        if(asset==null){
-            asset = await new Promise((resolve)=>{
-                _cc_().assetManager.loadAny({uuid:uuid},(err,asset)=>{
-                    resolve(asset)
+        try{
+            let ret = {} as any
+            let asset = _cc_().assetManager.assets.get(uuid)
+            if(asset==null){
+                asset = await new Promise((resolve)=>{
+                    _cc_().assetManager.loadAny({uuid:uuid},(err,asset)=>{
+                        resolve(asset)
+                    })
                 })
-            })
-            if(asset){
-                ret.bNotInUse = true
-            }else{
-                ret.bIsNotFount = true
-            }
-        }
-        if(!(asset instanceof _cc_().SpriteFrame)){
-            ret.bNotFrame = true
-        }else{
-            if(_cc_().DynamicAtlasManager.instance.enabled){
-                const _atlases = _cc_().DynamicAtlasManager.instance._atlases
-                for(let atlas of _atlases){
-                    if(asset._texture==atlas._texture){
-                        ret.bIsInDynamicTexture = true //已加入动态图集
-                        break
-                    }
+                if(asset){
+                    ret.bNotInUse = true
+                }else{
+                    ret.bIsNotFount = true
                 }
             }
+            if(!(asset instanceof _cc_().SpriteFrame)){
+                ret.bNotFrame = true
+            }else{
+                if(_cc_().DynamicAtlasManager.instance.enabled){
+                    const _atlases = _cc_().DynamicAtlasManager.instance._atlases
+                    for(let i=0;i<_atlases.length;i++){
+                        if(asset._texture==_atlases[i]._texture){
+                            ret.dynamicTexId = i //已加入动态图集
+                            break
+                        }
+                    }
+                }            
+            }
             
-            asset.texture = asset._texture.uuid
+            return ret
+        }catch(e){
+
         }
-        
-        return ret
     }
 
     private _getComponentsInfo(node: any/**import("cc").Node */) {
@@ -1422,7 +1424,6 @@ class _RuntimeData{
             data["animation"] = component["_defaultClip"].name
         }else if(clsName === "dragonBones.ArmatureDisplay"){
             const _armature = component["_armature"]
-            _armature.hasEventListener(null)
             data["animationArr"] = [..._armature._armatureData.animationNames]
             data["animationArr"].unshift("<None>")
             data["animation"] = _armature._armatureData.defaultAnimation.name

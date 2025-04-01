@@ -56,7 +56,7 @@ function onSelect(event) {
     <div class="component-properties">
         <div class="title">
             <ui-checkbox id="id_enable" @change="onToggle" :value="compModel.enabled"></ui-checkbox>
-            <h3>cc.Sprite</h3>
+            <h3>{{ compModel.typeStr }}</h3>
         </div>
         <div class="property">
             <label>CustomMaterial:</label>
