@@ -144,6 +144,94 @@ async function onSel_node(info:InspectorInfo_Node){
     _curSelResItem.value = null
 }
 
+function _applyNodeInfoChange(oldObj: any, changes: Record<string, any> | null): void {
+    if (!changes) {
+        return;
+    }
+    for (const key in changes) {
+        const changeVal = changes[key];
+        // 过滤原型链上的属性
+        if (!changes.hasOwnProperty(key)) {
+            continue;
+        }
+        if (changeVal === null) {
+            continue;
+        }
+        const oldVal = oldObj[key];
+        if (Array.isArray(changeVal)) {
+            // 处理数组类型的变更
+            if (!Array.isArray(oldVal)) {
+                // 旧值不是数组，直接替换为新数组
+                const newArray: any[] = [];
+                for (let i = 0; i < changeVal.length; i++) {
+                    newArray[i] = changeVal[i] !== null ? changeVal[i] : null;
+                }
+                oldObj[key] = newArray;
+            } else {
+                // 调整旧数组长度以匹配变更数组长度
+                if (oldVal.length < changeVal.length) {
+                    oldVal.length = changeVal.length;
+                }
+                // 遍历处理每个索引的变更
+                for (let i = 0; i < changeVal.length; i++) {
+                    const elemChange = changeVal[i];
+                    if (elemChange === null) {
+                        // 无变更，但需确保新增索引设为 null（与原逻辑一致）
+                        if (i >= oldVal.length) {
+                            oldVal[i] = null;
+                        }
+                        continue;
+                    }
+                    // 处理当前索引的变更
+                    if (typeof elemChange === 'object' && elemChange !== null) {
+                        // 递归处理对象或数组
+                        if (oldVal[i] !== null && typeof oldVal[i] === 'object') {
+                            _applyNodeInfoChange(oldVal[i], elemChange);
+                        } else {
+                            oldVal[i] = elemChange;
+                        }
+                    } else {
+                        // 基本类型直接赋值
+                        oldVal[i] = elemChange;
+                    }
+                }
+            }
+        } else if (typeof changeVal === 'object' && changeVal !== null) {
+            // 处理对象类型的变更
+            if (oldVal === null || typeof oldVal !== 'object') {
+                // 旧值非对象，直接替换
+                oldObj[key] = changeVal;
+            } else {
+                // 递归处理子对象
+                _applyNodeInfoChange(oldVal, changeVal);
+            }
+        } else {
+            // 基本类型直接替换
+            oldObj[key] = changeVal;
+        }
+    }
+}
+
+let _cancelFor_onUpdateCurSelNodeInfo:()=>void = null
+onMounted(()=>{
+    _cancelFor_onUpdateCurSelNodeInfo = _pluginSocket.listenForUpdateCurSelNodeInfo((diff)=>{
+        try{
+            let newVal = JSON.parse(JSON.stringify(_curSelNodeInfo.value))
+            _applyNodeInfoChange(newVal,diff) 
+            _curSelNodeInfo.value = newVal
+        }catch(e){
+
+        }
+    })
+})
+
+onUnmounted(()=>{
+    if(_cancelFor_onUpdateCurSelNodeInfo){
+        _cancelFor_onUpdateCurSelNodeInfo()
+        _cancelFor_onUpdateCurSelNodeInfo = null
+    }
+})
+
 function onSel_asset(item:ResTreeItem) {
     // if(item&&!item.isDirectory){
     //     console.log('选中资源:', item);

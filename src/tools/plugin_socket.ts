@@ -383,6 +383,10 @@ class PluginSocket {
         return this.listenForPushData<any>(PushAction.onMousePickNode,callback,null)
     }
 
+    listenForUpdateCurSelNodeInfo(callback:(diff:any)=>void){
+        return this.listenForPushData<any>(PushAction.onUpdateCurSelNodeInfo,callback,null)
+    }
+
     private _onWaitRuntimeOnlineResolves:Array<(data:any)=>void> = []
     /**等待runtime上线连接上plugin */
     async waitForRuntimeIsInline(){
@@ -457,6 +461,12 @@ class PluginSocket {
         }
         info = _funcs.roundNumbersToPrecision(info, 2)
         return info as any as InspectorInfo_Node
+    }
+
+    /**取消当前选中的节点 */
+    async cancelCurSelectNode(){
+        await this.waitForRuntimeIsInline()
+        this._sendRequest("cancelCurSelectNode",null,{encrypted:1})
     }
 
     /**
@@ -826,6 +836,8 @@ enum PushAction{
     loopFrameTime = "loopFrameTime",
     /**pick模式下，鼠标选中节点 */
     onMousePickNode = "onMousePickNode",
+    /**自动刷新当前选中节点的信息 */
+    onUpdateCurSelNodeInfo = "onUpdateCurSelNodeInfo",
 
 }
 

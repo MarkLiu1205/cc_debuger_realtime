@@ -183,6 +183,10 @@ class RunTimeSocket {
             } else if (msg.action === 'getNodeInfo') {
                 const uuid = msg.data.uuid;
                 data = _data.getNodeInfo(uuid)
+                _data.setCurSelectNode(uuid)
+                _data._curNodeInfoMap = data
+            } else if (msg.action === 'cancelCurSelectNode') {
+                data = _data.cancelCurSelectNode()
             } else if (msg.action === 'reqModifyNodeInfo') {
                 data = _data.doModifyNodeInfo(msg.data)
             } else if (msg.action === 'fiterCompsWithType') {
@@ -473,6 +477,10 @@ class RunTimeSocket {
     sendPush_pickNode(uuid){
         return this._sendPush( 'onMousePickNode', uuid);
     }
+
+    sendPush_updateCurSelNodeInfo(diff){
+        return this._sendPush( 'onUpdateCurSelNodeInfo', diff);
+    }
 }
 
 
@@ -654,6 +662,10 @@ class _RuntimeData{
         this.m_curSceneName = ""
         this.m_hasSendCompAttrsMap = {}
         this.setIsPickMode(false)
+
+        this._curSelectNodeUuid = null
+        clearInterval(this._timeId_updateCurNode)
+        this._timeId_updateCurNode = 0
     }
 
     /**从assetManager.assets初始化需要同步的资源 */
@@ -1226,6 +1238,9 @@ class _RuntimeData{
         return ret
     }
 
+    private _curSelectNodeUuid:string = null;
+    private _timeId_updateCurNode = 0 as any
+    public _curNodeInfoMap = {}
     getNodeInfo(uuid:string){
         const node = this.m_nodeUuidMap[uuid]
         if(node==null||!_cc_().isValid(node)){
@@ -1235,13 +1250,38 @@ class _RuntimeData{
             uuid: node?.uuid??"",
             active: node.active,
             name: node.name,
-            position: node.position,
-            rotation: node.rotation,
-            scale: node.scale,
+            position: {x:Math.floor(node.position.x*100)/100,y:Math.floor(node.position.y*100)/100,z:Math.floor(node.position.z*100)/100},
+            rotation: {x:Math.floor(node.rotation.x*100)/100,y:Math.floor(node.rotation.y*100)/100,z:Math.floor(node.rotation.z*100)/100},
+            scale: {x:Math.floor(node.scale.x*100)/100,y:Math.floor(node.scale.y*100)/100,z:Math.floor(node.scale.z*100)/100},
             layer: node.layer,
             components: this._getComponentsInfo(node)
         };
+        
         return nodeInfo
+    }
+
+    private _onUpdateCurSelNode(){
+        const oldInfo = this._curNodeInfoMap
+        const newInfo = this._curNodeInfoMap = this.getNodeInfo(this._curSelectNodeUuid)
+        const diff = deepCompare(newInfo,oldInfo)
+        if(diff!=null){
+            _runtimeSocket.sendPush_updateCurSelNodeInfo(diff)
+        }
+    }
+
+    setCurSelectNode(node){
+        this._curSelectNodeUuid = node
+
+        clearInterval(this._timeId_updateCurNode)
+
+        this._timeId_updateCurNode = setInterval(this._onUpdateCurSelNode.bind(this),1000/20)
+    }
+
+    /**标记取消选中当前节点 */
+    cancelCurSelectNode(){
+        this._curSelectNodeUuid = null;
+        clearInterval(this._timeId_updateCurNode)
+        this._timeId_updateCurNode = 0
     }
 
     private _getComponentsInfo(node: any/**import("cc").Node */) {
@@ -2418,6 +2458,61 @@ function str_decrypt(base64Input: string, key: string) {
     return new TextDecoder().decode(originalBytes);
 }
 
+function deepCompare(newObj: any, oldObj: any): Record<string, any> | null {
+    if (oldObj == null) {
+        return null;
+    }
+    const changes: Record<string, any> = {};
+    for (const key in newObj) {
+        const newVal = newObj[key];
+        const oldVal = oldObj[key];
+        if (typeof newVal === 'object' && newVal !== null) {
+            if (Array.isArray(newVal)) {
+                if (!Array.isArray(oldVal)) {
+                    // 旧值非数组，记录整个新数组
+                    changes[key] = newVal;
+                } else {
+                    // 处理数组元素变化
+                    const arrChanges: any[] = [];
+                    let hasChanges = false;
+                    for (let i = 0; i < newVal.length; i++) {
+                        const childOld = i < oldVal.length ? oldVal[i] : null;
+                        const change = deepCompare(newVal[i], childOld);
+                        if (change !== null) {
+                            arrChanges[i] = change;
+                            hasChanges = true;
+                        } else {
+                            arrChanges[i] = null; // 无变化的位置设为null
+                        }
+                    }
+                    // 确保数组长度与newVal一致，填充可能的undefined为null
+                    for (let i = 0; i < newVal.length; i++) {
+                        if (arrChanges[i] === undefined) {
+                            arrChanges[i] = null;
+                        }
+                    }
+                    if (hasChanges) {
+                        changes[key] = arrChanges;
+                    }
+                }
+            } else {
+                // 处理普通对象
+                const childChanges = deepCompare(newVal, oldVal);
+                if (childChanges !== null) {
+                    changes[key] = childChanges;
+                }
+            }
+        } else {
+            // 处理基本类型
+            if (newVal !== oldVal) {
+                changes[key] = newVal;
+            }
+        }
+    }
+    return Object.keys(changes).length > 0 ? changes : null;
+}
+
+
 let bInited = false
 let _runtimeSocket:RunTimeSocket = null
 
@@ -2490,6 +2585,8 @@ function _initOnce() {
 
     
     _cc_().director.on(_cc_().Director.EVENT_AFTER_SCENE_LAUNCH, () => {
+        _data.cancelCurSelectNode()
+
         _runtimeSocket.sendPush_sceneLaunched()
         _runtimeSocket.sendPush_checkUpdateSceneTree()
     })

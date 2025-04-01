@@ -86,6 +86,7 @@ const _curSelUuid = ref("")
 let _timeOutId:any = 0
 async function _onSelect_node(item:NodeTreeItem){
     if(item==null){
+        console.log("取消选中几点")
         _curSelNodeInfo.value = null
         emit('onSel_node', null);
         return null
@@ -210,7 +211,7 @@ function deepCompare(newObj: any, oldObj: any) {
                 changes[key] = newObj[key];
             } else {
                 changes[key] = deepCompare(newObj[key], oldObj[key]);
-                if (Object.keys(changes[key]).length === 0) {
+                if (changes[key]==null || Object.keys(changes[key]).length === 0) {
                     delete changes[key];
                 }
             }
