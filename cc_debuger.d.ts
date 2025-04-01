@@ -51,6 +51,11 @@ interface ResTreeItem{
     isUrlImg?:boolean,
     //是本地文件夹的资源
     isNativeImg?:boolean,
+
+    /**是否加入了自动图集 */
+    isAutoPackImg?:boolean,
+    /**是否加入了动态图集，加入了则为动态图集索引，没加入则为null */
+    dynamicTexId?:number,
 }
 
 // type CompType = "Sprite" | "Label" | "UITransform" | "Button" | "Canvas" | "EditBox" | "Layout" | 

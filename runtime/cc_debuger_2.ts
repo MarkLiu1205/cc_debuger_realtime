@@ -187,6 +187,14 @@ class RunTimeSocket {
                 _data._curNodeInfoMap = data
             } else if (msg.action === 'cancelCurSelectNode') {
                 data = _data.cancelCurSelectNode()
+            } else if (msg.action === 'getSpriteFrameInfo') {
+                const uuid = msg.data.uuid;
+                _data.getSpriteFrameInfo(uuid).then((ret)=>{
+                    responseData.data = ret
+                    responseData.encrypted = 1
+                    this._send(responseData);
+                })
+                return
             } else if (msg.action === 'reqModifyNodeInfo') {
                 data = _data.doModifyNodeInfo(msg.data)
             } else if (msg.action === 'fiterCompsWithType') {
@@ -1282,6 +1290,41 @@ class _RuntimeData{
         this._curSelectNodeUuid = null;
         clearInterval(this._timeId_updateCurNode)
         this._timeId_updateCurNode = 0
+    }
+
+    /**获取资源的详情 */
+    async getSpriteFrameInfo(uuid){
+        let ret = {} as any
+        let asset = _cc_().assetManager.assets.get(uuid)
+        if(asset==null){
+            asset = await new Promise((resolve)=>{
+                _cc_().assetManager.loadAny({uuid:uuid},(err,asset)=>{
+                    resolve(asset)
+                })
+            })
+            if(asset){
+                ret.bNotInUse = true
+            }else{
+                ret.bIsNotFount = true
+            }
+        }
+        if(!(asset instanceof _cc_().SpriteFrame)){
+            ret.bNotFrame = true
+        }else{
+            if(_cc_().DynamicAtlasManager.instance.enabled){
+                const _atlases = _cc_().DynamicAtlasManager.instance._atlases
+                for(let atlas of _atlases){
+                    if(asset._texture==atlas._texture){
+                        ret.bIsInDynamicTexture = true //已加入动态图集
+                        break
+                    }
+                }
+            }
+            
+            asset.texture = asset._texture.uuid
+        }
+        
+        return ret
     }
 
     private _getComponentsInfo(node: any/**import("cc").Node */) {

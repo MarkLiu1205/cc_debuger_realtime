@@ -173,6 +173,9 @@ class _DataContext{
         if(resObj?.isNativeImg!=null){
             item.isNativeImg = resObj.isNativeImg
         }
+        if(resObj?.isAutoPackImg!=null){
+            item.isAutoPackImg = resObj.isAutoPackImg
+        }
     }
     /**
      * 标记正在被使用的资源

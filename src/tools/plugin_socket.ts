@@ -12,6 +12,7 @@ interface OneMsg{
     action?: string; 
     data?: any; 
     requestId?: number;
+    /**1加密  2压缩 */
     encrypted?:number;
     role?:string;
 }
@@ -421,7 +422,12 @@ class PluginSocket {
     }
 
     /**发送一个需要返回的socket请求，异步返回结果 */
-    private async _sendRequest<T>(action:string, data:any = null, param:{type?:string,timeout?:number,encrypted?:number}=null) {
+    private async _sendRequest<T>(action:string, data:any = null, param:{
+        type?:string,
+        timeout?:number,
+        /**1加密 2压缩 */
+        encrypted?:number
+    }=null) {
         if (!this.m_socket || this.m_socket.readyState !== WebSocket.OPEN) {
             return Promise.reject(new Error('WebSocket is not connected'));
         }
@@ -461,6 +467,13 @@ class PluginSocket {
         }
         info = _funcs.roundNumbersToPrecision(info, 2)
         return info as any as InspectorInfo_Node
+    }
+
+    /**获取frame资源信息（因为从编辑器获取的有时候会不准，比如涉及到自动图集） */
+    async getSpriteFrameInfo(uuid:string):Promise<any>{
+        await this.waitForRuntimeIsInline()
+        let info = await this._sendRequest('getSpriteFrameInfo', { uuid },{encrypted:2});
+        return info
     }
 
     /**取消当前选中的节点 */

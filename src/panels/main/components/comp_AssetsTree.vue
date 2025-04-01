@@ -285,7 +285,7 @@ const customClass_Asset = (nodeData): string => {
   return nodeData.path === selectedAssetId ? 'custom-current' : ''
 }
 
-function onClick_asset (data: ResTreeItem, node: TreeNode, e: MouseEvent){
+async function onClick_asset (data: ResTreeItem, node: TreeNode, e: MouseEvent){
     if(selectedAssetId==data.path){
         if(ref_resTree.value){
             ref_resTree.value.setCurrentKey(null)
@@ -297,6 +297,14 @@ function onClick_asset (data: ResTreeItem, node: TreeNode, e: MouseEvent){
         }
     }else{
         selectedAssetId = data.path
+        if(data.assetType=="cc.SpriteFrame"){
+            let info = await _pluginSocket.getSpriteFrameInfo(data.uuid)
+            if(info.dynamicTexId!=null){
+                data.dynamicTexId = info.dynamicTexId
+            }
+            // console.log("=======info",info)
+        }
+        
         emit('onSel_asset', data);
     }
 }

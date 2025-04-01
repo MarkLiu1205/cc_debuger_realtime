@@ -180,6 +180,26 @@ function onClose(){
     eventBus.emit("close_inspector",assetInfo.value.uuid)
 }
 
+function onClickJumpDynamicTex(idx){
+    // console.log("idx",idx)
+    openDynamicPanel()
+}
+
+const _isDynamicLoading = ref(false)
+async function openDynamicPanel(){
+    if(_isDynamicLoading.value){
+        return
+    }
+    _isDynamicLoading.value = true
+    const panelId = _funcs.getPluginName()+".dynamicTexture_panel"
+    
+    if(await Editor.Panel.has(panelId)){
+        Editor.Panel.focus(panelId);
+    }else{
+        await Editor.Panel.open(panelId);
+    }
+    _isDynamicLoading.value = false
+}
 
 </script>
 
@@ -262,8 +282,10 @@ function onClose(){
             <div class="row">
                 <label class="orange">{{ _funcs.getI18nText("text_55") }}</label>
                 <label class="break-word">{{ assetInfo.assetType }}</label>
-                <!-- <label class="green" v-if="assetInfo.assetType=='cc.ImageAsset'||assetInfo.assetType=='cc.Texture2D'">(这是自动图集)</label>
-                <label class="green" v-if="assetInfo.assetType=='cc.SpriteFrame'">(已加入自动图集)</label> -->
+                <label class="green" v-if="assetInfo.isAutoPackImg && (assetInfo.assetType=='cc.ImageAsset'||assetInfo.assetType=='cc.Texture2D')">(这是自动图集)</label>
+                <label v-if="assetInfo.dynamicTexId!=null && assetInfo.assetType=='cc.SpriteFrame'" class="clickable" @click="onClickJumpDynamicTex(assetInfo.dynamicTexId)">(已加入动态图集)</label>
+                <label class="green" v-else-if="assetInfo.isAutoPackImg && assetInfo.assetType=='cc.SpriteFrame'" >(已加入自动图集)</label>
+                <ui-loading v-if="_isDynamicLoading"></ui-loading>
             </div>
             <div class="row" v-if="!isNotInCache">
                 <label class="orange">{{ _funcs.getI18nText("text_56") }}:</label>
@@ -277,11 +299,13 @@ function onClose(){
                 <div class="row" v-if="assetInfo.textureUuid">
                     <label class="orange">{{ _funcs.getI18nText("text_59") }}</label>
                     <label class="clickable" @click="onClickUuid(assetInfo.textureUuid)">{{ assetInfo.textureUuid }}</label>
+                    <label class="orange" v-if="assetInfo.isAutoPackImg">{{ "(自动图集)" }}</label>
                 </div>
                 <div class="row" v-if="assetInfo.imageUuid">
                     <label class="orange">{{ _funcs.getI18nText("text_60") }}</label>
                     <label class="clickable" @click="onClickUuid(assetInfo.imageUuid)">{{ assetInfo.imageUuid }}</label>
                 </div>
+                
             </div>
             <div style="margin-top: 10px;">
                 <label class="orange">{{ _funcs.getI18nText("text_61") }}</label>
