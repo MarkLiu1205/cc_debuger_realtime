@@ -19,25 +19,32 @@ const verifyTip = computed(()=>{
         return _funcs.getI18nText("text_118")
     }
 })
-//比较版本号
-function checkCurIsLatestVersion(){
+//比较版本号 如 1.0.0  1.0.23
+function checkCurIsLatestVersion() {
     const nowVer = _funcs.getPluginVersionName();
-    const vArr_self = nowVer.split(".")
-    const vArr_remote = verifyInfo.latestVersion.split(".")
-    for(let i=0;i<vArr_self.length;i++){
-        if(vArr_remote[i]==null){
-            return true
+    const vArr_self = nowVer.split(".");
+    const vArr_remote = verifyInfo.latestVersion.split(".");
+
+    const maxLength = Math.max(vArr_self.length, vArr_remote.length);
+
+    for (let i = 0; i < maxLength; i++) {
+        const subV_self = parseInt(vArr_self[i] || "0", 10); // 默认值为 0
+        const subV_remote = parseInt(vArr_remote[i] || "0", 10); // 默认值为 0
+
+        if (isNaN(subV_self) || isNaN(subV_remote)) {
+            // 如果解析失败，认为当前版本是最新的
+            return true;
         }
-        let subV_self = parseInt(vArr_self[i])
-        let subV_remote = parseInt(vArr_remote[i])
-        if(isNaN(subV_remote)){
-            return true
+
+        if (subV_self < subV_remote) {
+            return false; // 当前版本小于远程版本
+        } else if (subV_self > subV_remote) {
+            return true; // 当前版本大于远程版本
         }
-        if(subV_self<subV_remote){
-            return false
-        }
+        // 如果相等，继续比较下一部分
     }
-    return true
+
+    return true; // 如果所有部分都相等，认为是最新版本
 }
 
 const vertionTip = computed(()=>{
