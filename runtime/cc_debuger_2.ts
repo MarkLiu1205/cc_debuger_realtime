@@ -1421,7 +1421,7 @@ class _RuntimeData{
             data["animation"] = component["animation"]
         }else if(clsName === "cc.Animation"){
             data["animationArr"] = component["_clips"].map((item)=>item.name)
-            data["animation"] = component["_defaultClip"].name
+            data["animation"] = component["_defaultClip"]?.name
         }else if(clsName === "dragonBones.ArmatureDisplay"){
             const _armature = component["_armature"]
             data["animationArr"] = [..._armature._armatureData.animationNames]
