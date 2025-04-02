@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, inject, onMounted, onUnmounted, reactive, ref, defineProps, nextTick, watch, Ref} from 'vue';
+import { computed, inject, onMounted, onUnmounted, reactive, ref, defineProps,defineExpose, nextTick, watch, Ref} from 'vue';
 import { ElMessage, MessageParams } from 'element-plus';
 import { _funcs } from '../../../tools/_funcs';
 import { _dataCtx } from '../../../tools/_dataCtx';
@@ -107,6 +107,10 @@ async function _onSelect_node(item:NodeTreeItem){
     }
     // console.log(newVal)
     _dataCtx.parseCompAttrInfos(newVal)
+    resetCurSelNodeInfo(newVal)
+}
+
+function resetCurSelNodeInfo(newVal){
     _curSelNodeInfo.value = newVal
     _dataCtx.setCurSelectNodeInfo(JSON.parse(JSON.stringify(newVal)))
 
@@ -268,6 +272,7 @@ function checkCancelSelect(){
 
 defineExpose({
     checkCancelSelect,
+    resetCurSelNodeInfo,
 });
 
 onMounted(() => {

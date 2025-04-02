@@ -212,13 +212,15 @@ function _applyNodeInfoChange(oldObj: any, changes: Record<string, any> | null):
     }
 }
 
+const ref_comp_left_tree_panel = ref(null)
+
 let _cancelFor_onUpdateCurSelNodeInfo:()=>void = null
 onMounted(()=>{
     _cancelFor_onUpdateCurSelNodeInfo = _pluginSocket.listenForUpdateCurSelNodeInfo((diff)=>{
         try{
             let newVal = JSON.parse(JSON.stringify(_curSelNodeInfo.value))
             _applyNodeInfoChange(newVal,diff) 
-            _curSelNodeInfo.value = newVal
+            ref_comp_left_tree_panel.value.resetCurSelNodeInfo(newVal)
         }catch(e){
 
         }
@@ -492,7 +494,7 @@ function onJumpTrial(){
             
             <div id="eid_view_main" class="cls_view_main" v-else>
                 <div id="eid_view_asset_list" class="left-panel" :style="{ width: width_left_panel + 'px' }">
-                    <comp_left_tree_panel 
+                    <comp_left_tree_panel ref="ref_comp_left_tree_panel"
                         @onSel_asset="onSel_asset"
                         @onSel_node="onSel_node"
                     />

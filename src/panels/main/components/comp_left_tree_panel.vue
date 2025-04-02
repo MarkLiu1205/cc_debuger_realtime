@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, inject, onMounted, onUnmounted, reactive, ref, defineProps, nextTick, watch} from 'vue';
+import { computed, inject, onMounted, onUnmounted, reactive, ref, defineProps,defineExpose, nextTick, watch} from 'vue';
 import { ElMessage } from 'element-plus';
 import { _funcs } from '../../../tools/_funcs';
 import { _dataCtx } from '../../../tools/_dataCtx';
@@ -92,6 +92,14 @@ function onClickOutside(){
     ref_nodeTree.value.checkCancelSelect()
     ref_resTree.value.checkCancelSelect()
 }
+
+function resetCurSelNodeInfo(newVal){
+    ref_nodeTree.value.resetCurSelNodeInfo(newVal)
+}
+
+defineExpose({
+    resetCurSelNodeInfo
+})
 
 </script>
 
