@@ -8,7 +8,7 @@ echo Build server complete
 
 set GOOS=js
 set GOARCH=wasm
-go env -w GOOS=js GOARCH=wasm
+@REM go env -w GOOS=js GOARCH=wasm
 go build -o server.wasm
 echo Build server.wasm complete
 
