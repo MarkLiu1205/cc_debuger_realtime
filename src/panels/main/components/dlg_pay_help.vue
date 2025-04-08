@@ -8,13 +8,8 @@ import {  ElButton } from "element-plus";
 const dialogVisible = ref(false);
 
 // 外部调用：打开弹窗
-function openDialog(initialCode = '') {
+function openDialog() {
   dialogVisible.value = true;
-  if (initialCode) {
-    if(ref_js_input.value!=null){
-      ref_js_input.value.value = initialCode; // 初始化脚本输入
-    }
-  }
 }
 
 

@@ -4,7 +4,7 @@ const { exec,spawn } = require('child_process');
 const fs = require('fs-extra');
 const os = require('os');
 // const {PNG} = require('pngjs');
-// const https = require('https');
+const http = require('http');
 
 import { MessageParams } from 'element-plus';
 import packageJSON from '../../package.json';
@@ -725,6 +725,62 @@ export function getDesignResolutionSize():{width:number,height:number}{
         }
     }
     return null
+}
+
+
+/**​
+ * 发送 POST 请求的 async 函数
+ * @param {string} url - 请求的 URL
+ * @param {Object} data - 要发送的数据对象
+ * @returns {Promise<Object>} - 返回解析后的响应数据
+ */
+export async function sendPostRequest(url, data):Promise<any> {
+    return new Promise((resolve, reject) => {
+        // 将数据对象转换为 JSON 字符串
+        const postData = JSON.stringify(data);
+
+        // 配置请求选项
+        const options = {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Content-Length': Buffer.byteLength(postData)
+            }
+        };
+
+        // 创建请求对象
+        const req = http.request(url, options, (res) => {
+            let responseBody = '';
+
+            // 接收响应数据
+            res.on('data', (chunk) => {
+                responseBody += chunk;
+            });
+
+            // 响应结束
+            res.on('end', () => {
+                if (res.statusCode >= 200 && res.statusCode < 300) {
+                    try {
+                        // 尝试解析 JSON 响应
+                        resolve(JSON.parse(responseBody));
+                    } catch (error) {
+                        resolve(responseBody); // 如果不是 JSON，直接返回原始响应
+                    }
+                } else {
+                    reject(new Error(`Request failed with status code ${res.statusCode}`));
+                }
+            });
+        });
+
+        // 处理请求错误
+        req.on('error', (error) => {
+            reject(error);
+        });
+
+        // 发送请求体
+        req.write(postData);
+        req.end();
+    });
 }
 
 }

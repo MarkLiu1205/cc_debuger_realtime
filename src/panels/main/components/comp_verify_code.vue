@@ -5,6 +5,7 @@ import { _funcs } from '../../../tools/_funcs';
 import { eventBus } from '../../../tools/_enentBus';
 import { _pluginSocket } from '../../../tools/plugin_socket';
 import dlg_pay_help from './dlg_pay_help.vue';
+import dlg_pay_shop from './dlg_pay_shop.vue';
 
 const verifyInfo = inject("verifyInfo") as VerifyRespParam
 
@@ -108,7 +109,7 @@ const errorTip = computed(()=>{
             <ui-button style="padding-top: 5px;padding-bottom: 5px;" @click="onBtnDoVerify(verify_code)">{{ _funcs.getI18nText("text_98") }}</ui-button>
         </div>
         
-        <dlg_pay_help ref="ref_payDlg"/>
+        <dlg_pay_shop ref="ref_payDlg"/>
     </div>
 </template>
 
