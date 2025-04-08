@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, defineExpose,inject } from 'vue';
+import { ref, defineExpose,inject, onMounted } from 'vue';
 import { ElButton, ElCard, ElMessage } from 'element-plus';
 import { _funcs } from '../../../tools/_funcs';
 
@@ -39,6 +39,25 @@ function selectGoods(id) {
   selectedGoodsId.value = id;
 }
 
+async function getGoodsList(){
+  const url = "http://ccdebuger.com:8080/req_goodslist"
+  // const url = "http://localhost:8080/req_goodslist"
+  const jsonData = {
+    pluginVersion:_funcs.getPluginVersionName()
+ }
+  try{
+    const obj = await _funcs.sendPostRequest(url,jsonData,true)
+    // console.log("obj",obj)
+    goodsList.value = obj.goodsCfgList
+  }catch(e){
+    // showToast(e.message)
+  }
+}
+
+onMounted(()=>{
+  getGoodsList()
+})
+
 // 去下单按钮点击
 async function handleBuy() {
   const item = goodsList.value.find(g => g.goodsId === selectedGoodsId.value);
@@ -47,15 +66,17 @@ async function handleBuy() {
     return;
   }
   const url = "http://ccdebuger.com:8080/order_pre"
+  // const url = "http://localhost:8080/order_pre"
   let userInfo = await Editor.User.getData()
   const jsonData = {
     goodsId: selectedGoodsId.value,
     cocos_uid: userInfo.cocos_uid+"",
-    deviceId:""
+    deviceId:"",
+    pluginVersion:_funcs.getPluginVersionName()
  }
   try{
-    const obj = await _funcs.sendPostRequest(url,jsonData)
-    console.log("obj",obj)
+    const obj = await _funcs.sendPostRequest(url,jsonData,true)
+    // console.log("obj",obj)
     //TODO 下单成功后，去网页完成支付
     _funcs.openWebSiteUrl(`http://ccdebuger.com/#/payment?orderId=${obj.orderId}`)
     
@@ -72,7 +93,7 @@ defineExpose({
 <template>
   <el-dialog
     v-model="dialogVisible"
-    width="800"
+    width="600"
     title="购买激活码"
     :close-on-click-modal="false"
     :destroy-on-close="true"
@@ -134,7 +155,7 @@ defineExpose({
   padding: 10px;
   cursor: pointer;
   transition: all 0.2s;
-  border: 2px solid transparent;
+  border: 2px solid #45454666;
 }
 
 .goods_card.selected {
@@ -162,15 +183,15 @@ defineExpose({
 .tip_area {
   margin-top: 16px;
   display: flex;
-  justify-content: flex-end;
+  justify-content: flex-start;
 }
 
 .tip_box {
-  border: 1px solid #2a2a2a;
+  border: 1px solid #363636;
   border-radius: 6px;
   padding: 12px 16px;
   /* background-color: #2a2a2a; */
-  text-align: right;
+  text-align: left;
   font-size: 16px;
   color: #ffffff;
   line-height: 1.8;

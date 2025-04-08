@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { ref,defineExpose, computed } from 'vue';
 import comp_md_info from './comp_md_info.vue'
 import { _funcs } from '../../../tools/_funcs';

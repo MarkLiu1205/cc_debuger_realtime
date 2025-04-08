@@ -5,6 +5,8 @@ const fs = require('fs-extra');
 const os = require('os');
 // const {PNG} = require('pngjs');
 const http = require('http');
+const crypto = require('crypto');
+const url = require('url');
 
 import { MessageParams } from 'element-plus';
 import packageJSON from '../../package.json';
@@ -727,6 +729,56 @@ export function getDesignResolutionSize():{width:number,height:number}{
     return null
 }
 
+export function getMethodOfUrl(httpLink:string){
+    // 使用 url.parse 解析 URL
+    const parsedUrl = url.parse(httpLink);
+
+    // 获取路径部分
+    const method = parsedUrl.pathname;
+
+    return method
+}
+
+export function str_to_md5(input:string) {
+    // 创建一个MD5哈希对象
+    const hash = crypto.createHash('md5');
+    
+    // 更新哈希对象的内容为输入字符串
+    hash.update(input);
+    
+    // 计算MD5哈希值，并返回十六进制格式的字符串
+    return hash.digest('hex');
+}
+
+const CHECK_CDOE = "7FC7F4BE5C4E543E0F3439095EE00A95"
+/**计算http方法签名 */
+export function make_sign_of_method(method:string, postData: Record<string,any>,signCode=null) : string{
+    signCode = signCode || CHECK_CDOE;
+    let paramStr = "";
+    let kArr = [];
+    for(let k in postData){
+        kArr.push(k);
+    }
+    kArr.sort((a,b)=>{
+        return a>b?1:-1;
+    });
+    for(let k of kArr){
+        let v = postData[k];
+        
+        if(paramStr.length != 0){
+            paramStr += '&';
+        }
+        if(typeof v=="object"){
+            v = JSON.stringify(v)
+        }
+        paramStr += k + '=' + v;
+    }
+
+    let orignStr = method + ';' + paramStr + ';' + signCode;
+    let md5Str = str_to_md5(orignStr);
+    console.log("-------签名字符串:\n",orignStr,"\nsign:",md5Str);
+    return md5Str;
+}
 
 /**​
  * 发送 POST 请求的 async 函数
@@ -734,8 +786,18 @@ export function getDesignResolutionSize():{width:number,height:number}{
  * @param {Object} data - 要发送的数据对象
  * @returns {Promise<Object>} - 返回解析后的响应数据
  */
-export async function sendPostRequest(url, data):Promise<any> {
+export async function sendPostRequest(url:string, data:Record<string,any>,withSign=false):Promise<any> {
     return new Promise((resolve, reject) => {
+        if(withSign){
+            const method = getMethodOfUrl(url)
+            
+            const signStr = make_sign_of_method(method,data)
+            data["sign"] = signStr
+
+            // console.log("------url",url)
+            // console.log("------method",method)
+            // console.log("data",data)
+        }
         // 将数据对象转换为 JSON 字符串
         const postData = JSON.stringify(data);
 

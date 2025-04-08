@@ -13,6 +13,15 @@
     -moz-osx-font-smoothing: grayscale;
 }
 
+.el-dialog {
+    border: 1px solid #5a5856 !important;
+    background-color: #1d1d1d !important;
+}
+
+.el-dialog__title {
+    font-weight: bold;
+}
+
 /* a {
     font-weight: 500;
     color: #646cff;
