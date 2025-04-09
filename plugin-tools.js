@@ -264,7 +264,11 @@ function cleanNpmCacheSync() {
 function buildServer() {
     const buildBatDir = "server"
     try {
-        execSync(`cd ${buildBatDir} && build.bat`, { stdio: 'inherit', shell: true });
+        let cmd = `cd ${buildBatDir} && build.bat`
+        if(process.platform=="darwin"){
+            cmd = `cd ${buildBatDir} && sh build.sh`
+        }
+        execSync(cmd, { stdio: 'inherit', shell: true });
     } catch (err) {
         console.error(`Failed to execute build script: ${err.message}`);
         process.exit(1);
