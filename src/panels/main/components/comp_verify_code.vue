@@ -43,10 +43,10 @@ function onEditVerifyCode(event){
     verify_code.value = event.target.value
 }
 
-const onBtnDoVerify = inject("do_verify_activation_code") as (code:string)=>void
+const onBtnDoVerify = inject("do_verify_activation_code") as (code:string)=>Promise<VerifyRespParam>
 
 function onBtnPayHelp(){
-    ref_payDlg.value.openDialog()
+    ref_payDlg.value.openDlgShop()
 }
 
 const tipExpired = computed(()=>{

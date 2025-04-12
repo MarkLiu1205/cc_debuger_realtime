@@ -533,3 +533,25 @@ interface VerifyRespParam{
         githubUrl:string,
     }
 }
+/**查询订单信息 */
+interface QueryOrderRespParam {
+    code: number; // 返回码
+    msg: string; // 返回信息
+    orderId: string; // 商户订单号
+    status: number; // 订单状态 1: 预下单, 2: 支付宝下单, 3: 已付款发货, 4: 发货超时
+    price: string; // 订单金额
+    productName: string; // 订单标题
+    orderTime: number; // 下单时间
+    payTime: number; // 支付时间
+    activationCode: string; //发货的激活码
+}
+/**预下单返回 */
+interface OrderPreRespParam {
+    code: number; // 返回码
+    msg: string; // 返回信息
+    goodsId: string; // 商品ID
+    orderTime: string; // 下单时间
+    orderId: string; // 商户订单号
+    price: string; // 订单金额
+    productName: string; // 订单标题
+}

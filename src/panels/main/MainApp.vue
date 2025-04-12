@@ -362,42 +362,47 @@ const isExpired = computed(()=>{
 })
 
 async function onDoVerify(activationCode:string){
-    verifyInfo.state = 0
-    nextTick(async ()=>{
-        // console.log("去验证",activationCode)
-        const resp = await _pluginSocket.doVerify(activationCode)
-        if(resp.state==null||resp.state<0){
-            verifyInfo.state = 1
-            return
-        }
-        // console.log("验证结果",resp)
-        
-        await Editor.Profile.setConfig(_funcs.getPluginName(),"activationCode",resp.activationCode)
-        for(let k in resp){
-            if(resp[k]!=null){
-                const val = resp[k]
-                if(k=="authorInfo"){
-                    for(let key in val){
-                        if(val[key]!=null){
-                            verifyInfo.authorInfo[key] = val[key]
+    return new Promise<VerifyRespParam>((resolve,reject)=>{
+        verifyInfo.state = 0
+        nextTick(async ()=>{
+            // console.log("去验证",activationCode)
+            const resp = await _pluginSocket.doVerify(activationCode)
+            if(resp.state==null||resp.state<0){
+                verifyInfo.state = 1
+                resolve(verifyInfo)
+                return
+            }
+            // console.log("验证结果",resp)
+            
+            await Editor.Profile.setConfig(_funcs.getPluginName(),"activationCode",resp.activationCode)
+            for(let k in resp){
+                if(resp[k]!=null){
+                    const val = resp[k]
+                    if(k=="authorInfo"){
+                        for(let key in val){
+                            if(val[key]!=null){
+                                verifyInfo.authorInfo[key] = val[key]
+                            }
                         }
+                        
+                    }else{
+                        verifyInfo[k] = val
                     }
-                    
-                }else{
-                    verifyInfo[k] = val
                 }
             }
-        }
-        if(resp.state==1){//未激活
+            if(resp.state==1){//未激活
 
-        }else if(resp.state==2){//试用期中
+            }else if(resp.state==2){//试用期中
 
-        }else if(resp.state==3){//已激活
+            }else if(resp.state==3){//已激活
 
-        }else if(resp.state==4){//激活码已过期
+            }else if(resp.state==4){//激活码已过期
 
-        }
+            }
+            resolve(verifyInfo)
+        })
     })
+    
 }
 
 provide("do_verify_activation_code",onDoVerify)

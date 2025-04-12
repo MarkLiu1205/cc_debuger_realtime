@@ -776,7 +776,7 @@ export function make_sign_of_method(method:string, postData: Record<string,any>,
 
     let orignStr = method + ';' + paramStr + ';' + signCode;
     let md5Str = str_to_md5(orignStr);
-    console.log("-------签名字符串:\n",orignStr,"\nsign:",md5Str);
+    // console.log("-------签名字符串:\n",orignStr,"\nsign:",md5Str);
     return md5Str;
 }
 
