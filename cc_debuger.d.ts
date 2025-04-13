@@ -550,7 +550,7 @@ interface OrderPreRespParam {
     code: number; // 返回码
     msg: string; // 返回信息
     goodsId: string; // 商品ID
-    orderTime: string; // 下单时间
+    orderTime: number; // 下单时间
     orderId: string; // 商户订单号
     price: string; // 订单金额
     productName: string; // 订单标题

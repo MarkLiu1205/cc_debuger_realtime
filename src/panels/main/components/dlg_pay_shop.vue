@@ -7,7 +7,11 @@ const showToast = inject<ToastParam>("message")
 const onBtnDoVerify = inject("do_verify_activation_code") as (code:string)=>Promise<VerifyRespParam>
 
 //是否使用本地服务器调试
-const IS_LOCAL_DEBUG = true
+const IS_LOCAL_DEBUG = false
+
+const webPage_url = IS_LOCAL_DEBUG ?
+  "http://localhost:5173/#/payment" :
+  "http://ccdebuger.com/#/payment"
 
 //>>>>>>>>>>>>商品列表 start >>>>>>>>>>>>
 
@@ -42,7 +46,8 @@ const selectedGoodsId = ref('');
 
 // 打开弹窗时默认选中第一项
 function openDlgShop() {
-  if(oldOrderInfo.value!=null){
+  const obj = oldOrderInfo.value
+  if(obj!=null && (obj.status==1||obj.status==2)){
     openDlgOldOrder(()=>{
       shopDlgVisible.value = true;
     })
@@ -94,11 +99,14 @@ async function onBtnDoOrder() {
  }
   try{
     const obj:OrderPreRespParam = await _funcs.sendPostRequest(url,jsonData,true)
-    // console.log("下单返回obj",obj)
+    console.log("下单返回obj",obj)
     if(obj.code==0){
       //TODO 下单成功后，去网页完成支付
-      _funcs.openWebSiteUrl(`http://ccdebuger.com/#/payment?orderId=${obj.orderId}`)
-
+      _funcs.openWebSiteUrl(`${webPage_url}?orderId=${obj.orderId}`)
+      oldOrderInfo.value.price = obj.price
+      oldOrderInfo.value.productName = obj.productName
+      oldOrderInfo.value.orderId = obj.orderId
+      oldOrderInfo.value.orderTime = obj.orderTime
       openDlgOldOrder(null,1)
       //用于给客户查看的
       let jsonStr = await Editor.Profile.getConfig(_funcs.getPluginName(),obj.orderId)
@@ -159,9 +167,11 @@ async function checkOldOrder() {
   }
   try{
     const obj:QueryOrderRespParam = oldOrderInfo.value = await _funcs.sendPostRequest(url,jsonData,true)
-    _funcs.log_1("存在未完成订单：",obj)
-    if(obj.code==0){
-      openDlgOldOrder(null)
+    if(obj.status==1||obj.status==2){
+      _funcs.log_1("存在未完成订单：",obj)
+      if(obj.code==0){
+        openDlgOldOrder(null)
+      }
     }
     
   }catch(e){
@@ -175,7 +185,7 @@ onMounted(()=>{
 
 async function onClick_pay_olrOrder() {
   const orderId = oldOrderInfo.value.orderId
-  _funcs.openWebSiteUrl(`http://ccdebuger.com/#/payment?orderId=${orderId}`)
+  _funcs.openWebSiteUrl(`${webPage_url}?orderId=${orderId}`)
   _orderDlgType.value = 1
 }
 
