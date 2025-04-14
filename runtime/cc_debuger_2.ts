@@ -2062,6 +2062,54 @@ function readPixels(texture: any/**import("cc").Texture2D */, flipY = true): Uin
     return buffer;
 }
 
+// Base64 编码
+function btoaPolyfill(input: string): string {
+    if(globalThis.btoa){
+        return btoa(input)
+    }
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
+    let str = input;
+    let output = '';
+
+    for (let block = 0, charCode, i = 0, map = chars;
+        str.charAt(i | 0) || (map = '=', i % 1);
+        output += map.charAt(63 & (block >> (8 - (i % 1) * 8)))
+    ) {
+        charCode = str.charCodeAt(i += 3 / 4);
+        if (charCode > 0xFF) {
+            throw new Error("'btoa' failed: The string to be encoded contains characters outside of the Latin1 range.");
+        }
+        block = (block << 8) | charCode;
+    }
+
+    return output;
+}
+
+// Base64 解码
+function atobPolyfill(input: string): string {
+    if(globalThis.atob){
+        return atob(input)
+    }
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
+    let str = input.replace(/=+$/, '');
+    let output = '';
+
+    if (str.length % 4 === 1) {
+        throw new Error("'atob' failed: The string to be decoded is not correctly encoded.");
+    }
+
+    for (let bc = 0, bs = 0, buffer, i = 0;
+        (buffer = str.charAt(i++));
+        ~buffer && ((bs = bc % 4 ? (bs << 6) | buffer : buffer), bc++ % 4)
+        ? (output += String.fromCharCode(255 & (bs >> ((-2 * bc) & 6))))
+        : 0
+    ) {
+        buffer = chars.indexOf(buffer);
+    }
+
+    return output;
+}
+
 function uint8ArrayToBase64(uint8Array: Uint8Array): string {
     const chunkSize = 0x8000; // 每次处理 32768 个字节
     let result = '';
@@ -2071,7 +2119,7 @@ function uint8ArrayToBase64(uint8Array: Uint8Array): string {
         result += String.fromCharCode.apply(null, chunk as unknown as number[]);
     }
 
-    return btoa(result);
+    return btoaPolyfill(result);
 }
 
 function cropBlankPixels(buffer: Uint8Array, width: number, height: number): {
@@ -2472,7 +2520,7 @@ function str_encrypt(input: string, key: string) {
         result += String.fromCharCode.apply(null, Array.from(chunk));
     }
 
-    return btoa(result);
+    return btoaPolyfill(result);
 }
 
 // 解密函数
@@ -2482,7 +2530,7 @@ function str_decrypt(base64Input: string, key: string) {
         return;
     }
     // Base64 解码为字节数组
-    const binaryString = atob(base64Input);
+    const binaryString = atobPolyfill(base64Input);
     const chunkSize = 0x8000; // 每次处理 32768 个字节
     const xorResult = new Uint8Array(binaryString.length);
     for (let i = 0; i < binaryString.length; i += chunkSize) {

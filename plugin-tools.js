@@ -41,30 +41,31 @@ async function deal_cc_debuger_2(retryCount = 0) {
                 stringArrayThreshold: 0.75,
             }).getObfuscatedCode();
 
-            let uglyJsCode = `const jsStr = \`${obfuscatedJsCode}\`;\ntry{\n    const _func = new Function(jsStr)\n    _func()\n}catch(e){\n    console.log(e)\n}\n\n`
-            // 验证混淆后的代码
-            try {
-                let _func = new Function(uglyJsCode);
-                _func();
-            } catch (e) {
-                console.error(`Obfuscated code validation failed: ${e.message}`);
-                if (retryCount < 5) {
-                    console.log("重新混淆cc_debuger_2.ts");
-                    await waitForTime(1);
-                    await deal_cc_debuger_2(retryCount + 1);
-                } else {
-                    console.error("重试次数过多，停止重试");
-                }
-                return;
-            }
+            // let uglyJsCode = `const jsStr = \`${obfuscatedJsCode}\`;\ntry{\n    const _func = new Function(jsStr)\n    _func()\n}catch(e){\n    console.log(e)\n}\n\n`
+            // // 验证混淆后的代码
+            // try {
+            //     let _func = new Function(uglyJsCode);
+            //     _func();
+            // } catch (e) {
+            //     console.error(`Obfuscated code validation failed: ${e.message}`);
+            //     if (retryCount < 5) {
+            //         console.log("重新混淆cc_debuger_2.ts");
+            //         await waitForTime(1);
+            //         await deal_cc_debuger_2(retryCount + 1);
+            //     } else {
+            //         console.error("重试次数过多，停止重试");
+            //     }
+            //     return;
+            // }
 
             
-            let pakoPath = "src/tools/pako.min.js";
-            let pakoStr = fs.readFileSync(pakoPath, "utf-8");
+            //let pakoPath = "src/tools/pako.min.js";
+            // let pakoStr = fs.readFileSync(pakoPath, "utf-8");
+            // let pakoJsCode = `const pakoStr = \`${pakoStr}\`\ntry{\n    const _func = new Function(pakoStr)\n    _func()\n}catch(e){\n    console.log(e)\n}\n\n`
             
-            
-            let pakoJsCode = `const pakoStr = \`${pakoStr}\`\ntry{\n    const _func = new Function(pakoStr)\n    _func()\n}catch(e){\n    console.log(e)\n}\n\n`
-            
+            let pakoJsCode = `import pako from './ccdebuger.pako.min.js'\n\n`
+            let uglyJsCode = obfuscatedJsCode
+
             fs.writeFileSync(jsFilePath, pakoJsCode + uglyJsCode, 'utf-8');
             console.log(`Obfuscated: ${jsFilePath}\n`);
         }
@@ -72,12 +73,22 @@ async function deal_cc_debuger_2(retryCount = 0) {
 }
 
 function move_cc_debuger_2_ugly() {
-    const fromPath = 'runtime/cc_debuger_2_ugly.ts';
-    const toPath = '../../assets/cc_debuger_2_ugly.ts';
+    let fromPath = 'runtime/cc_debuger_2_ugly.ts';
+    let toPath = '../../assets/cc_debuger_2_ugly.ts';
 
     // 检查目标路径是否存在
     if (fs.existsSync(toPath)) {
         console.log(`Target file ${toPath} exists. Overwriting...`);
+        // 复制源文件到目标路径并进行覆盖
+        fs.copyFileSync(fromPath, toPath);
+        console.log(`Copied ${fromPath} to ${toPath}`);
+    }
+
+    fromPath = 'src/tools/pako.min.js';
+    toPath = '../../assets/ccdebuger.pako.min.js';
+
+    // 检查目标路径是否存在
+    if (!fs.existsSync(toPath)) {
         // 复制源文件到目标路径并进行覆盖
         fs.copyFileSync(fromPath, toPath);
         console.log(`Copied ${fromPath} to ${toPath}`);
