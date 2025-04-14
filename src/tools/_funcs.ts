@@ -696,23 +696,6 @@ export function pako_inflate(str:string){
     return pako.inflate(str, { to: 'string' });
 }
 
-let _designSize = null
-export async function getStaticsInfo(){
-    const pPath = Editor.Project.path
-    console.log("pPath",pPath)
-    console.log("Editor.Project.tmpDir",Editor.Project.tmpDir)
-    const projPath = path.join(Editor.Project.path,"settings/v2/packages/project.json") 
-
-    const projJson = fs.readJSONSync(projPath)
-    console.log("projJson",projJson)
-        
-    if(this._designSize==null){
-        const cmd = `const {width,height} = cc.view.getDesignResolutionSize();return {width,height}`
-        const size = await this.evalJsInRuntime(cmd)
-        console.log("执行",size)
-    }
-}
-
 export function getDesignResolutionSize():{width:number,height:number}{
     const projPath = path.join(Editor.Project.path,"settings/v2/packages/project.json") 
     if(fs.existsSync(projPath)){

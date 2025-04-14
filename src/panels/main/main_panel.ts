@@ -18,9 +18,6 @@ export default Editor.Panel.define({
         appInst: null as any,
     },
     methods: {
-        async doEvalJs(str) {
-            return await _pluginSocket.evalJsInRuntime(str)
-        },
         async callMainPanelFunc(instStr:string,funcName:string,...args){
             if(instStr=="_pluginSocket"){
                 let inst = _pluginSocket;

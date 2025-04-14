@@ -528,12 +528,9 @@ class PluginSocket {
         if(this._nodeLayers){
             return this._nodeLayers
         }
-        let str = await this.evalJsInRuntime("return cc.Layers.Enum")
-        try{
-            this._nodeLayers = JSON.parse(str as string)
-        }catch(e){
-            console.error(e)
-        }
+        await this.waitForRuntimeIsInline()
+        this._nodeLayers = await this._sendRequest("get.cc.Layers.Enum",null,{encrypted:1})
+
         return this._nodeLayers
     }
     
