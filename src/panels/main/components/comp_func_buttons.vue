@@ -24,6 +24,12 @@ async function test_1() {
 }
 
 async function openEvalPanel(event: MouseEvent){
+    const gameEnvObj = await _pluginSocket.getGameEnv()
+    if(gameEnvObj.isWechatGame){
+        showToast("微信小游戏不支持注入js代码")
+        return
+    }
+
     _isLoading.value = true
     await _funcs.openEvalPanel()
     _isLoading.value = false

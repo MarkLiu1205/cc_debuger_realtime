@@ -1,7 +1,11 @@
 
-declare var pako:any
+
 const _cc_ = function(){
     return globalThis["__cchyz"]
+}
+
+const _ccenv_ = function(){
+    return globalThis["__ccenvhyz"]
 }
 
 let _data:_RuntimeData = null;
@@ -203,7 +207,7 @@ class RunTimeSocket {
                 const uuid = msg.data.uuid;
                 data = _data.getNodeOfComp(uuid)
             } else if (msg.action === 'getGameEnv') {
-                data = globalThis["getGameEnv"]()
+                data = getGameEnv()
             } else if (msg.action === 'requestShowFPS') {
                 let bool = msg.data
                 if(bool=="true"||bool===true){
@@ -292,6 +296,8 @@ class RunTimeSocket {
                     _data.setIsPickMode(false)
                 }
                 data = ""
+            } else if (msg.action === 'get.cc.Layers.Enum') {
+                data = _cc_().Layers.Enum
             }
     
             responseData.data = data
@@ -2267,7 +2273,24 @@ function getImageAssetMemorySize(imageAsset: any/**import("cc").ImageAsset */): 
     return width * height * bytesPerPixel;
 }
 
-
+function getGameEnv(){
+    let obj = {
+        isNative:_cc_().sys.isNative,
+        isBrowser:_cc_().sys.isBrowser,
+        isMobile:_cc_().sys.isMobile,
+        isWechatGame:_cc_().sys.platform === _cc_().sys.Platform.WECHAT_GAME,
+        CC_DEV: _ccenv_().DEV,
+        CC_DEBUG: _ccenv_().DEBUG,
+        CC_PREVIEW: _ccenv_().PREVIEW,
+        CC_JSB: _ccenv_().JSB,
+        CC_SUPPORT_JIT: _ccenv_().SUPPORT_JIT,
+        CC_EDITOR:_ccenv_().EDITOR
+    } as GameEnvParam 
+    if(_cc_().sys.isNative){
+        obj.writablePath = _cc_().native.fileUtils.getWritablePath()
+    }
+    return obj
+}
 
 
 function _getSelfModelName() {
@@ -2675,13 +2698,19 @@ function _initOnce() {
         _runtimeSocket.loopWithInterval(duration)
     }, duration);
 
-    
-    _cc_().director.on(_cc_().Director.EVENT_AFTER_SCENE_LAUNCH, () => {
-        _data.cancelCurSelectNode()
-
+    const scene = _cc_().director.getScene()
+    if(scene){
         _runtimeSocket.sendPush_sceneLaunched()
         _runtimeSocket.sendPush_checkUpdateSceneTree()
-    })
+    }else{
+        _cc_().director.on(_cc_().Director.EVENT_AFTER_SCENE_LAUNCH, () => {
+            _data.cancelCurSelectNode()
+    
+            _runtimeSocket.sendPush_sceneLaunched()
+            _runtimeSocket.sendPush_checkUpdateSceneTree()
+        })
+    }
+    
 
     interceptLog()
 }

@@ -397,6 +397,7 @@ interface GameEnvParam{
     isNative:boolean,
     isBrowser:boolean,
     isMobile:boolean,
+    isWechatGame:boolean,
     CC_DEV: boolean,
     CC_DEBUG: boolean,
     CC_PREVIEW: boolean,

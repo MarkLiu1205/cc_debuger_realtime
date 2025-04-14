@@ -151,18 +151,25 @@ async function onPrintSearchPaths(){
                 <label>CC_PREVIEW:</label>
                 <label class="blue">{{ gameEnvObj.CC_PREVIEW }}</label>
             </div>
-            <div class="row" v-if="!gameEnvObj.CC_PREVIEW">
-                <label>CC_DEBUG:</label>
-                <label class="blue">{{ gameEnvObj.CC_DEBUG }}</label>
-                <label>CC_JSB:</label>
-                <label class="blue">{{ gameEnvObj.CC_JSB }}</label>
+            <div v-else>
+                <div class="row">
+                    <label>CC_DEBUG:</label>
+                    <label class="blue">{{ gameEnvObj.CC_DEBUG }}</label>
+                    <label>CC_JSB:</label>
+                    <label class="blue">{{ gameEnvObj.CC_JSB }}</label>
+                </div>
+                <div class="row" v-if="gameEnvObj.isWechatGame">
+                    <label>isWechatGame:</label>
+                    <label class="blue">{{ gameEnvObj.isWechatGame }}</label>
+                </div>
+                <div class="row" v-else>
+                    <label>isMobile:</label>
+                    <label class="blue">{{ gameEnvObj.isMobile }}</label>
+                    <label>isBrowser:</label>
+                    <label class="blue">{{ gameEnvObj.isBrowser }}</label>
+                </div>
             </div>
-            <div class="row" v-if="!gameEnvObj.CC_PREVIEW">
-                <label>isMobile:</label>
-                <label class="blue">{{ gameEnvObj.isMobile }}</label>
-                <label>isBrowser:</label>
-                <label class="blue">{{ gameEnvObj.isBrowser }}</label>
-            </div>
+            
             <div class="row">
                 <label>dynamicTextureEnabled:</label>
                 <label class="blue">{{ dynamicTextureEnabled }}</label>
