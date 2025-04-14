@@ -83,16 +83,6 @@ function move_cc_debuger_2_ugly() {
         fs.copyFileSync(fromPath, toPath);
         console.log(`Copied ${fromPath} to ${toPath}`);
     }
-
-    fromPath = 'src/tools/pako.min.js';
-    toPath = '../../assets/ccdebuger.pako.min.js';
-
-    // 检查目标路径是否存在
-    if (!fs.existsSync(toPath)) {
-        // 复制源文件到目标路径并进行覆盖
-        fs.copyFileSync(fromPath, toPath);
-        console.log(`Copied ${fromPath} to ${toPath}`);
-    }
 }
 
 function deal_server_js(){
@@ -174,7 +164,7 @@ function packPluginToZip() {
         "server/server.wasm",
         "server/server.js",
         "server/wasm/",
-        "src/tools/pako.min.js",
+        "src/tools/ccdebuger.pako.min.js",
         "package.json",
         "version.txt",
     ];

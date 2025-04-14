@@ -7,6 +7,9 @@ import { _funcs } from './_funcs';
 const runtimeScriptName_1 = 'cc_debuger_1.ts';
 const runtimeScriptName_2 = 'cc_debuger_2_ugly.ts';
 
+const runtimeScriptName_3 = 'ccdebuger.pako.min.js';
+const sourceScriptPath_3 = path.join(_funcs.getCurPluginPath(), "src/tools/", runtimeScriptName_3);
+
 const sourceScriptPath_1 = path.join(_funcs.getCurPluginPath(), "runtime/", runtimeScriptName_1);
 const sourceScriptPath_2 = path.join(_funcs.getCurPluginPath(), "runtime/", runtimeScriptName_2);
 
@@ -15,6 +18,9 @@ const runtimeMetaPath_1 = runtimeScriptPath_1 + '.meta';
 
 const runtimeScriptPath_2 = path.join(Editor.Project.path, 'assets', runtimeScriptName_2);
 const runtimeMetaPath_2 = runtimeScriptPath_2 + '.meta';
+
+const runtimeScriptPath_3 = path.join(Editor.Project.path, 'assets', runtimeScriptName_3);
+const runtimeMetaPath_3 = runtimeScriptPath_3 + '.meta';
 
 let _oldContent_ts:string;
 let _oldContent_meta:string;
@@ -89,6 +95,21 @@ export const load_ts_to_runtime = async () => {
             return
         }
         {
+            const sourceScriptContent = fs.readFileSync(sourceScriptPath_3, 'utf-8');
+
+            // 写入文件
+            fs.writeFileSync(runtimeScriptPath_3, sourceScriptContent, 'utf-8');
+
+            // 刷新资源
+            console.log(`[${_funcs.getPluginName()}] Runtime script written to ${runtimeScriptPath_3}`);
+            await Editor.Message.request(
+                "asset-db",
+                "refresh-asset",
+                `db://assets/${runtimeScriptName_3}`
+            );
+        }
+        
+        {
             const sourceScriptContent = fs.readFileSync(sourceScriptPath_2, 'utf-8');
 
             // 写入文件
@@ -137,6 +158,10 @@ export const unload_ts_from_runtime = async () => {
             fs.unlinkSync(runtimeScriptPath_2);
             console.log(`[${_funcs.getPluginName()}] Runtime script removed: ${runtimeScriptPath_2}`);
         }
+        if (fs.existsSync(runtimeScriptPath_3)) {
+            fs.unlinkSync(runtimeScriptPath_3);
+            console.log(`[${_funcs.getPluginName()}] Runtime script removed: ${runtimeScriptPath_3}`);
+        }
         if (fs.existsSync(runtimeMetaPath_1)) {
             fs.unlinkSync(runtimeMetaPath_1);
             console.log(`[${_funcs.getPluginName()}] Meta file removed: ${runtimeMetaPath_1}`);
@@ -144,6 +169,10 @@ export const unload_ts_from_runtime = async () => {
         if (fs.existsSync(runtimeMetaPath_2)) {
             fs.unlinkSync(runtimeMetaPath_2);
             console.log(`[${_funcs.getPluginName()}] Meta file removed: ${runtimeMetaPath_2}`);
+        }
+        if (fs.existsSync(runtimeMetaPath_3)) {
+            fs.unlinkSync(runtimeMetaPath_3);
+            console.log(`[${_funcs.getPluginName()}] Meta file removed: ${runtimeMetaPath_3}`);
         }
 
         // 刷新资源

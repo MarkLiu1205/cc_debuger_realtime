@@ -1,4 +1,4 @@
-
+declare var pako:any
 
 const _cc_ = function(){
     return globalThis["__cchyz"]
@@ -2285,7 +2285,7 @@ function getGameEnv(){
         CC_JSB: _ccenv_().JSB,
         CC_SUPPORT_JIT: _ccenv_().SUPPORT_JIT,
         CC_EDITOR:_ccenv_().EDITOR
-    } as GameEnvParam 
+    } as any 
     if(_cc_().sys.isNative){
         obj.writablePath = _cc_().native.fileUtils.getWritablePath()
     }

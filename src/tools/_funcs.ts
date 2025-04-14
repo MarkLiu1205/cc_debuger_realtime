@@ -836,7 +836,7 @@ function _initPako(){
     if(globalThis.pako!=null){
         return
     }
-    let pakoPath = path.join(_funcs.getCurPluginPath(), "src/tools/", "pako.min.js");
+    let pakoPath = path.join(_funcs.getCurPluginPath(), "src/tools/", "ccdebuger.pako.min.js");
     let pakoStr = fs.readFileSync(pakoPath,"utf-8")
     
     try{
