@@ -1388,7 +1388,15 @@ class _RuntimeData{
                     height:val.height,
                 }
             }else if(obj.ctor=="cc.ClickEvent"){
-                val = val?.map((item:any/**import("cc").EventHandler */)=>JSON.stringify({node:item?.target?.uuid,comp:item?._componentId,handler:item?.handler}))
+                if(val){
+                    if(Array.isArray(val)){
+                        val = val?.map((item:any/**import("cc").EventHandler */)=>JSON.stringify({node:item?.target?.uuid,comp:item?._componentId,handler:item?.handler,customEventData :val?.customEventData}))
+                    }else if(val instanceof _cc_().EventHandler){
+                        val = JSON.stringify({node:val?.target?.uuid,comp:val?._componentId,handler:val?.handler,customEventData :val?.customEventData})
+                    }
+                }else{
+                    val = ""
+                }
             }else{
                 if(obj.ctor=="cc.ModelBakeSettings"){
                     let g = 0;
