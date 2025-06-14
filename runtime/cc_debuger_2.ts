@@ -2393,51 +2393,66 @@ function _getSelfModelName() {
     return model;
 }
 
-function interceptLog(){
-    let _handleLog = globalThis["cc_debuger_handleLog"]
-    if(!_handleLog){
+function interceptLog() {
+    let _handleLog = globalThis["cc_debuger_handleLog"];
+    if (!_handleLog) {
+        // 添加递归保护标志
+        let isHandlingLog = false;
+
         globalThis["cc_debuger_handleLog"] = _handleLog = function (level: any/**LogLevel */, args: any[]) {
-            const message = args.map((a) => {
-                if(typeof a === "object"){
-                    try{
-                        return JSON.stringify(a)
-                    }catch(e){
-                        if(a.toString){
-                            return a.toString()
-                        }else{
-                            return "[object]"
+            if (isHandlingLog) {
+                // 如果正在处理日志，直接返回，避免递归
+                return;
+            }
+
+            try {
+                isHandlingLog = true; // 设置标志，表示正在处理日志
+
+                const message = args.map((a) => {
+                    if (typeof a === "object") {
+                        try {
+                            return JSON.stringify(a);
+                        } catch (e) {
+                            if (a.toString) {
+                                return a.toString();
+                            } else {
+                                return "[object]";
+                            }
                         }
+                    } else {
+                        return String(a);
                     }
-                }else{
-                    return String(a)
-                }
-            }).join(" ");
-            let time = new Date();
-            let timeStr = `${time.getHours()}:${time.getMinutes()}:${time.getSeconds()}.${time.getMilliseconds()}`;
-            const logEntry: any/**LogEntry */ = {
-                message,
-                level,
-                timestamp: timeStr,
-            }; 
-    
-            _runtimeSocket.sendPush_runtimeLog(logEntry)
-        }
+                }).join(" ");
+                let time = new Date();
+                let timeStr = `${time.getHours()}:${time.getMinutes()}:${time.getSeconds()}.${time.getMilliseconds()}`;
+                const logEntry: any/**LogEntry */ = {
+                    message,
+                    level,
+                    timestamp: timeStr,
+                };
+
+                _runtimeSocket.sendPush_runtimeLog(logEntry);
+            } catch (e) {
+                console.error("日志处理时发生错误:", e);
+            } finally {
+                isHandlingLog = false; // 恢复标志
+            }
+        };
     }
-    
-    if(!globalThis["cc_debuger_log_intercepted"]){
+
+    if (!globalThis["cc_debuger_log_intercepted"]) {
         globalThis["cc_debuger_log_intercepted"] = true;
         ["log", "warn", "error"].forEach(level => {
             const originalMethod = console[level];
-    
+
             console[level] = (...args) => {
-                if(globalThis["cc_debuger_handleLog"]){
+                if (globalThis["cc_debuger_handleLog"]) {
                     globalThis["cc_debuger_handleLog"](level, args);
-                    originalMethod.apply(console, args);
                 }
+                originalMethod.apply(console, args); // 始终调用原始日志方法
             };
         });
     }
-    
 }
 
 function _getImageAssetUrl(asset:any/**import("cc").ImageAsset */){
