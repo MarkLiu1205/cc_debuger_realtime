@@ -50,6 +50,8 @@ export default Editor.Panel.define({
 
         weakMap.set(this, app);
 
+        _funcs.checkNodeJsEnable()
+
         startServer(appInst)
 
         _funcs.registerF5()

@@ -67,7 +67,7 @@ export async function getUuidByUrl(url) {
 
 /**打印 */
 export function log_1(...args){
-    args.unshift("[plugin]")
+    args.unshift("[Plugin]")
     console.log.apply(console, args)
 }
 
@@ -835,6 +835,28 @@ export function logToFile(logStr:string,logFilePath?:string){
     // console.error(`logFilePath:${logFilePath},logStr:${logStr}`)
     _funcs.ensureFloderExist(path.dirname(logFilePath))
     fs.appendFileSync(logFilePath,`${_funcs.formatDate("yyyy-MM-dd hh:mm:ss")}: ${logStr}\n`)
+}
+
+export async function checkNodeJsEnable() {
+    exec('node -v', (error, stdout, stderr) => {
+        if (error) {
+          console.error('Node.js 未安装或未正确配置，请安装 Node.js：https://nodejs.org/');
+          return;
+        }
+        const version = stdout.trim();
+        const minVer = 18
+        // 判断 Node.js 是否已安装及版本是否大于 v18
+        try {
+            const major = parseInt(version.replace(/^[v,V]/, '').split('.')[0], 10);
+            if (major >= minVer) {
+                _funcs.log_1('Node.js 版本：', version);
+            } else {
+                console.error("[cc_debuger_realtime]",`Node.js 版本过低，可能无法正常使用插件，需要 >= v${minVer}，当前为：`, version);
+            }
+        } catch (e) {
+            
+        }
+    });
 }
 
 }
