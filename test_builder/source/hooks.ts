@@ -48,7 +48,7 @@ export const onAfterCompressSettings: BuildHook.onAfterCompressSettings = async 
 };
 
 export const onAfterBuild: BuildHook.onAfterBuild = async function(options: ITaskOptions, result: IBuildResult) {
-    Editor.Message.request("cc_debuger_realtime","onAfterBuild",options,result.dest,result.paths)
+    Editor.Message.request("cc_debuger_realtime","onAfterBuild",true,options,result.dest,result.paths)
 };
 
 export const unload: BuildHook.unload = async function() {
@@ -57,7 +57,8 @@ export const unload: BuildHook.unload = async function() {
 
 export const onError: BuildHook.onError = async function(options, result) {
     // Todo some thing
-    console.warn(`${PACKAGE_NAME} run onError`);
+    console.warn(`${PACKAGE_NAME} run onError 2`);
+    Editor.Message.request("cc_debuger_realtime","onAfterBuild",false,options,result.dest,result.paths)
 };
 
 export const onBeforeMake: BuildHook.onBeforeMake = async function(root, options) {

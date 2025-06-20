@@ -83,7 +83,7 @@ export const configs: BuildPlugin.Configs = {
                 },
             },
             wsServerUrl:{
-                message:"必须填写有效的websocket地址",
+                message:"必须填写有效的websocket地址,以 'ws://' 或 'wss://' 开头",
                 func(val, buildOptions) {
                     if (val.startsWith("ws://")||val.startsWith("wss://")) {
                         return true;

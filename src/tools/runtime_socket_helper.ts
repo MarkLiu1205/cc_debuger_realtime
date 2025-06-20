@@ -62,18 +62,24 @@ export const applyBuildParamBefore = async (cfg:SelfBuildParam)=>{
 }
 
 export const applyBuildParamAfter = async(cfg:SelfBuildParam)=>{
-    // console.log("结束构建",_oldContent_meta?.length)
-    if(_oldContent_ts){
-        fs.writeFileSync(runtimeScriptPath_1, _oldContent_ts, 'utf-8');
+    console.log("结束构建",_oldContent_meta?.length,"cfg?.cut_plugin_from_runtime",cfg?.cut_plugin_from_runtime)
+    const cut_plugin_from_runtime = cfg?.cut_plugin_from_runtime
+    if(cut_plugin_from_runtime){
+        await load_ts_to_runtime()
+    }else{
+        if(_oldContent_ts){
+            fs.writeFileSync(runtimeScriptPath_1, _oldContent_ts, 'utf-8');
+        }
+        if(_oldContent_meta){
+            fs.writeFileSync(runtimeMetaPath_1, _oldContent_meta, 'utf-8');
+        }
+        await Editor.Message.request(
+            "asset-db",
+            "refresh-asset",
+            `db://assets/${runtimeScriptName_1}`
+        );
     }
-    if(_oldContent_meta){
-        fs.writeFileSync(runtimeMetaPath_1, _oldContent_meta, 'utf-8');
-    }
-    await Editor.Message.request(
-        "asset-db",
-        "refresh-asset",
-        `db://assets/${runtimeScriptName_1}`
-    );
+    
 }
 
 export const load_ts_to_runtime = async () => {

@@ -828,6 +828,15 @@ export async function sendPostRequest(url:string, data:Record<string,any>,withSi
     });
 }
 
+export function logToFile(logStr:string,logFilePath?:string){
+    if(!logFilePath){
+        logFilePath = path.join(_funcs.getCurPluginPath(),"logs","cc_debuger_realtime.log")
+    }
+    // console.error(`logFilePath:${logFilePath},logStr:${logStr}`)
+    _funcs.ensureFloderExist(path.dirname(logFilePath))
+    fs.appendFileSync(logFilePath,`${_funcs.formatDate("yyyy-MM-dd hh:mm:ss")}: ${logStr}\n`)
+}
+
 }
 
 declare var pako: any;

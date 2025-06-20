@@ -49,27 +49,30 @@ export const methods = {
     async onBeforeBuild(options:IBuildTaskOption){
         // console.error(`----------onBeforeBuild:${JSON.stringify(options,null,2)}`)
         const cfg = options?.packages?.cc_debuger_realtime as SelfBuildParam
-        // console.log(`构建配置:${JSON.stringify(cfg,null,2)}`)
+        _funcs.logToFile(`beforeBuild,构建配置:${JSON.stringify(cfg??{},null,2)}`)
         return await applyBuildParamBefore(cfg)
     },
-    async onAfterBuild(options:IBuildTaskOption,dest:string,paths){
+    async onAfterBuild(bSuccess:boolean,options:IBuildTaskOption,dest:string,paths){
         const app_js_path = paths?.cache?.applicationJS
-        // console.log(`----------onAfterBuild,${dest}`)
-        
-        // console.log(`options:${JSON.stringify(options,null,2)}`)
-        // console.log(`paths:${JSON.stringify(paths,null,2)}`)
-
-        const bExist = await pathExistsSync(app_js_path)
-        // console.log(`indexjs:${app_js_path},bExist:${bExist}`)
-        if(bExist){
-            let str = readFileSync(app_js_path);
-            // // console.warn(`str:${str}`)
-            str = str + "\n" + log_intercept_str;
-            writeFileSync(app_js_path, str);
-        }
         const cfg = options?.packages?.cc_debuger_realtime as SelfBuildParam
-
-        return applyBuildParamAfter(cfg)
+        if(bSuccess){
+            _funcs.logToFile(`构建成功，应用脚本路径:${app_js_path}`)
+        }else{
+            _funcs.logToFile(`构建失败`)
+        }
+        _funcs.logToFile(`afterBuild,构建配置:${JSON.stringify(cfg??{},null,2)}`)
+        if(bSuccess){
+            const bExist = await pathExistsSync(app_js_path)
+            // console.log(`indexjs:${app_js_path},bExist:${bExist}`)
+            if(bExist){
+                let str = readFileSync(app_js_path);
+                // // console.warn(`str:${str}`)
+                str = str + "\n" + log_intercept_str;
+                writeFileSync(app_js_path, str);
+            }
+        }
+        
+        return applyBuildParamAfter(cfg) 
     }
 };
 
