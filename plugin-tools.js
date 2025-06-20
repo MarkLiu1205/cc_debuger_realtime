@@ -164,6 +164,8 @@ function packPluginToZip() {
         "server/server.wasm",
         "server/server.js",
         "server/wasm/",
+        "server/package.json",
+        "server/readme.md",
         "src/tools/ccdebuger.pako.min.js",
         "package.json",
         "version.txt",
