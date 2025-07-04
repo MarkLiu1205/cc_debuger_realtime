@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, inject, onMounted, onUnmounted, reactive, ref, defineProps, nextTick, watch, Ref} from 'vue';
-import { ElMessage } from 'element-plus';
+import { ElMessage,ElTreeV2 } from 'element-plus';
 import { _funcs } from '../../../tools/_funcs';
 import { _dataCtx } from '../../../tools/_dataCtx';
 import { _pluginSocket } from '../../../tools/plugin_socket';
@@ -147,10 +147,9 @@ function on_click_in_inspector_asset(uuid: string){
         parent = parent.parent;
     }
     // 滚动到目标节点
-    
     setTimeout(() => {
         nextTick(() => {
-            tree.scrollToNode(nodeItem);
+            tree.scrollToNode(_key);
         });
     }, 100);
 }

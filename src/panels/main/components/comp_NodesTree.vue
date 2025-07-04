@@ -307,7 +307,7 @@ function on_click_in_inspector_node(uuid: string) {
     }
     // 滚动到目标节点
     nextTick(() => {
-        tree.scrollToNode(nodeItem);
+        tree.scrollToNode(_key);
     });
 }
 
