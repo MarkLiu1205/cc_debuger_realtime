@@ -275,8 +275,8 @@ onUnmounted(() => {
     eventBus.off("check-asset-depend", on_check_asset_depend);
     eventBus.off("check-asset-depend-traverse", on_check_asset_depend_traverse);
 
-    eventBus.on("check-node-depends-asset", on_check_node_depends_asset);
-    eventBus.on("check-node-traverse-depends-asset", on_check_node_traverse_depends_asset);
+    eventBus.off("check-node-depends-asset", on_check_node_depends_asset);
+    eventBus.off("check-node-traverse-depends-asset", on_check_node_traverse_depends_asset);
 });
 
 let selectedAssetId: string | null = null

@@ -799,18 +799,16 @@ class PluginSocket {
         return this._sendRequest("setIsPickMode",bool,{encrypted:1})
     }
 
-    async testPako(){
-        // let ret1 = await this._sendRequest("testPako","",{encrypted:false})
-        let originalStr = `AAAAA11111BBBBB22222`
+    /**删除节点 */
+    async destoryNode (uuid:string) {
+        await this.waitForRuntimeIsInline()
+        return this._sendRequest("destoryNode",uuid,{encrypted:1})
+    }
 
-        
-        // originalStr = pako.deflate(originalStr, { to: 'string' })
-
-        let ret2 = await this._sendRequest("testPako",originalStr,{encrypted:1})
-        console.log("----ret2",ret2)
-        // new Uint8Array(xxx.split(",").map((item)=>parseInt(item)))
-        
-        
+    /**生成副本 */
+    async duplicateNode(uuid:string){
+        await this.waitForRuntimeIsInline()
+        return this._sendRequest("duplicateNode",uuid,{encrypted:1})
     }
 
     clear(){

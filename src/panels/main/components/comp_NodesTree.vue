@@ -407,6 +407,33 @@ function onRightClick_node( event: MouseEvent, data: NodeTreeItem, node: TreeNod
                 // console.log("点击2",data.uuid,data.path)
                 eventBus.emit("check-node-traverse-depends-asset", data.uuid);
             }
+        },{ 
+            label: _funcs.getI18nText("text_123"), 
+            action: () => {
+                if(data.isSceneNode){
+                    showToast("场景节点不可删除")
+                    return
+                }
+                _pluginSocket.destoryNode(data.uuid).then(()=>{
+                    _funcs.log_1("节点删除成功")
+                    _onSelect_node(null)
+                }).catch((err)=>{
+                    _funcs.log_1("删除节点失败",err)
+                })
+            }
+        },{ 
+            label:_funcs.getI18nText("text_124"), 
+            action: () => {
+                if(data.isSceneNode){
+                    showToast("场景节点不可创建副本")
+                    return
+                }
+                _pluginSocket.duplicateNode(data.uuid).then(()=>{
+                    _funcs.log_1("创建副本成功")
+                }).catch((err)=>{
+                    _funcs.log_1("创建副本失败",err)
+                })
+            }
         }
     ];
     nextTick(()=>{

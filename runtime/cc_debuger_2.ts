@@ -298,6 +298,12 @@ class RunTimeSocket {
                 data = ""
             } else if (msg.action === 'get.cc.Layers.Enum') {
                 data = _cc_().Layers.Enum
+            } else if (msg.action === 'destoryNode') {
+                const uuid = msg.data
+                data = _data.destoryNode(uuid)
+            } else if (msg.action === 'duplicateNode') {
+                const uuid = msg.data
+                data = _data.duplicateNode(uuid)
             }
     
             responseData.data = data
@@ -1489,6 +1495,9 @@ class _RuntimeData{
             return -3
         }
         let parentTrans = this.makePersistCanvasNode()
+        if(parentTrans==null){
+            return
+        }
         let worldPt = trans.node.getWorldPosition()
 
         const pt = parentTrans.convertToNodeSpaceAR(_cc_().v3(worldPt.x,worldPt.y,0))
@@ -1535,6 +1544,36 @@ class _RuntimeData{
         return graphics
     }
 
+    destoryNode(uuid:string){
+        const node = this.m_nodeUuidMap[uuid]
+        if(node==null){
+            return -1
+        }
+        if(!_cc_().isValid(node)){
+            return -2
+        }
+        node.destroy()
+        setTimeout(() => {
+            _runtimeSocket.sendPush_checkUpdateSceneTree()
+        }, 100);
+    }
+
+    duplicateNode(uuid:string){
+        const node = this.m_nodeUuidMap[uuid]
+        if(node==null){
+            return -1
+        }
+        if(!_cc_().isValid(node)){
+            return -2
+        }
+        let _newNode = _cc_().instantiate(node);
+        _newNode.parent = node.parent;
+        _newNode.setSiblingIndex(node.getSiblingIndex());
+        setTimeout(() => {
+            _runtimeSocket.sendPush_checkUpdateSceneTree()
+        }, 100);
+    }
+
     private _globalNode = null;
     private _touchNode = null;
     makePersistCanvasNode(){
@@ -1547,6 +1586,9 @@ class _RuntimeData{
             canvas.alignCanvasWithScreen = true;
 
             const _updateCamera = ()=>{
+                if(!_cc_().isValid(this._globalNode)){
+                    return
+                }
                 let _uiCamera = null
                 let _canvasArr = _cc_().director.getScene().getComponentsInChildren(_cc_().Canvas)
                 for(let _cvs of _canvasArr){
@@ -1580,6 +1622,9 @@ class _RuntimeData{
                 _cc_().game.canvas.addEventListener('mouseup', this._onCanvasMouseUp.bind(this));
             }
             
+        }
+        if(!_cc_().isValid(this._globalNode)){
+            return null
         }
         return this._globalNode.getComponent(_cc_().UITransform)
     }
