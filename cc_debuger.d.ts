@@ -8,6 +8,7 @@ interface EditorAssetInfo {
     uuid:string,
     path:string,
     isDirectory?:boolean,
+    name?:string,
 }
 
 interface ResTreeItem{
@@ -111,6 +112,7 @@ interface InspectorInfo_Node extends NodeInfo{
 interface CompInfo_Base{
     enabled:boolean,
     typeStr:CompType,
+    clsId:string,
     uuid:TypeUUID,
 }
 

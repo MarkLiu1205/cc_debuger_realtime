@@ -89,6 +89,7 @@ async function _onSelect_node(item:NodeTreeItem){
         console.log("取消选中几点")
         _curSelNodeInfo.value = null
         emit('onSel_node', null);
+        _pluginSocket.getNodeInfo(null)
         return null
     }
     _curSelUuid.value = item.uuid
@@ -365,7 +366,14 @@ const contextMenuRef = ref(null);
 
 const defaultEvalFormat = `
 const scene = cc.director.getScene();
-const _node = scene?.getChildByPath(\"{0}\");
+let _node = null
+scene.walk((child)=>{
+    if(child.uuid == "{0}"){
+        _node = child;
+    }
+})
+
+
 const _comps = _node.components
 
 return _comps.map(item=>item.__proto__.__classname__)
@@ -385,7 +393,7 @@ function onRightClick_node( event: MouseEvent, data: NodeTreeItem, node: TreeNod
             label: "以此为上下文打开eval面板", 
             action: () => {
                 console.log("----",data.path)
-                const str = _funcs.formatStr(defaultEvalFormat,data.path)
+                const str = _funcs.formatStr(defaultEvalFormat,data.uuid)
                 _funcs.openEvalPanel(str)
             }
         },{ 

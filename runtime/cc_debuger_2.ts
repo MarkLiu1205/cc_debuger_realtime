@@ -1289,12 +1289,13 @@ class _RuntimeData{
         }
     }
 
-    setCurSelectNode(node){
-        this._curSelectNodeUuid = node
+    setCurSelectNode(uuid:string){
+        this._curSelectNodeUuid = uuid
 
         clearInterval(this._timeId_updateCurNode)
-
-        this._timeId_updateCurNode = setInterval(this._onUpdateCurSelNode.bind(this),1000/20)
+        if(uuid){
+            this._timeId_updateCurNode = setInterval(this._onUpdateCurSelNode.bind(this),1000/20)
+        }
     }
 
     /**标记取消选中当前节点 */
@@ -1359,6 +1360,7 @@ class _RuntimeData{
     private _getComponentProperties(component: any/**import("cc").Component */):any/**CompInfo_Base */ {
         const clsPrototype = component["__proto__"]
         const clsName = clsPrototype.__classname__
+        const clsId = clsPrototype.__cid__
         if(clsName=="cc.MeshRenderer"){
             let g = 0;
         }
@@ -1452,10 +1454,11 @@ class _RuntimeData{
             // data["skinArr"] = _armature._armatureData.skins.map((item)=>item.name)
             // data["_defaultSkinIndex"] = _armature._armatureData.defaultSkin.name
         }
-
+        
         const ret = {
             enabled:component.enabled,
             typeStr:clsName,
+            clsId:clsId,
             uuid:component?.uuid??"",
 
             ...data
