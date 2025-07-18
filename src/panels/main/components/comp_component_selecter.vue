@@ -5,7 +5,10 @@ import { _pluginSocket } from '../../../tools/plugin_socket';
 import { _dataCtx } from '../../../tools/_dataCtx';
 import { eventBus } from '../../../tools/_enentBus';
 
-const props = defineProps<{compType:CompType}>()
+const props = defineProps<{
+    compType:CompType,
+    disabled?:boolean
+}>()
 
 // 使用 defineModel 绑定 v-model 的属性
 const elementUuid = defineModel<string>();
@@ -91,13 +94,13 @@ function handleClick() {
                 <span class="name" :class="{empty:true}" v-if="!curSelectUuid">{{ props.compType }}</span>
                 <span class="name" @click="handleClick" v-else>@{{ curSelectName }}</span>
                 <ui-icon 
-                    v-if="isHover && curSelectUuid" 
+                    v-if="isHover && curSelectUuid && !disabled" 
                     class="delete-btn" 
                     value="close" 
                     @click="clearSelection"
                 ></ui-icon>
             </div>
-            <ui-icon 
+            <ui-icon v-if="!disabled"
                 class="select-btn" 
                 value="select" 
                 @click="openSelecterDlg"

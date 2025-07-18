@@ -4,7 +4,10 @@ import { _pluginSocket } from '../../../tools/plugin_socket';
 import { _dataCtx } from '../../../tools/_dataCtx';
 import { eventBus } from '../../../tools/_enentBus';
 
-const props = defineProps<{assetType:AssetType}>()
+const props = defineProps<{
+    assetType:AssetType,
+    disabled?:boolean
+}>()
 
 // 使用 defineModel 绑定 v-model 的属性
 const elementUuid = defineModel<string>();
@@ -41,7 +44,7 @@ const isReadonly = computed(()=>{
 </script>
 
 <template>
-    <ui-asset :droppable="props.assetType" :readonly="isReadonly" @click="handleClick" @change="onChange" :value="curSelectUuid"></ui-asset>
+    <ui-asset :droppable="props.assetType" :readonly="isReadonly" :disabled="disabled" @click="handleClick" @change="onChange" :value="curSelectUuid"></ui-asset>
 </template>
 
 <style scoped>

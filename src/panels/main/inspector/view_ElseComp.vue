@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue';
 import CompPropretyWrapper from '../components/CompPropretyWrapper.vue';
-import comp_selecter_asset from '../components/comp_selecter_asset.vue';
+import CompPropretyArrayWrapper from '../components/CompPropretyArrayWrapper.vue';
 import { _funcs } from '../../../tools/_funcs';
 
 const props = defineProps({
@@ -18,6 +18,9 @@ async function checkIdCustomScript(){
     if(compModel.value.clsId==compModel.value.typeStr){
         return null
     } 
+    if(!(compModel?.value?.clsId)){
+        return null
+    }
     let uuid = Editor.Utils.UUID.decompressUUID(compModel.value.clsId);
     
     scriptAssect.value = await _funcs.getAssetInfoByUuid(uuid)
@@ -28,7 +31,7 @@ async function checkIdCustomScript(){
             return null
         }
     }
-    console.log("获取到的脚本信息",scriptAssect)
+    // console.log("获取到的脚本信息",scriptAssect)
 }
 
 function onToggle(event) {
@@ -40,7 +43,7 @@ function onToggle(event) {
 }
 
 onMounted(()=>{
-    // console.log("compAttrs",props.compAttrs)
+    // console.log("compAttrs",JSON.stringify(props,null,2))
     checkIdCustomScript()
 })
 
@@ -57,7 +60,8 @@ onMounted(()=>{
             <ui-asset droppable="cc.Script" disabled :value="scriptAssect.uuid"></ui-asset>
         </div>
         <div v-if="compAttrs!=null" v-for="(attrs, propretyName) in compAttrs" :key="propretyName" >
-            <CompPropretyWrapper v-model="compModel" :attrs="attrs" :propretyName="propretyName"></CompPropretyWrapper>
+            <CompPropretyArrayWrapper v-model="compModel" :attrs="attrs" :propretyName="propretyName" v-if="attrs.type=='Array'"></CompPropretyArrayWrapper>
+            <CompPropretyWrapper v-model="compModel" :attrs="attrs" :propretyName="propretyName" v-else></CompPropretyWrapper>
         </div>
     </div>
 </template>

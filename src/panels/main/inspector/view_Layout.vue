@@ -55,7 +55,7 @@ const enumDesc_Constraint = ["NONE", "FIXED_ROW", "FIXED_COL"];
 //     alignHorizontal: false,
 //     alignVertical: false,
 //     affectByScale: false,
-//     verticalDirection: VerticalDirection.TOP_TO_BOTTOM,
+//     horizontalDirection: VerticalDirection.TOP_TO_BOTTOM,
 //     horiazonDirection: HoriazonDirection.LEFT_TO_RIGHT,
 //     startAxis:AxisDirection.HORIZONTAL,
 //     constraint:Constraint.NONE,
@@ -82,8 +82,8 @@ function onSelect(event) {
         compModel.value.type = sel;
     } else if (eleId === "id_resizeMode") {
         compModel.value.resizeMode = sel;
-    } else if (eleId === "id_horiazonDirection") {
-        compModel.value.horiazonDirection = sel;
+    } else if (eleId === "id_horizontalDirection") {
+        compModel.value.horizontalDirection = sel;
     } else if (eleId === "id_verticalDirection") {
         compModel.value.verticalDirection = sel;
     } else if (eleId === "id_startAxis") {
@@ -184,7 +184,7 @@ function onNumChange(event) {
         </div>
         <div class="property" v-if="compModel.type==Type.HORIZONTAL||compModel.type==Type.GRID">
             <label>Horiazon Direction:</label>
-            <ui-select id="id_horiazonDirection" v-model="compModel.horiazonDirection" @change="onSelect">
+            <ui-select id="id_horizontalDirection" v-model="compModel.horizontalDirection" @change="onSelect">
                 <option v-for="(mode, index) in enumDesc_HoriazonDirection" :key="index" :value="index">
                     {{ mode }}
                 </option>

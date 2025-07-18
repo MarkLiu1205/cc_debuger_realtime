@@ -171,7 +171,7 @@ interface CompInfo_Layout extends CompInfo_Base{
     alignVertical: boolean,
     affectByScale: boolean,
     verticalDirection: import("cc").Layout.VerticalDirection,
-    horiazonDirection: import("cc").Layout.HoriazonDirection,
+    horizontalDirection: import("cc").Layout.HorizontalDirection,
     startAxis:import("cc").Layout.AxisDirection,
     constraint:import("cc").Layout.Constraint,
 }

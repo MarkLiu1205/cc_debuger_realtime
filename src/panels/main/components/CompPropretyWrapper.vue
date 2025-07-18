@@ -21,7 +21,9 @@ interface _AttrType{
     multiline?:boolean,
     enumList?:Array<{name:string,value:number}>,
     displayName?:string,
-    displayOrder?:number
+    displayOrder?:number,
+
+    isArray?:boolean,
 }
 
 const props = defineProps<{
@@ -75,59 +77,59 @@ function onAssetChange(event){
     pModel.value[props.propretyName] = val
 }
 
-onMounted(()=>{
-    // console.log("ssss",pModel)
-})
+const isDisable = props.attrs.isArray
+
 
 </script>
 
 <template>
-    <div class="property">
-        <label>{{attrs?.displayName?? propretyName}}:</label>
+    <div class="property" >
+        <label v-if="!attrs.isArray">{{attrs?.displayName?? _funcs.capitalizeSplit(propretyName)}}:</label>
 
-        <comp_component_selecter class="comp_component_selecter" v-model="pModel[propretyName]" :compType="attrs.ctor" v-if="attrs.type=='cc.Component'"/>
-        <comp_node_selecter class="comp_node_selecter" v-model="pModel[propretyName]" v-else-if="attrs.type=='cc.Node'"/>
-        <comp_selecter_asset :assetType="attrs.ctor"  v-model="pModel[propretyName]" v-else-if="attrs.type=='cc.Asset'"/>
-        <ui-color :value="pModel[propretyName]" @confirm="onConfirmColor" v-else-if="attrs.type=='cc.Color'" />
+        <comp_component_selecter class="comp_component_selecter" v-model="pModel[propretyName]" :disabled="isDisable" :compType="attrs.ctor" v-if="attrs.type=='cc.Component'"/>
+        <comp_node_selecter class="comp_node_selecter" v-model="pModel[propretyName]" :disabled="isDisable" v-else-if="attrs.type=='cc.Node'"/>
+        <comp_selecter_asset :assetType="attrs.ctor"  v-model="pModel[propretyName]" :disabled="isDisable" v-else-if="attrs.type=='cc.Asset'"/>
+        <ui-color :value="pModel[propretyName]" @confirm="onConfirmColor" :disabled="isDisable" v-else-if="attrs.type=='cc.Color'" />
 
         <div class="vectorInput"  v-else-if="attrs.type=='cc.Vec2'||attrs.type=='cc.Vec3'||attrs.type=='cc.Vec4'||attrs.type=='cc.Rect'">
-            <ui-num-input class="shortInput" @change="onNumChange($event,'x')" :value="pModel[propretyName].x"  step="0.01" unit="x"></ui-num-input>
-            <ui-num-input class="shortInput" @change="onNumChange($event,'y')":value="pModel[propretyName].y"  step="0.01" unit="y"></ui-num-input>
+            <ui-num-input class="shortInput" @change="onNumChange($event,'x')" :value="pModel[propretyName].x"  step="0.01" unit="x" :disabled="isDisable"></ui-num-input>
+            <ui-num-input class="shortInput" @change="onNumChange($event,'y')":value="pModel[propretyName].y"  step="0.01" unit="y" :disabled="isDisable"></ui-num-input>
         </div>
 
         <div class="vectorInput"  v-else-if="attrs.type=='cc.Size'">
-            <ui-num-input class="shortInput" @change="onNumChange($event,'width')" :value="pModel[propretyName].width"  step="0.01" unit="width"></ui-num-input>
-            <ui-num-input class="shortInput" @change="onNumChange($event,'height')":value="pModel[propretyName].height"  step="0.01" unit="height"></ui-num-input>
+            <ui-num-input class="shortInput" @change="onNumChange($event,'width')" :value="pModel[propretyName].width"  step="0.01" unit="width" :disabled="isDisable"></ui-num-input>
+            <ui-num-input class="shortInput" @change="onNumChange($event,'height')":value="pModel[propretyName].height"  step="0.01" unit="height" :disabled="isDisable"></ui-num-input>
         </div>
 
         <ui-select :value="pModel[propretyName]" @change="onSelect" v-else-if="attrs.type=='Enum'">
             <option v-for="(mode, index) in attrs.enumList" :key="mode.value" :value="mode.value">{{ mode.name }}</option>
         </ui-select>
         <ui-slider :value="pModel[propretyName]" @change="onSliderChange" :step="attrs.step??0.01" :min="attrs.min??0" :max="attrs.max??1" v-else-if="attrs.slide"/>
-        <ui-num-input :value="pModel[propretyName]" @change="onNumChange" :step="attrs.step??0.01" :min="attrs.min??null" :max="attrs.max??null" v-else-if="attrs.type=='number'"/>
+        <ui-num-input :value="pModel[propretyName]" @change="onNumChange" :step="attrs.step??0.01" :min="attrs.min??null" :max="attrs.max??null" v-else-if="attrs.type=='number'" :disabled="isDisable"/>
         <ui-textarea :value="pModel[propretyName]" @change="onTextChange" v-else-if="attrs.type=='string'&&attrs.multiline" />
-        <ui-input :value="pModel[propretyName]" @change="onTextChange" v-else-if="attrs.type=='string'" />
-        <ui-checkbox :value="pModel[propretyName]" @change="onToggle" v-else-if="attrs.type=='boolean'" />
+        <ui-input :value="pModel[propretyName]" @change="onTextChange" v-else-if="attrs.type=='string'" :disabled="isDisable"/>
+        <ui-checkbox :value="pModel[propretyName]" @change="onToggle" v-else-if="attrs.type=='boolean'" :disabled="isDisable"/>
         
     </div>
     <div class="property" style="margin-top: 5px;" v-if="attrs.type=='cc.Vec3'||attrs.type=='cc.Vec4'">
         <label></label>
         <div class="vectorInput">
-            <ui-num-input class="shortInput" @change="onNumChange($event,'z')" :value="pModel[propretyName].x"  step="0.01" unit="z"></ui-num-input>
-            <ui-num-input class="shortInput" @change="onNumChange($event,'w')" :value="pModel[propretyName].y"  step="0.01" unit="w" v-if="attrs.type=='cc.Vec4'"></ui-num-input>
+            <ui-num-input class="shortInput" @change="onNumChange($event,'z')" :value="pModel[propretyName].x"  step="0.01" unit="z" :disabled="isDisable"></ui-num-input>
+            <ui-num-input class="shortInput" @change="onNumChange($event,'w')" :value="pModel[propretyName].y"  step="0.01" unit="w" v-if="attrs.type=='cc.Vec4'" :disabled="isDisable"></ui-num-input>
         </div>
     </div>
     <div class="property" style="margin-top: 5px;" v-if="attrs.type=='cc.Rect'">
         <label></label>
         <div class="vectorInput">
-            <ui-num-input class="shortInput" @change="onNumChange($event,'width')" :value="pModel[propretyName].width"  step="0.01" unit="width"></ui-num-input>
-            <ui-num-input class="shortInput" @change="onNumChange($event,'height')":value="pModel[propretyName].height"  step="0.01" unit="height"></ui-num-input>
+            <ui-num-input class="shortInput" @change="onNumChange($event,'width')" :value="pModel[propretyName].width"  step="0.01" unit="width" :disabled="isDisable"></ui-num-input>
+            <ui-num-input class="shortInput" @change="onNumChange($event,'height')":value="pModel[propretyName].height"  step="0.01" unit="height" :disabled="isDisable"></ui-num-input>
         </div>
     </div>
 </template>
 
 <style scoped>
 @import "../inspector/inspector.css";
+
 
 .property {
     display: flex;

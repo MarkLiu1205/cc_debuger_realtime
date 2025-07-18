@@ -33,7 +33,7 @@ export const applyBuildParamBefore = async (cfg:SelfBuildParam)=>{
     // console.log("bAutoStarPlugin",bAutoStarPlugin)
     // console.log("serverAddress",serverAddress)
     if (!fs.existsSync(runtimeScriptPath_1)) {
-        return
+        return 0
     }
     _oldContent_ts = fs.readFileSync(runtimeScriptPath_1, 'utf-8');
     _oldContent_meta = fs.readFileSync(runtimeMetaPath_1, 'utf-8');

@@ -859,6 +859,22 @@ export async function checkNodeJsEnable() {
     });
 }
 
+/**将字符串根据驼峰或者下划线拆分 */
+export function capitalizeSplit(str) {
+  if (typeof str !== 'string') return ''; // 非字符串输入返回空
+  return str
+    .replace(/_/g, ' ') // 下划线转空格 [1](@ref)
+    .replace(/([a-z])([A-Z])/g, '$1 $2') // 插入空格分隔大小写 [5](@ref)
+    .toLowerCase() // 统一转为小写（避免原字符串大小写干扰）
+    .split(' ') // 按空格拆分单词
+    .map(word => {
+      if (word.length === 0) return ''; // 跳过空字符串
+      return word.charAt(0).toUpperCase() + word.slice(1); // 首字母大写 [1,4](@ref)
+    })
+    .join(' ') // 重新组合
+    .trim(); // 去除首尾空格
+}
+
 }
 
 declare var pako: any;
