@@ -10,17 +10,17 @@ interface _AttrType{
     type:string,
     ctor?:string,
     ctorBase?:string,
-    propretyName?:string,
 }
 
 const props = defineProps<{
+    propretyName:string,
     attrs: _AttrType,
     arrItemVal:any,
     idx:number
 }>()
 
 const newModel = ref({
-    [props.attrs.propretyName]:props.arrItemVal
+    [props.propretyName]:props.arrItemVal
 })
 
 const newAttr = ref({
@@ -29,13 +29,19 @@ const newAttr = ref({
     isArray:true,
 })
 
+// onMounted(()=>{
+//     // console.log("ssss",pModel)
+//     if(props.propretyName=="onBottomTabChanged"){
+//         console.log("灌灌灌灌",JSON.stringify(props,null,4))
+//     }
+// })
 
 </script>
 
 <template>
     <div class="row">
         <label class="index">[{{ idx }}]</label>
-         <CompPropretyWrapper v-model="newModel" :attrs="newAttr" :propretyName="attrs.propretyName"></CompPropretyWrapper>
+         <CompPropretyWrapper v-model="newModel" :attrs="newAttr" :propretyName="propretyName"></CompPropretyWrapper>
     </div>
 </template>
 

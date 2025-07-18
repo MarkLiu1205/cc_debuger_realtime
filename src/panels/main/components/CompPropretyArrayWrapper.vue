@@ -39,7 +39,7 @@ function onExpandArr(){
         </div>
         <div class="arrRect" v-if="isExpand">
             <div class="arr-item" v-for="(arrItem,k) in pModel[propretyName]" :key="k">
-                <CompPropretyArrayItem :arrItemVal="pModel[propretyName][k]" :idx="k" :attrs="attrs"/>
+                <CompPropretyArrayItem :arrItemVal="pModel[propretyName][k]" :idx="k" :attrs="attrs" :propretyName="propretyName"/>
             </div>
         </div>
     </div>

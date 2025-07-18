@@ -4,6 +4,7 @@ import { ref, reactive, onUnmounted, watch, nextTick, defineExpose,defineProps, 
 import comp_component_selecter from '../components/comp_component_selecter.vue';
 import comp_node_selecter from '../components/comp_node_selecter.vue';
 import comp_selecter_asset from '../components/comp_selecter_asset.vue';
+import comp_click_event from '../components/comp_click_event.vue';
 import { _dataCtx } from '../../../tools/_dataCtx';
 import { _funcs } from '../../../tools/_funcs';
 
@@ -72,13 +73,14 @@ function onConfirmColor(event){
     pModel.value[props.propretyName] = _funcs.rgbaToHex(r,g,b,a)
 }
 
-function onAssetChange(event){
-    const val = event.target.value
-    pModel.value[props.propretyName] = val
-}
-
 const isDisable = props.attrs.isArray
 
+onMounted(()=>{
+    // console.log("ssss",pModel)
+    if(props.propretyName=="onBottomTabChanged"){
+        console.log("灌灌灌灌",JSON.stringify(props,null,4))
+    }
+})
 
 </script>
 
@@ -109,7 +111,7 @@ const isDisable = props.attrs.isArray
         <ui-textarea :value="pModel[propretyName]" @change="onTextChange" v-else-if="attrs.type=='string'&&attrs.multiline" />
         <ui-input :value="pModel[propretyName]" @change="onTextChange" v-else-if="attrs.type=='string'" :disabled="isDisable"/>
         <ui-checkbox :value="pModel[propretyName]" @change="onToggle" v-else-if="attrs.type=='boolean'" :disabled="isDisable"/>
-        
+        <comp_click_event v-model="pModel[propretyName]" v-else-if="attrs.type=='cc.ClickEvent'"  :disabled="isDisable"/>
     </div>
     <div class="property" style="margin-top: 5px;" v-if="attrs.type=='cc.Vec3'||attrs.type=='cc.Vec4'">
         <label></label>
