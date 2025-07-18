@@ -178,15 +178,14 @@ onMounted(()=>{
         </div>
         <div class="property">
             <label>H-Alignment:</label>
-            <div class="property">
-                <ui-tab @change="onTab" id="id_h-align" :value="_tabVal_H">
-                    <ui-button>None</ui-button>
-                    <ui-button><ui-icon value="align-left"></ui-icon></ui-button>
-                    <ui-button><ui-icon value="align-h-center"></ui-icon></ui-button>
-                    <ui-button><ui-icon value="align-right"></ui-icon></ui-button>
-                    <ui-button>Stretch</ui-button>
-                </ui-tab>
-            </div>
+            
+            <ui-tab @change="onTab" id="id_h-align" :value="_tabVal_H">
+                <ui-button>None</ui-button>
+                <ui-button><ui-icon value="align-left"></ui-icon></ui-button>
+                <ui-button><ui-icon value="align-h-center"></ui-icon></ui-button>
+                <ui-button><ui-icon value="align-right"></ui-icon></ui-button>
+                <ui-button>Stretch</ui-button>
+            </ui-tab>
         </div>
         <div class="property" v-if="_tabVal_H==1||_tabVal_H==4">
             <label>Left:</label>
@@ -203,15 +202,13 @@ onMounted(()=>{
 
         <div class="property">
             <label>V-Alignment:</label>
-            <div class="property">
-                <ui-tab @change="onTab" id="id_v-align" :value="_tabVal_V">
-                    <ui-button>None</ui-button>
-                    <ui-button><ui-icon value="align-top"></ui-icon></ui-button>
-                    <ui-button><ui-icon value="align-v-center"></ui-icon></ui-button>
-                    <ui-button><ui-icon value="align-bottom"></ui-icon></ui-button>
-                    <ui-button>Stretch</ui-button>
-                </ui-tab>
-            </div>
+            <ui-tab @change="onTab" id="id_v-align" :value="_tabVal_V">
+                <ui-button>None</ui-button>
+                <ui-button><ui-icon value="align-top"></ui-icon></ui-button>
+                <ui-button><ui-icon value="align-v-center"></ui-icon></ui-button>
+                <ui-button><ui-icon value="align-bottom"></ui-icon></ui-button>
+                <ui-button>Stretch</ui-button>
+            </ui-tab>
         </div>
         <div class="property" v-if="_tabVal_V==1||_tabVal_V==4">
             <label>Top:</label>

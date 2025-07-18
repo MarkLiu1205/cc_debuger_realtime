@@ -56,6 +56,7 @@ const newAttr = ref({
 
 .index {
     margin-left: 20px;
+    width: 180px;
 }
 
 </style>

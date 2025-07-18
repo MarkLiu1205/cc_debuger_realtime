@@ -54,7 +54,7 @@ function stopCurAni(){
 @import "./inspector.css";
 
 ui-select {
-    width: calc((100% - 105px - 126px));
+    width: calc((100% - 180px - 126px));
 }
 
 </style>

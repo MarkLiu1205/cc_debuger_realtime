@@ -161,7 +161,7 @@ label.long {
     width: 120px;
 }
 ui-select.anim {
-    width: calc((100% - 105px - 60px));
+    width: calc((100% - 180px - 60px));
 }
 
 </style>

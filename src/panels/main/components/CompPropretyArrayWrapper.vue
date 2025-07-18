@@ -30,7 +30,7 @@ function onExpandArr(){
 <template>
     <div v-if="attrs.type=='Array'" >
         <div class="property" @click="onExpandArr">
-            <div style="width: 105px;">
+            <div style="width: 180px;">
                 <ui-icon color value="arrow-right" style="font-size: 10px;" :class="{ expanded: isExpand,unexpanded: !isExpand }"/>
                 <label>{{attrs?.displayName?? _funcs.capitalizeSplit(propretyName)}}:</label>
             </div>
