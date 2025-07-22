@@ -19,37 +19,16 @@ const verifyTip = computed(()=>{
         return _funcs.getI18nText("text_118")
     }
 })
-//比较版本号 如 1.0.0  1.0.23
-function checkCurIsLatestVersion() {
+
+const isLatestVersion = computed(()=>{
     const nowVer = _funcs.getPluginVersionName();
-    const vArr_self = nowVer.split(".");
-    const vArr_remote = verifyInfo.latestVersion.split(".");
-
-    const maxLength = Math.max(vArr_self.length, vArr_remote.length);
-
-    for (let i = 0; i < maxLength; i++) {
-        const subV_self = parseInt(vArr_self[i] || "0", 10); // 默认值为 0
-        const subV_remote = parseInt(vArr_remote[i] || "0", 10); // 默认值为 0
-
-        if (isNaN(subV_self) || isNaN(subV_remote)) {
-            // 如果解析失败，认为当前版本是最新的
-            return true;
-        }
-
-        if (subV_self < subV_remote) {
-            return false; // 当前版本小于远程版本
-        } else if (subV_self > subV_remote) {
-            return true; // 当前版本大于远程版本
-        }
-        // 如果相等，继续比较下一部分
-    }
-
-    return true; // 如果所有部分都相等，认为是最新版本
-}
+    const remoteVer = verifyInfo.latestVersion;
+    return _funcs.compareVersion(nowVer, remoteVer) >= 0;
+})
 
 const vertionTip = computed(()=>{
     const nowVer = _funcs.getPluginVersionName();
-    if(checkCurIsLatestVersion()){ 
+    if(isLatestVersion.value){ 
         return _funcs.formatStr(_funcs.getI18nText("text_119"),nowVer)
     }else{
         return _funcs.formatStr(_funcs.getI18nText("text_120"),nowVer,verifyInfo.latestVersion)
@@ -64,6 +43,15 @@ function onClickGitHub(){
     _funcs.openWebSiteUrl(verifyInfo.authorInfo?.githubUrl)
 }
 
+const isHotfixing = ref(false);
+const hotfixTip = ref("")
+function onClickHotfix(){
+    isHotfixing.value = true
+    _funcs.checkSyncFromGit((code, msg)=>{
+        hotfixTip.value = msg
+    })
+}
+
 </script>
 
 <template>
@@ -72,15 +60,16 @@ function onClickGitHub(){
             <label style="font-style: italic;font-weight: bold;">{{ verifyTip }}</label>
         </div>
         <div class="row" v-if="verifyInfo.latestVersion!=''">
-            <label v-if="checkCurIsLatestVersion()" >{{ vertionTip }}</label>
+            <label v-if="hotfixTip">{{ hotfixTip }}</label>
+            <label v-else-if="isLatestVersion" >{{ vertionTip }}</label>
             <label v-else style="color: #ff0000;">{{ vertionTip }}</label>
         </div>
         <div class="row">
             <label class="label_1">{{ _funcs.getI18nText("text_121") }}</label>
             <div style="display: flex;flex-direction: row;gap: 10px;">
+                <label class="btn-hotfix" @click="onClickHotfix" v-if="!isLatestVersion">在线热更新</label>
                 <label class="clickable" @click="onClickCocosStore">Cocos Store</label>
                 <label class="clickable" @click="onClickGitHub">Github</label>
-               
             </div>
         </div>
         <div class="row">
@@ -149,4 +138,17 @@ function onClickGitHub(){
 .clickable:hover {
     color: rgb(247, 232, 29); /* 设置 hover 颜色 */
 }
+
+.btn-hotfix {
+    cursor: pointer;
+    transition: color 0.3s;
+    user-select: none;
+    margin-left: 5px;
+    color: rgb(245, 39, 39);;
+}
+
+.btn-hotfix:hover {
+    color: rgb(207, 247, 29); /* 设置 hover 颜色 */
+}
+
 </style>

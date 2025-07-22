@@ -7,6 +7,8 @@ const os = require('os');
 const http = require('http');
 const crypto = require('crypto');
 const url = require('url');
+const util = require('util');
+const execAsync = util.promisify(exec);
 
 import { MessageParams } from 'element-plus';
 import packageJSON from '../../package.json';
@@ -873,6 +875,120 @@ export function capitalizeSplit(str) {
     })
     .join(' ') // 重新组合
     .trim(); // 去除首尾空格
+}
+/**公用版本号比较函数
+ * @param a 版本号字符串
+ * @param b 版本号字符串
+ * @return {number} 返回值大于0表示a大于b，小于0表示a小于b，等于0表示相等
+ */
+export function compareVersion(a: string, b: string): number {
+    const arrA = a.split('.').map(s => parseInt(s, 10) || 0);
+    const arrB = b.split('.').map(s => parseInt(s, 10) || 0);
+    const maxLen = Math.max(arrA.length, arrB.length);
+    for (let i = 0; i < maxLen; i++) {
+        const numA = arrA[i] || 0;
+        const numB = arrB[i] || 0;
+        if (numA > numB) return 1;
+        if (numA < numB) return -1;
+    }
+    return 0;
+}
+
+export async function checkSyncFromGit(callback:(step:number,desc:string)=>void) {
+    const gitUrl = "https://gitee.com/huangyuzhao2018/ccdebuger-publish.git";
+    const gitPath = Editor.Project.tmpDir + "/ccdebuger-publish";
+    const pluginPath = _funcs.getCurPluginPath();
+    const gitVerPath = path.join(gitPath, "version.txt");
+    const localVerPath = path.join(pluginPath, "version.txt");
+    
+
+    try {
+        callback&&callback(0,"开始从gitee获取最新版插件...");
+        // 1. clone 或 pull
+        if (!fs.existsSync(gitPath) || !fs.existsSync(path.join(gitPath, '.git'))) {
+            await execAsync(`git clone ${gitUrl} "${gitPath}"`);
+            console.log("[SyncFromGit] clone 完成");
+            callback&&callback(1,"克隆远程仓库成功");
+        } else {
+            await execAsync(`git -C "${gitPath}" pull`);
+            console.log("[SyncFromGit] pull 完成");
+            callback&&callback(1,"拉取远程仓库更新成功");
+        }
+
+        // 2. 读取版本号
+        let gitVer = "0.0.0";
+        let localVer = "0.0.0";
+        try {
+            gitVer = (await fs.readFile(gitVerPath, 'utf8')).trim();
+        } catch (e) {
+            console.log("[SyncFromGit] 远程版本号读取失败，使用默认值0.0.0");
+        }
+        try {
+            localVer = (await fs.readFile(localVerPath, 'utf8')).trim();
+        } catch (e) {
+            console.log("[SyncFromGit] 本地版本号读取失败，使用默认值0.0.0");
+        }
+        callback&&callback(2,`远程版本号: ${gitVer}, 本地版本号: ${localVer}`);
+
+        // 3. 比较版本号
+        if (_funcs.compareVersion(gitVer, localVer) > 0) {
+            callback&&callback(3,"本地插件较旧，开始同步插件文件...");
+            // 4. 获取gitPath下所有一级路径，排除.git
+            const items = await fs.readdir(gitPath);
+            // 先处理非version.txt和非.git
+            for (const item of items) {
+                if (item === 'version.txt' || item === '.git') continue;
+                const src = path.join(gitPath, item);
+                const dest = path.join(pluginPath, item);
+                await fs.copy(src, dest, { overwrite: true });
+                // console.log(`[SyncFromGit] 已复制 ${item}`);
+            }
+            // 最后处理version.txt
+            if (items.includes('version.txt')) { 
+                const srcVer = path.join(gitPath, 'version.txt');
+                const destVer = path.join(pluginPath, 'version.txt');
+                await fs.copy(srcVer, destVer, { overwrite: true });
+                // console.log(`[SyncFromGit] 已复制 version.txt`);
+            }
+
+            // 5. 判断依赖是否变化
+            let needInstall = false;
+            try {
+                const pkgGitStr = await fs.readFile(path.join(gitPath, 'package.json'), 'utf8');
+                const pkgLocalPath = path.join(pluginPath, 'package.json');
+                let pkgLocalStr = '';
+                if (await fs.pathExists(pkgLocalPath)) {
+                    pkgLocalStr = await fs.readFile(pkgLocalPath, 'utf8');
+                }
+                const pkgGit = JSON.parse(pkgGitStr);
+                const pkgLocal = pkgLocalStr ? JSON.parse(pkgLocalStr) : {};
+
+                const depGit = JSON.stringify(pkgGit.dependencies || {});
+                const depLocal = JSON.stringify(pkgLocal.dependencies || {});
+                if (depGit !== depLocal) {
+                    needInstall = true;
+                }
+            } catch (e) {
+                needInstall = true;
+            }
+
+            if (needInstall) {
+                callback&&callback(4,"插件文件已更新，开始安装依赖");
+                await execAsync(`npm install`, { cwd: pluginPath });
+                console.log("[SyncFromGit] 已安装依赖");
+                callback&&callback(5,"插件依赖已安装");
+            }else{
+                callback&&callback(5,"插件文件已更新");
+            }
+            callback&&callback(6,"插件更新成功，请按F5重启插件生效");
+            console.log("[SyncFromGit] 插件已更新到最新版本，重启生效");
+        } else {
+            console.log("[SyncFromGit] 当前已是最新版本，无需更新");
+            callback&&callback(6,"您的插件已经是最新版："+localVer);
+        }
+    } catch (err) {
+        console.log("[SyncFromGit] 同步插件失败：" + err.message);
+    }
 }
 
 }
