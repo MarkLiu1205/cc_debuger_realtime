@@ -2742,12 +2742,22 @@ function isSubclass(childClass: any, parentClass: any): boolean {
 let bInited = false
 let _runtimeSocket:RunTimeSocket = null
 
-function _initOnce() {
+async function _initOnce(wsUrl:string) {
+    let scene = _cc_().director.getScene()
+    if(scene==null){
+        await new Promise((resolve)=>{
+            _cc_().director.once(_cc_().Director.EVENT_AFTER_SCENE_LAUNCH,()=>{
+                scene = _cc_().director.getScene()
+                resolve(null)
+            })
+        })
+    }
+
     if(bInited){
         return
     }
     bInited = true
-    const wsUrl = globalThis["__cc_debuger_wsUrl"]
+    
     _data = new _RuntimeData();
     _runtimeSocket = new RunTimeSocket();
     _runtimeSocket.initSocket(wsUrl);
@@ -2809,18 +2819,14 @@ function _initOnce() {
         _runtimeSocket.loopWithInterval(duration)
     }, duration);
 
-    const scene = _cc_().director.getScene()
-    if(scene){
-        _runtimeSocket.sendPush_sceneLaunched()
-        _runtimeSocket.sendPush_checkUpdateSceneTree()
-    }else{
-        _cc_().director.on(_cc_().Director.EVENT_AFTER_SCENE_LAUNCH, () => {
-            _data.cancelCurSelectNode()
     
-            _runtimeSocket.sendPush_sceneLaunched()
-            _runtimeSocket.sendPush_checkUpdateSceneTree()
-        })
-    }
+    _runtimeSocket.sendPush_sceneLaunched()
+    _runtimeSocket.sendPush_checkUpdateSceneTree()
+    
+    _cc_().director.on(_cc_().Director.EVENT_AFTER_SCENE_LAUNCH, () => {
+        _data.cancelCurSelectNode()
+    })
+    
     
 
     interceptLog()
