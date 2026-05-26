@@ -269,11 +269,7 @@ let _lastActivationCode = ""
 function _onSocketStateChanged(bIsConnected){
     isConnectingServer.value = !bIsConnected
     serverAddress_connected.value = _pluginSocket.getSocketUrl()
-    if(bIsConnected){
-        //(重)連上就重新驗證:連線中途斷掉 / server 重啟時,先前那次 verify 可能沒收到回應,
-        //這裡自動重試,避免永遠卡在「正在验证」。
-        onDoVerify(_lastActivationCode)
-    }
+    //已移除金鑰機制:不再自動驗證(verifyInfo.state 固定為 3 已啟用)
 }
 
 let _cancelForSocketState:()=>void = null
@@ -334,7 +330,7 @@ const verifyInfo = reactive<VerifyRespParam>({
     statusCode:200,
     activationCode:"",
     msg:"",
-    state:0,
+    state:3,//已移除金鑰機制:固定為「已啟用」,不再顯示啟動碼/試用/付費畫面
     endTime:0,
     latestVersion:"",
     authorInfo:{

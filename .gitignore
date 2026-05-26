@@ -30,6 +30,8 @@ cache/
 /archive
 /runtime/cc_debuger_2_ugly.ts
 app.db
+# 作者的啟動碼/付費後端伺服器(含使用者個資與授權碼),不隨插件發布
+activation-service/
 *.log
 *.exe
 *.exe~

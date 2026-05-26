@@ -44,7 +44,9 @@ const (
 )
 
 var (
-	m_verifyState = State_none
+	// 已移除金鑰/啟動碼機制:預設視為「已驗證通過」,isVerified() 永遠為真、dealFakeData 直接 return,
+	// 不再依賴作者的遠端驗證伺服器(ccdebuger.com),資料一律正常轉發不假化。
+	m_verifyState = State_verify_success
 	m_authorInfo  = map[string]interface{}{
 		"githubUrl":     "https://github.com/hyz1992/cc_debuger_realtime_publish.git",
 		"cocosStoreUrl": "https://store.cocos.com/app/search?name=%E8%8A%B1%E5%A4%A9%E7%8B%82%E9%AA%A8",
