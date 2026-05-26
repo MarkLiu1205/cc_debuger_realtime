@@ -23,9 +23,35 @@ globalThis.console_log = function (...a) {
   console.log(...a);
 };
 
+// ===== 診斷 log:用 DEBUG_FRAMES=1 開啟,觀察 runtime/plugin 進出的 frame =====
+const _debugFrames = process.env.DEBUG_FRAMES === '1';
+const _roleOfWsId = {};
+function _summariseFrame(dir, wsId, str) {
+  if (!_debugFrames) return;
+  let role = _roleOfWsId[wsId] || '?';
+  let summary;
+  try {
+    const m = JSON.parse(str);
+    if (m.type === 'identify') {
+      _roleOfWsId[wsId] = m.role;
+      role = m.role;
+    }
+    if (m.isSplit) {
+      summary = `isSplit idx=${m.idx}/${m.total} uniqueId=${m.uniqueId} enc=${m.encrypted} dataLen=${(m.data || '').length}`;
+    } else {
+      const actReadable = m.encrypted ? `<enc${m.encrypted}>` : m.action;
+      summary = `type=${m.type} action=${actReadable} enc=${m.encrypted || 0}`;
+    }
+  } catch (e) {
+    summary = `<non-json len=${str.length}>`;
+  }
+  console.log(`[FRAME ${dir}] ws#${wsId}(${role}) ${summary}`);
+}
+
 globalThis.sendWithWsId = function (wsId, msgStr) {
   try {
     const ws = _map2[wsId];
+    _summariseFrame('OUT->', wsId, msgStr);
     ws.send(msgStr);
     // console.log("---------向客户端发送",wsId,msgStr)
   } catch (e) {
@@ -107,6 +133,7 @@ async function startServer() {
     ws.on('message', (message) => {
       const str = message.toString();
       // console.log("服务端收到",str)
+      _summariseFrame('IN <-', wsId, str);
       globalThis.handleMessageWrapper(wsId, str);
     });
     ws.on('close', () => {

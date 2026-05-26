@@ -100,7 +100,9 @@ export const load_ts_to_runtime = async () => {
         if(!isAssetDbReady){
             return
         }
-        {
+        // cc_debuger_2_ugly.ts 与 ccdebuger.pako.min.js 为可远端下载的资产，
+        // 本地缺失时跳过注入，交由 cc_debuger_1.ts 在运行时从远端加载。
+        if (fs.existsSync(sourceScriptPath_3)) {
             const sourceScriptContent = fs.readFileSync(sourceScriptPath_3, 'utf-8');
 
             // 写入文件
@@ -113,9 +115,11 @@ export const load_ts_to_runtime = async () => {
                 "refresh-asset",
                 `db://assets/${runtimeScriptName_3}`
             );
+        } else {
+            console.log(`[${_funcs.getPluginName()}] Local runtime script not found, will load remotely: ${sourceScriptPath_3}`);
         }
-        
-        {
+
+        if (fs.existsSync(sourceScriptPath_2)) {
             const sourceScriptContent = fs.readFileSync(sourceScriptPath_2, 'utf-8');
 
             // 写入文件
@@ -128,6 +132,8 @@ export const load_ts_to_runtime = async () => {
                 "refresh-asset",
                 `db://assets/${runtimeScriptName_2}`
             );
+        } else {
+            console.log(`[${_funcs.getPluginName()}] Local runtime script not found, will load remotely: ${sourceScriptPath_2}`);
         }
 
         {

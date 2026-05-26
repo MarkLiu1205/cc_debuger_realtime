@@ -87,6 +87,19 @@ function isWebSocketSupported() {
 }
 
 async function load_cc_debuger_runtime(){
+    // 某些 release build 不含 cc.profiler，cc_debuger_2 调用 profiler.isShowingStats() 会抛错，
+    // 进而中断 loopWithInterval 里的节点树同步。这里在加载运行时前补一个安全 stub。
+    try {
+        const _ccObj = globalThis["__cchyz"]
+        if(_ccObj && !_ccObj.profiler){
+            _ccObj.profiler = {
+                isShowingStats: function(){ return false },
+                showStats: function(){},
+                hideStats: function(){},
+                _stats: null,
+            }
+        }
+    } catch(e) {}
     let _initOnce = window["__cc_debuger__initOnce"]
     if(_initOnce){
         return Promise.resolve(_initOnce)
@@ -97,7 +110,11 @@ async function load_cc_debuger_runtime(){
     const text_1 = await downloadJsFile({url:jsUrl_1})
     const text_2 = await downloadJsFile({url:jsUrl_2})
     if(text_1 && text_2){
-        new Function(text_1.text)
+        // 先执行 pako(UMD 会挂上 window.pako），cc_debuger_2 的 encrypted:2 压缩消息依赖它。
+        // 之前漏了执行 pako，导致 runtime 端 pako 未定义、节点树等压缩消息无法收发。
+        const _pakoScript = document.createElement('script')
+        _pakoScript.textContent = text_1.text
+        document.head.appendChild(_pakoScript)
         new Function(text_2.text)()
         let _initOnce = window["__cc_debuger__initOnce"]
         return Promise.resolve(_initOnce)

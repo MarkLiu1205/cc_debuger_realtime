@@ -518,8 +518,30 @@ watch(str_filter,async (newVal,oldVal)=>{
 })
 
 const isCollapsed = ref(true)
+
+//el-tree-v2 在 data 變更時會把展開狀態重設成 default-expanded-keys(element-plus 2.14 行為),
+//因此自己維護目前展開的 key,綁到 :default-expanded-keys,讓節點樹更新(如顯示 border 會在場景
+//新增 Graphics 節點觸發推送)時不會整棵收合。
+const treeExpandedKeys = ref<string[]>([])
+
+function onNodeExpand(data:any){
+    const key = data?._key
+    if(key!=null && !treeExpandedKeys.value.includes(key)){
+        treeExpandedKeys.value.push(key)
+    }
+}
+
+function onNodeCollapse(data:any){
+    const key = data?._key
+    const idx = treeExpandedKeys.value.indexOf(key)
+    if(idx>=0){
+        treeExpandedKeys.value.splice(idx,1)
+    }
+}
+
 function doExpandAll() {
     isCollapsed.value = false;
+    treeExpandedKeys.value = [..._dataCtx.allParendKeys]
     if (ref_nodeTree.value) {
 
         ref_nodeTree.value.setExpandedKeys(_dataCtx.allParendKeys);
@@ -528,6 +550,7 @@ function doExpandAll() {
 
 function doCollapseAll() {
     isCollapsed.value = true;
+    treeExpandedKeys.value = []
     if (ref_nodeTree.value) {
         ref_nodeTree.value.setExpandedKeys([]);
     }
@@ -619,7 +642,10 @@ async function doRefresh(){
                 :data="nodeTree_datas"
                 :props="{...treeProp_node,class: customClass_Node}"
                 :height="props.height_nodeTree - searchBarHeight-10"
+                :default-expanded-keys="treeExpandedKeys"
                 @node-click="onClick_node"
+                @node-expand="onNodeExpand"
+                @node-collapse="onNodeCollapse"
                 :highlight-current="true"
                 :expand-on-click-node="false"
                 @node-contextmenu="onRightClick_node"

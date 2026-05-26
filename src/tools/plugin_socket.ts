@@ -52,6 +52,10 @@ class PluginSocket {
     async connectToServer(url:string) {
         this.m_url = url
         this.closeSocket()
+        // 每次(重)連都要清掉快取的加密金鑰陣列:換了一台 server(例如舊 server 被回收後
+        // 重新 spawn)金鑰會不同,沿用舊 key 會導致 encrypted:1 訊息(含 VerifyActivationCode)
+        // 解不開,卡在「正在驗證激活碼」。清空後 getWsArr() 會重新向新 server 取得正確 key。
+        this._wsArr = null
         await new Promise((resolve, reject) => {
             this.m_socket = new WebSocket(url);
             // console.log("ggggggggg",url,this.m_socket.url)

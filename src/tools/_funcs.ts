@@ -322,6 +322,33 @@ export function findAvailablePort(startPort: number): Promise<number> {
 }
 
 /**
+ * 檢查指定 port 是否已被占用(已有 server 在監聽)。
+ * runtime 端寫死連 8085,需要據此判斷該重用既有 server 還是自己 spawn 一台。
+ */
+export function isPortInUse(port: number): Promise<boolean> {
+    return new Promise((resolve) => {
+        const tester = net.createServer();
+        tester.unref();
+        tester.once('error', () => {
+            resolve(true); // 無法綁定 → 已被占用
+        });
+        tester.once('listening', () => {
+            tester.close(() => resolve(false));
+        });
+        tester.listen(port);
+    });
+}
+
+/** 從 ws/wss URL 取出 host(解析失敗回空字串) */
+export function getHostFromWsUrl(wsUrl: string): string {
+    try {
+        return new URL(wsUrl).hostname;
+    } catch (e) {
+        return "";
+    }
+}
+
+/**
  * 遍历一个对象，将其中所有的数字四舍五入到小数点后两位
  * @param obj 
  * @returns 
