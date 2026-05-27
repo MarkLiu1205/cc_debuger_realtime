@@ -104,7 +104,29 @@ async function load_cc_debuger_runtime(){
     if(_initOnce){
         return Promise.resolve(_initOnce)
     }
-    //如果本地没有cc_debuger_2_ugly.ts文件，尝试去加载远程代码
+    // 优先使用打包时内嵌的本地运行时，避免依赖远程 ccdebuger.com。
+    // 注入时(runtime_socket_helper.load_ts_to_runtime)会把 cc_debuger_2_ugly.ts 与 pako 的内容
+    // 替换进下方 LOCAL_CC_DEBUGER_2_JS / LOCAL_PAKO_JS 两个常量。
+    // 若未被替换(仍是短占位串，length 很小)或执行失败，则回退到远程下载，保证零回归。
+    try {
+        const _hasLocalRuntime = LOCAL_CC_DEBUGER_2_JS && LOCAL_CC_DEBUGER_2_JS.length > 1000
+        if(_hasLocalRuntime){
+            const _hasLocalPako = LOCAL_PAKO_JS && LOCAL_PAKO_JS.length > 1000
+            if(_hasLocalPako){
+                const _pakoScript = document.createElement('script')
+                _pakoScript.textContent = LOCAL_PAKO_JS
+                document.head.appendChild(_pakoScript)
+            }
+            new Function(LOCAL_CC_DEBUGER_2_JS)()
+            const _initOnceLocal = window["__cc_debuger__initOnce"]
+            if(_initOnceLocal){
+                return Promise.resolve(_initOnceLocal)
+            }
+        }
+    } catch(e) {
+        console.warn("cc_debuger: 本地内嵌运行时执行失败，回退远程加载", e)
+    }
+    //如果本地没有内嵌运行时(或执行失败)，尝试去加载远程代码
     const jsUrl_1 = `http://ccdebuger.com:9001/ccdebuger.runtime/ccdebuger.pako.min.js?t=${Date.now()}`
     const jsUrl_2 = `http://ccdebuger.com:9001/ccdebuger.runtime/cc_debuger_2_ugly.ts?t=${Date.now()}`
     const text_1 = await downloadJsFile({url:jsUrl_1})
@@ -139,5 +161,11 @@ game.on(Game.EVENT_GAME_INITED,()=>{
         })
     }
 });
+
+// 以下两个常量为「本地内嵌运行时」的占位符，默认是短占位串。
+// 插件注入时会用正则把整行替换成内嵌的真实内容(cc_debuger_2_ugly.ts / pako)。
+// 放在文件最底部，避免影响 applyBuildParamBefore 对 bAutoStart / plugin_server_address 的正则替换。
+const LOCAL_CC_DEBUGER_2_JS = "__CC_DEBUGER_2_NOT_INLINED__";
+const LOCAL_PAKO_JS = "__CC_DEBUGER_PAKO_NOT_INLINED__";
 
 

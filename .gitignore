@@ -28,7 +28,7 @@ cache/
 /tsconfig.tsbuildinfo
 /runtime/cc_debuger_2.js
 /archive
-/runtime/cc_debuger_2_ugly.ts
+# cc_debuger_2_ugly.ts 需随 repo 发布,供「本地打包」内嵌进 cc_debuger_1.ts(否则 clone 后会回退远程加载)
 app.db
 # 作者的啟動碼/付費後端伺服器(含使用者個資與授權碼),不隨插件發布
 activation-service/

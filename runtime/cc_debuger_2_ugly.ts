@@ -1,0 +1,2730 @@
+const _cc_ = function () {
+    return globalThis["__cchyz"];
+};
+const _ccenv_ = function () {
+    return globalThis["__ccenvhyz"];
+};
+let _data = null;
+let _accId = 0;
+function _getAccId() {
+    return ++_accId;
+}
+let _wsArr = null;
+class RunTimeSocket {
+    constructor() {
+        this.m_socket = null;
+        this.m_url = "";
+        this.m_isActive = false;
+        this._spiltMsg = {};
+        this._bAutoFreshNodeTree = true;
+        /**主动推送节点资源信息的时间间隔,一定要大于等于1000，不然就不主动推送 */
+        this._loopInterval = 1000;
+        /**主动推送节点资源信息的计时器 */
+        this._loopTimeAcc = 0;
+        /**进行一次推送的事件，用于统计 */
+        this._loopFrameTime = 0;
+        /**上一次进行发送节点资源信息的时间，避免发送过于频繁 */
+        this._lastUpdateTime = 0;
+        //刷新FPS的计时器
+        this._profileTimeAcc = 0;
+    }
+    getIsActive() {
+        return this.m_isActive;
+    }
+    initSocket(url) {
+        this.m_url = url;
+        this.m_socket = new WebSocket(url);
+        this.m_socket.onopen = () => {
+            // console.log('[Runtime] Connected to server');
+            this._send({ type: 'identify', role: 'runtime', name: _getSelfModelName() });
+        };
+        this.m_socket.onmessage = (event) => {
+            try {
+                const msg = JSON.parse(event.data);
+                this._onMessage(msg);
+            }
+            catch (e) {
+                console.log("[cc_debuger_realtime] error", e);
+            }
+        };
+        this.m_socket.onclose = this._onClose.bind(this);
+        this.m_socket.onerror = this._onError.bind(this);
+    }
+    _checkIsConnect() {
+        if (this.m_socket && this.m_socket.readyState === WebSocket.OPEN) {
+            return true;
+        }
+        return false;
+    }
+    _send(obj) {
+        var _a, _b;
+        try {
+            const step = 1024 * 10;
+            let jsonStr = JSON.stringify(obj);
+            if (_wsArr == null) {
+                delete obj.encrypted;
+            }
+            if (jsonStr.length <= step) {
+                if (obj.encrypted == 1) {
+                    obj.action = str_encrypt(obj.action, parseKey(_wsArr));
+                    if (obj.data != null) {
+                        if (typeof obj.data == "object") {
+                            obj.data = JSON.stringify(obj.data);
+                        }
+                        if (typeof obj.data == "string") {
+                            obj.data = str_encrypt(obj.data, parseKey(_wsArr));
+                        }
+                    }
+                    jsonStr = JSON.stringify(obj);
+                }
+                else if (obj.encrypted == 2) {
+                    obj.action = pako.deflate(obj.action, { to: 'string' });
+                    if (obj.data != null) {
+                        if (typeof obj.data == "object") {
+                            obj.data = JSON.stringify(obj.data);
+                        }
+                        if (typeof obj.data == "string") {
+                            obj.data = pako.deflate(obj.data, { to: 'string' });
+                        }
+                    }
+                    jsonStr = JSON.stringify(obj);
+                }
+                (_a = this.m_socket) === null || _a === void 0 ? void 0 : _a.send(jsonStr);
+            }
+            else {
+                if (obj.encrypted == 2) {
+                    jsonStr = pako.deflate(jsonStr, { to: 'string' });
+                }
+                else {
+                    delete obj.encrypted;
+                }
+                let idx = 0;
+                const total = Math.ceil(jsonStr.length / step);
+                const uniqueId = _getAccId();
+                while (idx < total) {
+                    const subStr = jsonStr.substring(idx * step, Math.min((idx + 1) * step, jsonStr.length));
+                    const subObj = {
+                        isSplit: true, idx: idx + 1, total: total, data: subStr, uniqueId: uniqueId, encrypted: obj.encrypted
+                    };
+                    (_b = this.m_socket) === null || _b === void 0 ? void 0 : _b.send(JSON.stringify(subObj));
+                    idx += 1;
+                }
+            }
+        }
+        catch (e) {
+            console.log("[cc_debuger_realtime] error", e);
+        }
+    }
+    _onMessage(msg) {
+        if (msg.encrypted == 1) {
+            msg.action = str_decrypt(msg.action, parseKey(_wsArr));
+            if (typeof msg.data == "string") {
+                msg.data = str_decrypt(msg.data, parseKey(_wsArr));
+                let newData = null;
+                try {
+                    newData = JSON.parse(msg.data);
+                    msg.data = newData;
+                }
+                catch (e) {
+                }
+            }
+        }
+        else if (msg.encrypted == 2) {
+            msg.action = pako.inflate(msg.action, { to: 'string' });
+            if (typeof msg.data == "string") {
+                msg.data = pako.inflate(msg.data, { to: 'string' });
+                try {
+                    let newData = JSON.parse(msg.data);
+                    msg.data = newData;
+                }
+                catch (e) {
+                }
+            }
+        }
+        // log("cc_onMesage",JSON.stringify(msg))
+        if (msg["isSplit"]) {
+            const obj = msg;
+            this._spiltMsg[obj.uniqueId] = this._spiltMsg[obj.uniqueId] || [];
+            this._spiltMsg[obj.uniqueId].push(obj);
+            if (this._spiltMsg[obj.uniqueId].length === obj.total) {
+                this._spiltMsg[obj.uniqueId].sort((a, b) => {
+                    return a.idx - b.idx;
+                });
+                let str = "";
+                for (let item of this._spiltMsg[obj.uniqueId]) {
+                    str += item.data;
+                }
+                delete this._spiltMsg[obj.uniqueId];
+                msg = JSON.parse(str);
+            }
+            else {
+                return;
+            }
+        }
+        const responseData = { type: 'response', action: msg.action, data: null, requestId: msg.requestId };
+        if (msg.type === 'request') { //表示是从插件发来的请求，需要进行回复
+            let data = null;
+            if (msg.action == "eval_js") {
+                evalJsStr(msg.data).then((ret) => {
+                    responseData.data = ret;
+                    this._send(responseData);
+                });
+                return;
+            }
+            if (msg.action === 'getRefCount') {
+                const uuid = msg.data.uuid;
+                data = _data.getRefCount(uuid);
+            }
+            else if (msg.action === 'getNodeInfo') {
+                const uuid = msg.data.uuid;
+                data = _data.getNodeInfo(uuid);
+                _data.setCurSelectNode(uuid);
+                _data._curNodeInfoMap = data;
+            }
+            else if (msg.action === 'cancelCurSelectNode') {
+                data = _data.cancelCurSelectNode();
+            }
+            else if (msg.action === 'getSpriteFrameInfo') {
+                const uuid = msg.data.uuid;
+                _data.getSpriteFrameInfo(uuid).then((ret) => {
+                    responseData.data = ret;
+                    responseData.encrypted = 1;
+                    this._send(responseData);
+                });
+                return;
+            }
+            else if (msg.action === 'reqModifyNodeInfo') {
+                data = _data.doModifyNodeInfo(msg.data);
+            }
+            else if (msg.action === 'fiterCompsWithType') {
+                data = _data.fiterCompsWithType(msg.data);
+            }
+            else if (msg.action === 'getNodeOfComp') {
+                const uuid = msg.data.uuid;
+                data = _data.getNodeOfComp(uuid);
+            }
+            else if (msg.action === 'getGameEnv') {
+                data = getGameEnv();
+            }
+            else if (msg.action === 'requestShowFPS') {
+                let bool = msg.data;
+                if (bool == "true" || bool === true) {
+                    _cc_().profiler.showStats();
+                }
+                else if (bool == "false" || bool === false) {
+                    _cc_().profiler.hideStats();
+                }
+                data = _cc_().profiler.isShowingStats();
+            }
+            else if (msg.action === 'requestDynamicAtlasEnable') {
+                let bool = msg.data;
+                if (bool == "true" || bool === true) {
+                    _cc_().macro.CLEANUP_IMAGE_CACHE = false;
+                    _cc_().DynamicAtlasManager.instance.enabled = true;
+                }
+                else if (bool == "false" || bool === false) {
+                    _cc_().DynamicAtlasManager.instance.enabled = false;
+                }
+                data = _cc_().DynamicAtlasManager.instance.enabled;
+            }
+            else if (msg.action === 'getDynamicAtlasCount') {
+                const index = msg.data;
+                data = _cc_().DynamicAtlasManager.instance.atlasCount;
+            }
+            else if (msg.action === 'getDynamicTextureData') {
+                const index = msg.data;
+                data = getDynamicTextureData(index);
+            }
+            else if (msg.action === 'getTextureData') {
+                const uuid = msg.data;
+                const _tex = _cc_().assetManager.assets.get(uuid);
+                data = getTextureData(_tex);
+            }
+            else if (msg.action === 'getWitablePathFilesInfo') {
+                data = getWitablePathFilesInfo();
+            }
+            else if (msg.action === 'getWritableFileData') {
+                const filePath = msg.data;
+                data = getWritableFileData(filePath);
+            }
+            else if (msg.action === 'getAssetUsageInScene') {
+                const uuid = msg.data;
+                data = _data.getAssetUsageInScene(uuid);
+            }
+            else if (msg.action === 'getAssetUsageInOtherAsset') {
+                const uuid = msg.data;
+                data = _data.getAssetUsageInOtherAsset(uuid);
+            }
+            else if (msg.action === 'getDependsOfAsset') {
+                const uuid = msg.data;
+                data = _data.getDependsOfAsset(uuid);
+            }
+            else if (msg.action === 'getRecursiveDependsOfAsset') {
+                const uuid = msg.data;
+                data = _data.getRecursiveDependsOfAsset(uuid);
+            }
+            else if (msg.action === 'getDependsOfNode') {
+                const uuid = msg.data;
+                data = _data.getDependsOfNode(uuid);
+            }
+            else if (msg.action === 'getRecursiveDependsOfNode') {
+                const uuid = msg.data;
+                data = _data.getRecursiveDependsOfNode(uuid);
+            }
+            else if (msg.action === 'updateNodeAndAssetInfo') {
+                data = this.updateNodeAndAssetInfo(true);
+            }
+            else if (msg.action === 'setLoopInterval') {
+                data = this._loopFrameTime;
+                let time = msg.data;
+                do {
+                    if (typeof time != "number") {
+                        break;
+                    }
+                    if (time == 0) {
+                        this._bAutoFreshNodeTree = false;
+                        break;
+                    }
+                    this._bAutoFreshNodeTree = true;
+                    this._loopInterval = time;
+                } while (0);
+            }
+            else if (msg.action === 'getLoopFrameTime') {
+                data = this._loopFrameTime;
+            }
+            else if (msg.action === 'callFuncOfComp') {
+                const { uuid, funcName, args } = msg.data;
+                data = _data.callFuncOfComp(uuid, funcName, args);
+            }
+            else if (msg.action === 'showBorderOfNode') {
+                const uuid = msg.data;
+                let code = _data.showBorderOfNode(uuid);
+                if (typeof code == "number") {
+                    data = code;
+                }
+            }
+            else if (msg.action === 'getSearchPaths') {
+                data = _data.getSearchPaths();
+            }
+            else if (msg.action === 'setIsPickMode') {
+                let bool = msg.data;
+                if (bool == "true" || bool === true) {
+                    _data.setIsPickMode(true);
+                }
+                else if (bool == "false" || bool === false) {
+                    _data.setIsPickMode(false);
+                }
+                data = "";
+            }
+            else if (msg.action === 'get.cc.Layers.Enum') {
+                data = _cc_().Layers.Enum;
+            }
+            else if (msg.action === 'destoryNode') {
+                const uuid = msg.data;
+                data = _data.destoryNode(uuid);
+            }
+            else if (msg.action === 'duplicateNode') {
+                const uuid = msg.data;
+                data = _data.duplicateNode(uuid);
+            }
+            responseData.data = data;
+            responseData.encrypted = 1;
+            this._send(responseData);
+        }
+        else if (msg.type === "push") {
+            if (msg.action === 'markActive') {
+                this.m_isActive = msg.data.isActive;
+                _wsArr = msg.data.wsArr;
+                if (!this.m_isActive) {
+                    _data.clear();
+                }
+                else {
+                    _data.checkPushAssetInfo();
+                    _runtimeSocket.sendPush_checkUpdateSceneTree();
+                }
+                // console.log("this.m_isActive",this.m_isActive)
+            }
+        }
+    }
+    _onClose(event) {
+        // console.log('[Runtime] Disconnected from server');
+        _data.clear();
+        this.m_isActive = false;
+        const interval = 5; //5秒重试
+        setTimeout(() => {
+            if (this.m_socket != null) {
+                this.m_socket.close();
+                this.m_socket = null;
+            }
+            this.initSocket(this.m_url);
+        }, interval * 1000);
+    }
+    _onError(error) {
+        // console.error('[Runtime] WebSocket error:', error);
+    }
+    loopWithInterval(dt) {
+        if (!this._checkIsConnect()) {
+            return;
+        }
+        if (!this.m_isActive) {
+            return;
+        }
+        if (dt != null) {
+            this._profileTimeAcc += dt;
+            if (this._profileTimeAcc >= 1000) {
+                this._profileTimeAcc = 0;
+                this.sendPush_profile();
+            }
+            if (this._bAutoFreshNodeTree) {
+                this._loopTimeAcc += dt;
+                if (this._loopInterval > 999 && this._loopTimeAcc >= this._loopInterval) {
+                    this._loopTimeAcc = 0;
+                    this.updateNodeAndAssetInfo();
+                }
+            }
+        }
+    }
+    updateNodeAndAssetInfo(bForce = false) {
+        let now = Date.now();
+        if (now - this._lastUpdateTime < this._loopInterval) {
+            return;
+        }
+        this.sendPush_checkUpdateSceneTree(bForce);
+        _data.checkPushAssetInfo();
+        this._lastUpdateTime = Date.now();
+        this._loopFrameTime = this._lastUpdateTime - now;
+        if (this._loopFrameTime > 0) {
+            let g = 0;
+        }
+        this.sendPush_loopFrameTime(this._loopFrameTime);
+        return this._loopFrameTime;
+    }
+    isReadyForPush() {
+        if (!this._checkIsConnect()) {
+            return false;
+        }
+        if (!this.m_isActive) {
+            return false;
+        }
+        return true;
+    }
+    _sendPush(action, data) {
+        if (!this.isReadyForPush()) {
+            return false;
+        }
+        const obj = { type: 'push', action, data };
+        obj.encrypted = 2;
+        this._send(obj);
+        return true;
+    }
+    sendPush_loopFrameTime(time) {
+        return this._sendPush('loopFrameTime', time);
+    }
+    sendPush_checkUpdateSceneTree(bForce = false) {
+        if (!this.isReadyForPush()) {
+            return false;
+        }
+        const obj = _data.searchNodeTree();
+        if (bForce) {
+            return this._sendPush('updateSceneTree', { newScene: _data.m_sceneTree });
+        }
+        else if (obj.newScene != null || obj.added.length > 0 || obj.deleted.length > 0 || obj.modified.length > 0) {
+            return this._sendPush('updateSceneTree', obj);
+        }
+    }
+    sendPush_sceneLaunched() {
+        return this._sendPush('sceneLaunched', "");
+    }
+    sendPush_runtimeLog(obj) {
+        return this._sendPush('onRuntimeLog', obj);
+    }
+    /**资源引用计数改变 */
+    sendPush_resRefCountChange(obj) {
+        return this._sendPush('onAssetRefCountChanged', obj);
+    }
+    /**资源添加进 _cc_().assetManager.assets */
+    sendPush_resAdded(obj) {
+        return this._sendPush('onAssetAdded', obj);
+    }
+    /**资源从 _cc_().assetManager.assets 移出 */
+    sendPush_resRemoveed(obj) {
+        return this._sendPush('onAssetRemoved', obj);
+    }
+    /**发送drawcall等信息 */
+    sendPush_profile() {
+        if (!_cc_().profiler.isShowingStats()) {
+            return;
+        }
+        let stats = _cc_().profiler._stats;
+        if (stats) {
+            const keys = [
+                'fps',
+                'draws',
+                'frame',
+                'instances',
+                'tricount',
+                'logic',
+                'physics',
+                'render',
+                'textureMemory',
+                'bufferMemory',
+            ];
+            const arr = [];
+            keys.forEach(key => {
+                const data = stats[key];
+                let value = null;
+                if (data.isInteger) {
+                    value = data.counter._value | 0;
+                }
+                else {
+                    value = data.counter._value.toFixed(2);
+                }
+                arr.push({ desc: data.desc, value });
+            });
+            return this._sendPush('profileInfoUpdate', arr);
+        }
+    }
+    /**pick模式下，鼠标选中节点 */
+    sendPush_pickNode(uuid) {
+        return this._sendPush('onMousePickNode', uuid);
+    }
+    sendPush_updateCurSelNodeInfo(diff) {
+        return this._sendPush('onUpdateCurSelNodeInfo', diff);
+    }
+}
+class _RuntimeData {
+    constructor() {
+        /**已经销毁的资源 */
+        this.m_hasDestroyedResArr = [];
+        /**距离上次同步以来，有变化的资源 */
+        this.m_waitForPushResArr = [];
+        /**当前节点数 */
+        this.m_sceneTree = null;
+        /**当前场景 */
+        this.m_curSceneName = "";
+        /**记录当前节点的uuid映射 */
+        this.m_nodeUuidMap = {};
+        /**记录当前所有组件实例的uuid映射 */
+        this.m_compUuidMap = {};
+        /**记录已经发送过的组件属性（用于inspectorUI显示），避免重复发送 */
+        this.m_hasSendCompAttrsMap = {};
+        this._curSelectNodeUuid = null;
+        this._timeId_updateCurNode = 0;
+        this._curNodeInfoMap = {};
+        this._globalNode = null;
+        this._touchNode = null;
+        this._timeIdAutoPick = 0;
+        this.m_isPickMode = false;
+        this._allNodeRectInfo = [];
+        this._lastHoverNodeUuid = null;
+        this._lastGraphics = null;
+        _cc_().director.on(_cc_().Director.EVENT_AFTER_SCENE_LAUNCH, this._onSceneChange, this);
+    }
+    doModifyNodeInfo(obj /**ChangedNodeInfo */) {
+        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k;
+        const _node = this.m_nodeUuidMap[obj.uuid];
+        if (_node == null) {
+            return _cc_().js.formatStr("[ERROR] node is error,uuid:%s", obj.uuid);
+        }
+        try {
+            let map /**NodeInfo */ = obj.nodeChange;
+            if (map) {
+                if (map.position != null) {
+                    _node.setPosition((_a = map.position.x) !== null && _a !== void 0 ? _a : _node.position.x, (_b = map.position.y) !== null && _b !== void 0 ? _b : _node.position.y, (_c = map.position.z) !== null && _c !== void 0 ? _c : _node.position.z);
+                }
+                if (map.rotation != null) {
+                    _node.setRotation((_d = map.rotation.x) !== null && _d !== void 0 ? _d : _node.rotation.x, (_e = map.rotation.y) !== null && _e !== void 0 ? _e : _node.rotation.y, (_f = map.rotation.z) !== null && _f !== void 0 ? _f : _node.rotation.z, (_g = map.rotation.w) !== null && _g !== void 0 ? _g : _node.rotation.w);
+                }
+                if (map.scale != null) {
+                    _node.setScale((_h = map.scale.x) !== null && _h !== void 0 ? _h : _node.scale.x, (_j = map.scale.y) !== null && _j !== void 0 ? _j : _node.scale.y, (_k = map.scale.z) !== null && _k !== void 0 ? _k : _node.scale.z);
+                }
+                if (map.active != null) {
+                    _node.active = map.active;
+                    _runtimeSocket === null || _runtimeSocket === void 0 ? void 0 : _runtimeSocket.sendPush_checkUpdateSceneTree();
+                }
+                if (map.layer != null) {
+                    _node.layer = map.layer;
+                }
+                if (map.name != null) {
+                    _node.name = map.name;
+                    _runtimeSocket === null || _runtimeSocket === void 0 ? void 0 : _runtimeSocket.sendPush_checkUpdateSceneTree();
+                }
+            }
+        }
+        catch (e) {
+            return e.message;
+        }
+        //@ts-ignore
+        const components = _node._components;
+        try {
+            for (let compUuid in obj.compChanges) {
+                const _comp = components.find(item => item.uuid == compUuid);
+                if (_comp == null) {
+                    continue;
+                }
+                let map = obj.compChanges[compUuid];
+                this.applyCompChange(_comp, map);
+            }
+        }
+        catch (e) {
+            return e.message;
+        }
+        return "";
+    }
+    async applyCompChange(_comp /**import("cc").Component */, map) {
+        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s, _u, _v;
+        if (_comp instanceof _cc_().Animation) {
+            if (map["animation"]) {
+                _comp.play(map["animation"]);
+                return;
+            }
+        }
+        for (let key in map) {
+            const oldV = _comp[key];
+            let newV = map[key];
+            if (newV && typeof newV == "string") { //如果是字符串，先检查一下是否是uuid
+                if (this.m_compUuidMap[newV] != null) {
+                    _comp[key] = this.m_compUuidMap[newV];
+                    continue;
+                }
+                else if (this.m_nodeUuidMap[newV] != null) {
+                    _comp[key] = this.m_nodeUuidMap[newV];
+                    continue;
+                }
+                else {
+                    //0bbc4349-d0e6-4676-b353-6a0d4108b6dd
+                    if (newV[8] == "-" && newV[13] == "-" && newV[18] == "-" && newV[23] == "-") {
+                        let asset = await new Promise((resolve) => {
+                            _cc_().assetManager.loadAny({ uuid: newV }, (err, asset) => {
+                                resolve(asset);
+                            });
+                        });
+                        if (asset) {
+                            _comp[key] = asset;
+                            continue;
+                        }
+                    }
+                }
+            }
+            if (oldV == null) {
+                _comp[key] = newV;
+            }
+            else if (typeof oldV === "object") {
+                let _newV = null;
+                if (oldV instanceof _cc_().Node || oldV instanceof _cc_().Asset || oldV instanceof _cc_().Component) {
+                    _comp[key] = null; //不为null的情况，上面已经检查过了
+                    continue;
+                }
+                else {
+                    if (oldV instanceof _cc_().Color) {
+                        _newV = _cc_().color().fromHEX(newV);
+                    }
+                    else if (oldV instanceof _cc_().Size) {
+                        _newV = new (_cc_()).Size((_a = newV.width) !== null && _a !== void 0 ? _a : oldV.width, (_b = newV.height) !== null && _b !== void 0 ? _b : oldV.height);
+                    }
+                    else if (oldV instanceof _cc_().Vec2) {
+                        _newV = new (_cc_()).Vec2((_c = newV.x) !== null && _c !== void 0 ? _c : oldV.x, (_d = newV.y) !== null && _d !== void 0 ? _d : oldV.y);
+                    }
+                    else if (oldV instanceof _cc_().Vec3) {
+                        _newV = new (_cc_()).Vec3((_e = newV.x) !== null && _e !== void 0 ? _e : oldV.x, (_f = newV.y) !== null && _f !== void 0 ? _f : oldV.y, (_g = newV.z) !== null && _g !== void 0 ? _g : oldV.z);
+                    }
+                    else if (oldV instanceof _cc_().Vec4) {
+                        _newV = new (_cc_()).Vec4((_h = newV.x) !== null && _h !== void 0 ? _h : oldV.x, (_j = newV.y) !== null && _j !== void 0 ? _j : oldV.y, (_k = newV.z) !== null && _k !== void 0 ? _k : oldV.z, (_l = newV.w) !== null && _l !== void 0 ? _l : oldV.w);
+                    }
+                    else if (oldV instanceof _cc_().Quat) {
+                        _newV = new (_cc_()).Quat((_m = newV.x) !== null && _m !== void 0 ? _m : oldV.x, (_o = newV.y) !== null && _o !== void 0 ? _o : oldV.y, (_p = newV.z) !== null && _p !== void 0 ? _p : oldV.z, (_q = newV.w) !== null && _q !== void 0 ? _q : oldV.w);
+                    }
+                    else if (oldV instanceof _cc_().Rect) {
+                        _newV = new (_cc_()).Rect((_r = newV.x) !== null && _r !== void 0 ? _r : oldV.x, (_s = newV.y) !== null && _s !== void 0 ? _s : oldV.y, (_u = newV.width) !== null && _u !== void 0 ? _u : oldV.width, (_v = newV.height) !== null && _v !== void 0 ? _v : oldV.height);
+                    }
+                }
+                if (_newV != null) {
+                    _comp[key] = _newV;
+                    continue;
+                }
+            }
+            if (typeof newV === "object") {
+                this.applyCompChange(oldV, newV);
+            }
+            else {
+                _comp[key] = newV;
+            }
+        }
+    }
+    fiterCompsWithType(typeStr /**CompType */) {
+        const ret = [];
+        for (let uuid in this.m_compUuidMap) {
+            const comp = this.m_compUuidMap[uuid];
+            if (comp["__proto__"]["__classname__"] === typeStr) {
+                ret.push({ uuid, nodeUuid: comp.node.uuid });
+            }
+        }
+        return ret;
+    }
+    getNodeOfComp(uuid) {
+        const comp = this.m_compUuidMap[uuid];
+        if (comp) {
+            return { name: comp.node.name, uuid: comp.node.uuid };
+        }
+        return { name: "", uuid: "" };
+    }
+    clear() {
+        this.m_hasDestroyedResArr = [];
+        this.initAssetForPush();
+        this.m_sceneTree = null;
+        this.m_nodeUuidMap = {};
+        this.m_compUuidMap = {};
+        this.m_curSceneName = "";
+        this.m_hasSendCompAttrsMap = {};
+        this.setIsPickMode(false);
+        this._curSelectNodeUuid = null;
+        clearInterval(this._timeId_updateCurNode);
+        this._timeId_updateCurNode = 0;
+    }
+    /**从assetManager.assets初始化需要同步的资源 */
+    initAssetForPush() {
+        this.m_waitForPushResArr = [];
+        _cc_().assetManager.assets.forEach((asset, uuid) => {
+            this.m_waitForPushResArr.push(uuid);
+        });
+    }
+    _onSceneChange(sceneNode /**import("cc").Scene */) {
+        this.m_curSceneName = sceneNode.name;
+    }
+    /**
+     * 获取资源的使用情况,-1表示资源没有被加载
+     * @param uuid
+     */
+    getRefCount(uuid) {
+        const asset = _cc_().assetManager.assets.get(uuid);
+        if (asset) {
+            return asset.refCount;
+        }
+        return -1;
+    }
+    _checkRecordResMemInfo(uuid, asset /**import("cc").Asset */) {
+        // if(uuid.length==9||uuid.length==15){
+        //     //@ts-ignore
+        //     const _name = asset?.__proto__?.__classname__
+        // }
+        if (uuid == null) {
+            return;
+        }
+        if (this.m_waitForPushResArr.indexOf(uuid) < 0) {
+            this.m_waitForPushResArr.push(uuid);
+        }
+    }
+    /**
+     * 资源被添加进 _cc_().assetManager.assets
+     */
+    onAsset_added(key, asset /**import("cc").Asset */) {
+        this._checkRecordResMemInfo(key, asset);
+        // this.checkPushAssetInfo()
+    }
+    /**
+     * 资源被添加进 _cc_().assetManager.assets
+     */
+    onAsset_removed(key) {
+        this.m_hasDestroyedResArr.push(key);
+    }
+    checkPushAssetInfo() {
+        var _a, _b, _c, _d, _e, _f, _g, _h;
+        if (!_runtimeSocket.isReadyForPush()) {
+            return;
+        }
+        if (((_a = this.m_waitForPushResArr) === null || _a === void 0 ? void 0 : _a.length) > 0) {
+            let arr = [];
+            let fails = [];
+            for (let uuid of this.m_waitForPushResArr) {
+                const asset = _cc_().assetManager.assets.get(uuid);
+                if (asset == null) {
+                    fails.push(uuid);
+                    continue;
+                }
+                //@ts-ignore
+                const classname = asset.__proto__.__classname__;
+                const obj /**ResMemInfo */ = {
+                    uuid,
+                    classname,
+                    refCount: asset.refCount,
+                    memory: _getResMemory(asset),
+                };
+                if (asset instanceof _cc_().ImageAsset) {
+                    obj.width = asset.width;
+                    obj.height = asset.height;
+                    if (uuid.length == 9) {
+                        obj.isAutoPackImg = true;
+                        obj.imgSrc = _getImageAssetUrl(asset);
+                        if (_cc_().sys.isBrowser) {
+                            obj.isUrlImg = true;
+                        }
+                        else if (_cc_().sys.isNative) {
+                            obj.isNativeImg = true;
+                        }
+                    }
+                }
+                else if (asset instanceof _cc_().Texture2D) {
+                    obj.width = asset.width;
+                    obj.height = asset.height;
+                    obj.imageUuid = (_c = (_b = asset.image) === null || _b === void 0 ? void 0 : _b.uuid) !== null && _c !== void 0 ? _c : (_d = asset.image) === null || _d === void 0 ? void 0 : _d._uuid;
+                    if (uuid.length == 15) {
+                        //@ts-ignore
+                        obj.imgSrc = _getImageAssetUrl(asset.image);
+                        obj.isAutoPackImg = true;
+                        if (_cc_().sys.isBrowser) {
+                            obj.isUrlImg = true;
+                        }
+                        else if (_cc_().sys.isNative) {
+                            obj.isNativeImg = true;
+                        }
+                    }
+                }
+                else if (asset instanceof _cc_().SpriteFrame) {
+                    if (asset.texture) {
+                        obj.width = asset.originalSize.width;
+                        obj.height = asset.originalSize.height;
+                        obj.textureUuid = (_f = (_e = asset.texture) === null || _e === void 0 ? void 0 : _e.uuid) !== null && _f !== void 0 ? _f : (_g = asset.texture) === null || _g === void 0 ? void 0 : _g._uuid;
+                        if (((_h = obj.textureUuid) === null || _h === void 0 ? void 0 : _h.length) == 15) {
+                            obj.isAutoPackImg = true;
+                        }
+                    }
+                }
+                arr.push(obj);
+            }
+            if (_runtimeSocket.sendPush_resAdded(arr)) {
+                this.m_waitForPushResArr = fails;
+            }
+        }
+    }
+    onRes_addRef(asset /**import("cc").Asset */) {
+        var _a;
+        this._checkRecordResMemInfo((_a = asset.uuid) !== null && _a !== void 0 ? _a : asset._uuid, asset);
+        // this.checkPushAssetInfo()
+    }
+    onRes_decRef(asset /**import("cc").Asset */) {
+        var _a;
+        this._checkRecordResMemInfo((_a = asset.uuid) !== null && _a !== void 0 ? _a : asset._uuid, asset);
+        // this.checkPushAssetInfo()
+    }
+    onRes_destroy(asset /**import("cc").Asset */) {
+    }
+    /**
+     * 获取指定资源正在被多少个节点的相关组件使用
+     * @param uuid 要检查的资源 (例如 _cc_().SpriteFrame)
+     * @returns 所有引用该资源的节点和组件的uuid
+     */
+    getAssetUsageInScene(uuid) {
+        const _asset = _cc_().assetManager.assets.get(uuid);
+        if (_asset == null) {
+            console.error(`_cc_().Asset with UUID ${uuid} not found.`);
+            return {};
+        }
+        const scene = _cc_().director.getScene(); // 获取当前场景
+        if (!scene) {
+            console.error('No active scene found.');
+            return {};
+        }
+        const ret = {}; //key为node.uuid，值为 comps.uuid[]
+        // 遍历场景中的所有节点
+        const preFunc = (node /**import("cc").Node */) => {
+            let uuidsOfComp = [];
+            const _comps = node.components;
+            for (let comp of _comps) {
+                if (comp instanceof _cc_().UIRenderer) {
+                    if (comp.customMaterial == _asset) {
+                        uuidsOfComp.push(comp.uuid);
+                    }
+                }
+                if (comp instanceof _cc_().Sprite) {
+                    if (comp.spriteFrame == _asset || comp.spriteAtlas == _asset) {
+                        uuidsOfComp.push(comp.uuid);
+                    }
+                }
+                else if (comp instanceof _cc_().Label) {
+                    if (comp.font == _asset) {
+                        uuidsOfComp.push(comp.uuid);
+                    }
+                }
+                else if (comp instanceof _cc_().EditBox) {
+                    if (comp.backgroundImage == _asset) {
+                        uuidsOfComp.push(comp.uuid);
+                    }
+                }
+                else if (comp instanceof _cc_().Mask) {
+                    if (comp.spriteFrame == _asset) {
+                        uuidsOfComp.push(comp.uuid);
+                    }
+                }
+                else if (comp instanceof _cc_().Camera) {
+                    if (comp.targetTexture == _asset) {
+                        uuidsOfComp.push(comp.uuid);
+                    }
+                }
+                else if (comp instanceof _cc_().ParticleSystem2D) {
+                    if (comp.file == _asset || comp.spriteFrame == _asset) {
+                        uuidsOfComp.push(comp.uuid);
+                    }
+                }
+                else if (comp instanceof _cc_().sp.Skeleton) {
+                    if (comp.skeletonData == _asset) {
+                        uuidsOfComp.push(comp.uuid);
+                    }
+                }
+                else if (comp instanceof _cc_().dragonBones.ArmatureDisplay) {
+                    if (comp.dragonAsset == _asset || comp.dragonAtlasAsset == _asset) {
+                        uuidsOfComp.push(comp.uuid);
+                    }
+                }
+                else if (comp instanceof _cc_().RichText) {
+                    if (comp.imageAtlas == _asset) {
+                        uuidsOfComp.push(comp.uuid);
+                    }
+                }
+                else if (comp instanceof _cc_().TiledMap) {
+                    if (comp.tmxAsset == _asset) {
+                        uuidsOfComp.push(comp.uuid);
+                    }
+                }
+                else if (comp instanceof _cc_().VideoPlayer) {
+                    if (comp.clip == _asset) {
+                        uuidsOfComp.push(comp.uuid);
+                    }
+                }
+                else if (comp instanceof _cc_().AudioSource) {
+                    if (comp.clip == _asset) {
+                        uuidsOfComp.push(comp.uuid);
+                    }
+                }
+                else {
+                    //这些是确定不会引用任何资源的组件，直接跳过
+                    if (comp instanceof _cc_().Widget || comp instanceof _cc_().Layout || comp instanceof _cc_().UIOpacity || comp instanceof _cc_().Button
+                        || comp instanceof _cc_().PageView || comp instanceof _cc_().ScrollView || comp instanceof _cc_().ProgressBar || comp instanceof _cc_().Graphics
+                        || comp instanceof _cc_().ScrollBar || comp instanceof _cc_().Slider || comp instanceof _cc_().ToggleContainer || comp instanceof _cc_().Toggle
+                        || comp instanceof _cc_().ViewGroup || comp instanceof _cc_().SafeArea || comp instanceof _cc_().BlockInputEvents || comp instanceof _cc_().LabelOutline
+                        || comp instanceof _cc_().LabelShadow || comp instanceof _cc_().LabelShadow) {
+                        continue;
+                    }
+                    else {
+                        const _keys = Object.keys(comp);
+                        for (let k of _keys) {
+                            if (typeof comp[k] == "object" && comp[k] === _asset) {
+                                uuidsOfComp.push(comp.uuid);
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            if (uuidsOfComp.length > 0) {
+                ret[node.uuid] = uuidsOfComp;
+            }
+        };
+        scene.walk(preFunc);
+        return ret;
+    }
+    /**
+     * 获取指定资源正在被多少个其他资源引用
+     * @param uuid 要检查的资源 (例如 _cc_().SpriteFrame)
+     * @returns 所有引用该资源的其他资源的uuid
+     */
+    getAssetUsageInOtherAsset(uuid) {
+        let ret = [];
+        _cc_().assetManager.assets.forEach((asset, key) => {
+            const deps = _cc_().assetManager.dependUtil.getDeps(key);
+            if (deps.indexOf(uuid) >= 0) {
+                ret.push(key);
+            }
+        });
+        return ret;
+    }
+    /**
+     * 获取某个资源直接依赖的资源列表
+     */
+    getDependsOfAsset(uuid) {
+        const deps = _cc_().assetManager.dependUtil.getDeps(uuid);
+        return deps;
+    }
+    /**
+     * 获取某个资源递归依赖的资源列表
+     */
+    getRecursiveDependsOfAsset(uuid) {
+        const deps = _cc_().assetManager.dependUtil.getDepsRecursively(uuid);
+        return deps;
+    }
+    /**
+     * 获取某个节点直接依赖的资源列表
+     * @param uuid
+     * @returns
+     */
+    getDependsOfNode(uuid) {
+        const _node = this.m_nodeUuidMap[uuid];
+        const _comps = _node.components;
+        const _uuids = [];
+        for (let comp of _comps) {
+            if (comp instanceof _cc_().UIRenderer) {
+                if (comp.customMaterial) {
+                    _uuids.push(comp.customMaterial.uuid);
+                }
+            }
+            if (comp instanceof _cc_().Sprite) {
+                if (comp.spriteAtlas) {
+                    _uuids.push(comp.spriteAtlas.uuid);
+                }
+                if (comp.spriteFrame) {
+                    _uuids.push(comp.spriteFrame.uuid);
+                }
+            }
+            else if (comp instanceof _cc_().Label) {
+                if (comp.font) {
+                    _uuids.push(comp.font.uuid);
+                }
+            }
+            else if (comp instanceof _cc_().EditBox) {
+                if (comp.backgroundImage) {
+                    _uuids.push(comp.backgroundImage.uuid);
+                }
+            }
+            else if (comp instanceof _cc_().Mask) {
+                if (comp.spriteFrame) {
+                    _uuids.push(comp.spriteFrame.uuid);
+                }
+            }
+            else if (comp instanceof _cc_().Camera) {
+                if (comp.targetTexture) {
+                    _uuids.push(comp.targetTexture.uuid);
+                }
+            }
+            else if (comp instanceof _cc_().ParticleSystem2D) {
+                if (comp.file) {
+                    _uuids.push(comp.file.uuid);
+                }
+                if (comp.spriteFrame) {
+                    _uuids.push(comp.spriteFrame.uuid);
+                }
+            }
+            else if (comp instanceof _cc_().sp.Skeleton) {
+                if (comp.skeletonData) {
+                    _uuids.push(comp.skeletonData.uuid);
+                }
+            }
+            else if (comp instanceof _cc_().dragonBones.ArmatureDisplay) {
+                if (comp.dragonAsset) {
+                    _uuids.push(comp.dragonAsset.uuid);
+                }
+                if (comp.dragonAtlasAsset) {
+                    _uuids.push(comp.dragonAtlasAsset.uuid);
+                }
+            }
+            else if (comp instanceof _cc_().RichText) {
+                if (comp.imageAtlas) {
+                    _uuids.push(comp.imageAtlas.uuid);
+                }
+            }
+            else if (comp instanceof _cc_().TiledMap) {
+                if (comp.tmxAsset) {
+                    _uuids.push(comp.tmxAsset.uuid);
+                }
+            }
+            else if (comp instanceof _cc_().VideoPlayer) {
+                if (comp.clip) {
+                    _uuids.push(comp.clip.uuid);
+                }
+            }
+            else if (comp instanceof _cc_().AudioSource) {
+                if (comp.clip) {
+                    _uuids.push(comp.clip.uuid);
+                }
+            }
+            else {
+                //这些是确定不会引用任何资源的组件，直接跳过
+                if (comp instanceof _cc_().Widget || comp instanceof _cc_().Layout || comp instanceof _cc_().UIOpacity || comp instanceof _cc_().Button
+                    || comp instanceof _cc_().PageView || comp instanceof _cc_().ScrollView || comp instanceof _cc_().ProgressBar || comp instanceof _cc_().Graphics
+                    || comp instanceof _cc_().ScrollBar || comp instanceof _cc_().Slider || comp instanceof _cc_().ToggleContainer || comp instanceof _cc_().Toggle
+                    || comp instanceof _cc_().ViewGroup || comp instanceof _cc_().SafeArea || comp instanceof _cc_().BlockInputEvents || comp instanceof _cc_().LabelOutline
+                    || comp instanceof _cc_().LabelShadow || comp instanceof _cc_().LabelShadow) {
+                    continue;
+                }
+                else {
+                    const _keys = Object.keys(comp);
+                    for (let k of _keys) {
+                        if (typeof comp[k] == "object" && comp[k] instanceof _cc_().Asset) {
+                            _uuids.push(comp[k].uuid);
+                        }
+                    }
+                }
+            }
+        }
+        return _uuids;
+    }
+    /**
+     * 获取某个节点递归依赖的资源列表
+     * @param uuid
+     * @returns
+     */
+    getRecursiveDependsOfNode(uuid) {
+        let ret = [];
+        const _node = this.m_nodeUuidMap[uuid];
+        ret.push(...this.getDependsOfNode(_node.uuid));
+        const preFunc = (node /**import("cc").Node */) => {
+            ret.push(...this.getDependsOfNode(node.uuid));
+        };
+        _node.walk(preFunc);
+        ret = Array.from(new Set(ret));
+        return ret;
+    }
+    /**
+     * 递归填充节点树
+     * @param treeObj
+     * @param children
+     * @param parentPath
+     */
+    _fillNodeTree(treeObj /**NodeTreeItem */, children, parentPath = '') {
+        var _a, _b, _c;
+        for (let i = 0; i < children.length; i++) {
+            const child = children[i];
+            const childPath = parentPath ? `${parentPath}/${child.name}` : child.name;
+            const childTree /**NodeTreeItem */ = {
+                name: child.name,
+                uuid: (_a = child === null || child === void 0 ? void 0 : child.uuid) !== null && _a !== void 0 ? _a : "",
+                childrenMap: {},
+                active: child.active,
+                activeInHierarchy: child.activeInHierarchy,
+                parentUuid: (_c = (_b = child.parent) === null || _b === void 0 ? void 0 : _b.uuid) !== null && _c !== void 0 ? _c : "",
+                path: childPath,
+                siblingIndex: child.getSiblingIndex(),
+            };
+            this.m_nodeUuidMap[child.uuid] = child;
+            //@ts-ignore
+            child._components.forEach((comp) => {
+                this.m_compUuidMap[comp.uuid] = comp;
+            });
+            this._fillNodeTree(childTree, child.children, childPath);
+            treeObj.childrenMap[childTree.uuid] = (childTree);
+        }
+    }
+    _compareNodeTrees(tree1 /**NodeTreeItem */, tree2 /**NodeTreeItem */) {
+        if (tree1.uuid !== tree2.uuid || tree1.name !== tree2.name ||
+            tree1.children.length !== tree2.children.length ||
+            tree1.activeInHierarchy !== tree2.activeInHierarchy) {
+            return false;
+        }
+        for (let i = 0; i < tree1.children.length; i++) {
+            if (!this._compareNodeTrees(tree1.children[i], tree2.children[i])) {
+                return false;
+            }
+        }
+        return true;
+    }
+    _diffNodeTrees(tree1 /**NodeTreeItem */, tree2 /**NodeTreeItem */) {
+        const added = [];
+        const modified = [];
+        const deleted = [];
+        const compareTrees = (node1, node2, parentUuid) => {
+            if (!node1 && !node2) {
+                return;
+            }
+            if (!node1 && node2) {
+                added.push({ ...node2, parentUuid });
+                return;
+            }
+            if (node1 && !node2) {
+                deleted.push(node1.uuid);
+                return;
+            }
+            const keys1 = Object.keys(node1.childrenMap);
+            const keys2 = Object.keys(node2.childrenMap);
+            for (let uuid of keys1) {
+                if (!keys2.includes(uuid)) {
+                    deleted.push(uuid);
+                }
+            }
+            for (let uuid of keys2) {
+                if (!keys1.includes(uuid)) {
+                    added.push({ ...node2.childrenMap[uuid], parentUuid: node2.uuid });
+                }
+                else {
+                    const child1 = node1.childrenMap[uuid];
+                    const child2 = node2.childrenMap[uuid];
+                    const changes = {};
+                    if (child1.name !== child2.name)
+                        changes.name = child2.name;
+                    if (child1.active !== child2.active)
+                        changes.active = child2.active;
+                    if (child1.siblingIndex !== child2.siblingIndex)
+                        changes.siblingIndex = child2.siblingIndex;
+                    if (Object.keys(changes).length > 0) {
+                        modified.push({ uuid: child2.uuid, changes });
+                    }
+                    compareTrees(child1, child2, node2.uuid);
+                }
+            }
+        };
+        compareTrees(tree1, tree2, '');
+        return { newScene: null, added, modified, deleted };
+    }
+    /**
+     * 搜索当前场景的节点树
+     * @returns 是否与上次搜索结果不同
+     */
+    searchNodeTree() {
+        var _a;
+        this.m_nodeUuidMap = {};
+        this.m_compUuidMap = {};
+        const lastSceneTree = this.m_sceneTree;
+        const sceneNode /**import("cc").Scene */ = _cc_().director.getScene();
+        this.m_sceneTree = {
+            name: sceneNode.name,
+            uuid: (_a = sceneNode === null || sceneNode === void 0 ? void 0 : sceneNode.uuid) !== null && _a !== void 0 ? _a : "",
+            active: true,
+            activeInHierarchy: true,
+            parentUuid: "",
+            path: "",
+            isSceneNode: true,
+            siblingIndex: 0,
+            childrenMap: {},
+        };
+        let _time1 = Date.now();
+        this._fillNodeTree(this.m_sceneTree, sceneNode.children);
+        let _time2 = Date.now();
+        this.m_nodeUuidMap[this.m_sceneTree.uuid] = sceneNode;
+        if (lastSceneTree === null || this.m_sceneTree.name !== lastSceneTree.name) {
+            return { newScene: this.m_sceneTree, added: [], modified: [], deleted: [] };
+        }
+        let _time3 = Date.now();
+        const ret = this._diffNodeTrees(lastSceneTree, this.m_sceneTree);
+        let _time4 = Date.now();
+        // console.log("fillNodeTree:",_time2-_time1,"diffNodeTrees:",_time4-_time3)
+        return ret;
+        // return !this._compareNodeTrees(lastSceneTree, this.m_sceneTree);
+    }
+    _getAllNodeRects(ret = null, treeObj = null, children = null, parentScaleX = 1, parentScaleY = 1) {
+        var _a, _b;
+        if (ret == null || treeObj == null) {
+            const sceneNode /**import("cc").Scene */ = _cc_().director.getScene();
+            treeObj = {
+                name: sceneNode.name,
+                uuid: (_a = sceneNode === null || sceneNode === void 0 ? void 0 : sceneNode.uuid) !== null && _a !== void 0 ? _a : "",
+                pt: sceneNode.getWorldPosition(),
+                anchorMargin: { left: 0, right: 0, top: 0, bottom: 0 },
+            };
+            children = sceneNode.children;
+            ret = [];
+        }
+        if (treeObj.isRendererNode) {
+            ret.push(treeObj);
+        }
+        for (let i = 0; i < children.length; i++) {
+            const child = children[i];
+            if (!child.activeInHierarchy || !child.active) {
+                continue;
+            }
+            if (child.getComponent(_cc_().UITransform) == null) {
+                continue;
+            }
+            if (child == this._globalNode) {
+                continue;
+            }
+            let isRendererNode = child.getComponent(_cc_().UIRenderer) != null;
+            const obj = {
+                name: child.name,
+                isRendererNode,
+                uuid: (_b = child === null || child === void 0 ? void 0 : child.uuid) !== null && _b !== void 0 ? _b : "",
+                pt: child.getWorldPosition(),
+                anchorMargin: _getNodeMarginOfAnchorPt(child),
+            };
+            this._getAllNodeRects(ret, obj, child.children, parentScaleX * child.scale.x, parentScaleY * child.scale.y);
+        }
+        return ret;
+    }
+    getNodeInfo(uuid) {
+        var _a;
+        const node = this.m_nodeUuidMap[uuid];
+        if (node == null || !_cc_().isValid(node)) {
+            return null;
+        }
+        const nodeInfo /**InspectorInfo_Node */ = {
+            uuid: (_a = node === null || node === void 0 ? void 0 : node.uuid) !== null && _a !== void 0 ? _a : "",
+            active: node.active,
+            name: node.name,
+            position: { x: Math.floor(node.position.x * 100) / 100, y: Math.floor(node.position.y * 100) / 100, z: Math.floor(node.position.z * 100) / 100 },
+            rotation: { x: Math.floor(node.rotation.x * 100) / 100, y: Math.floor(node.rotation.y * 100) / 100, z: Math.floor(node.rotation.z * 100) / 100 },
+            scale: { x: Math.floor(node.scale.x * 100) / 100, y: Math.floor(node.scale.y * 100) / 100, z: Math.floor(node.scale.z * 100) / 100 },
+            layer: node.layer,
+            components: this._getComponentsInfo(node)
+        };
+        return nodeInfo;
+    }
+    _onUpdateCurSelNode() {
+        const oldInfo = this._curNodeInfoMap;
+        const newInfo = this._curNodeInfoMap = this.getNodeInfo(this._curSelectNodeUuid);
+        const diff = deepCompare(newInfo, oldInfo);
+        if (diff != null) {
+            _runtimeSocket.sendPush_updateCurSelNodeInfo(diff);
+        }
+    }
+    setCurSelectNode(uuid) {
+        this._curSelectNodeUuid = uuid;
+        clearInterval(this._timeId_updateCurNode);
+        if (uuid) {
+            this._timeId_updateCurNode = setInterval(this._onUpdateCurSelNode.bind(this), 1000 / 20);
+        }
+    }
+    /**标记取消选中当前节点 */
+    cancelCurSelectNode() {
+        this._curSelectNodeUuid = null;
+        clearInterval(this._timeId_updateCurNode);
+        this._timeId_updateCurNode = 0;
+    }
+    /**获取资源的详情 */
+    async getSpriteFrameInfo(uuid) {
+        try {
+            let ret = {};
+            let asset = _cc_().assetManager.assets.get(uuid);
+            if (asset == null) {
+                asset = await new Promise((resolve) => {
+                    _cc_().assetManager.loadAny({ uuid: uuid }, (err, asset) => {
+                        resolve(asset);
+                    });
+                });
+                if (asset) {
+                    ret.bNotInUse = true;
+                }
+                else {
+                    ret.bIsNotFount = true;
+                }
+            }
+            if (!(asset instanceof _cc_().SpriteFrame)) {
+                ret.bNotFrame = true;
+            }
+            else {
+                if (_cc_().DynamicAtlasManager.instance.enabled) {
+                    const _atlases = _cc_().DynamicAtlasManager.instance._atlases;
+                    for (let i = 0; i < _atlases.length; i++) {
+                        if (asset._texture == _atlases[i]._texture) {
+                            ret.dynamicTexId = i; //已加入动态图集
+                            break;
+                        }
+                    }
+                }
+            }
+            return ret;
+        }
+        catch (e) {
+        }
+    }
+    _getComponentsInfo(node /**import("cc").Node */) {
+        const componentsInfo = [];
+        const components = node.components;
+        if (components == null) {
+            return componentsInfo;
+        }
+        for (const component of components) {
+            const info = this._getComponentProperties(component);
+            componentsInfo.push(info);
+        }
+        return componentsInfo;
+    }
+    _getComponentProperties(component /**import("cc").Component */) {
+        var _a, _b, _c, _d, _e;
+        const clsPrototype = component["__proto__"];
+        const clsName = clsPrototype.__classname__;
+        const clsId = clsPrototype.__cid__;
+        if (clsName == "cc.MeshRenderer") {
+            let g = 0;
+        }
+        let map = getCompAttrInfoFromCfg(clsName);
+        if (map == null) {
+            map = getAttrInfosOfComponentInst(component);
+        }
+        let data = {};
+        for (let k in map) {
+            const obj = map[k];
+            let val = component[k];
+            if (obj.type == "Array") {
+                const _xx = _cc_();
+                if (obj.ctor == "Integer" || obj.ctor == "Float" || obj.ctor == "Boolean" || obj.ctor == "String") {
+                    val = val;
+                }
+                else if (obj.ctor == "cc.ClickEvent") {
+                    val = val === null || val === void 0 ? void 0 : val.map((item /**import("cc").EventHandler */) => { var _a; return { node: (_a = item === null || item === void 0 ? void 0 : item.target) === null || _a === void 0 ? void 0 : _a.uuid, comp: item === null || item === void 0 ? void 0 : item._componentId, handler: item === null || item === void 0 ? void 0 : item.handler, customEventData: val === null || val === void 0 ? void 0 : val.customEventData }; });
+                }
+                else {
+                    const cls = _xx.js.getClassByName(obj.ctor);
+                    if (obj.ctor == "cc.Component") {
+                        val = val === null || val === void 0 ? void 0 : val.map((a) => { var _a; return (_a = a.uuid) !== null && _a !== void 0 ? _a : a._uuid; });
+                    }
+                    else if (obj.ctor == "cc.Node") {
+                        val = val === null || val === void 0 ? void 0 : val.map((a) => { var _a; return (_a = a.uuid) !== null && _a !== void 0 ? _a : a._uuid; });
+                    }
+                    else if (cls && isSubclass(cls, _xx.Component) == true) {
+                        val = val === null || val === void 0 ? void 0 : val.map((a) => { var _a; return (_a = a.uuid) !== null && _a !== void 0 ? _a : a._uuid; });
+                        // obj.ctor = "cc.Component"
+                    }
+                    else if (cls && isSubclass(cls, _xx.Asset) == true) {
+                        val = val === null || val === void 0 ? void 0 : val.map((a) => { var _a; return (_a = a.uuid) !== null && _a !== void 0 ? _a : a._uuid; });
+                        // obj.ctor = "cc.Asset"
+                    }
+                    else {
+                        //TODO 更多数组属性
+                        let xx = 0;
+                    }
+                }
+            }
+            else if (obj.type == "cc.Node" || obj.type == "cc.Component" || obj.type == "cc.Asset") {
+                val = (_b = (_a = val === null || val === void 0 ? void 0 : val.uuid) !== null && _a !== void 0 ? _a : val === null || val === void 0 ? void 0 : val._uuid) !== null && _b !== void 0 ? _b : "";
+            }
+            else if (obj.type == "cc.Color") {
+                val = val.toHEX();
+            }
+            else if (obj.type == "cc.Size") {
+                val = {
+                    width: val.width,
+                    height: val.height,
+                };
+            }
+            else if (obj.type == "cc.Vec2" || obj.type == "cc.Vec3" || obj.type == "cc.Vec4") {
+                val = {
+                    x: val.x,
+                    y: val.y,
+                    z: val.z,
+                    w: val.w,
+                };
+            }
+            else if (obj.type == "cc.Rect") {
+                val = {
+                    x: val.x,
+                    y: val.y,
+                    width: val.width,
+                    height: val.height,
+                };
+            }
+            else if (obj.ctor == "cc.ClickEvent") {
+                if (val) {
+                    if (val instanceof _cc_().EventHandler) {
+                        val = { node: (_c = val === null || val === void 0 ? void 0 : val.target) === null || _c === void 0 ? void 0 : _c.uuid, comp: val === null || val === void 0 ? void 0 : val._componentId, handler: val === null || val === void 0 ? void 0 : val.handler, customEventData: val === null || val === void 0 ? void 0 : val.customEventData };
+                    }
+                }
+                else {
+                    val = "";
+                }
+            }
+            else {
+                if (obj.ctor == "cc.ModelBakeSettings") {
+                    let g = 0;
+                }
+                if (typeof val == "object") {
+                    let newVal = {};
+                    Object.keys(val).forEach((kk) => {
+                        const _t = typeof val[kk];
+                        if (_t == "object") {
+                            //避免
+                        }
+                        else if (_t == "function") {
+                        }
+                        else {
+                            newVal[kk] = val[kk];
+                        }
+                    });
+                    val = newVal;
+                }
+            }
+            data[k] = val;
+        }
+        if (clsName === "cc.UITransform") { //因为UITransform比较特殊，contentSize和anchorPoint都是readonly的，实际是通过width、height/anchorX、anchorY修改的
+            const comp = component; /**import("cc").UITransform */
+            data = {
+                anchorX: comp.anchorX,
+                anchorY: comp.anchorY,
+                width: comp.width,
+                height: comp.height,
+            };
+        }
+        else if (clsName === "sp.Skeleton") {
+            const _skeleton = component["_skeleton"];
+            data["animationArr"] = _skeleton.data.animations.map((item) => item.name);
+            data["skinArr"] = _skeleton.data.skins.map((item) => item.name);
+            data["_defaultSkinIndex"] = component["_defaultSkinIndex"];
+            data["animation"] = component["animation"];
+        }
+        else if (clsName === "cc.Animation") {
+            data["animationArr"] = component["_clips"].map((item) => item.name);
+            data["animation"] = (_d = component["_defaultClip"]) === null || _d === void 0 ? void 0 : _d.name;
+        }
+        else if (clsName === "dragonBones.ArmatureDisplay") {
+            const _armature = component["_armature"];
+            data["animationArr"] = [..._armature._armatureData.animationNames];
+            data["animationArr"].unshift("<None>");
+            data["animation"] = _armature._armatureData.defaultAnimation.name;
+            data["_animationIndex"] = data["animationArr"].indexOf(data["animation"]);
+            // data["skinArr"] = _armature._armatureData.skins.map((item)=>item.name)
+            // data["_defaultSkinIndex"] = _armature._armatureData.defaultSkin.name
+        }
+        const ret = {
+            enabled: component.enabled,
+            typeStr: clsName,
+            clsId: clsId,
+            uuid: (_e = component === null || component === void 0 ? void 0 : component.uuid) !== null && _e !== void 0 ? _e : "",
+            ...data
+        };
+        if (!this.m_hasSendCompAttrsMap[clsName]) {
+            ret["__attrMap"] = map;
+            this.m_hasSendCompAttrsMap[clsName] = true;
+        }
+        return ret;
+    }
+    callFuncOfComp(uuid, funcName, args) {
+        const comp = this.m_compUuidMap[uuid];
+        if (comp == null) {
+            return null;
+        }
+        const func = comp[funcName];
+        if (func == null) {
+            return null;
+        }
+        func.apply(comp, args);
+    }
+    /**显示节点的边框 */
+    showBorderOfNode(uuid, noAnim = false) {
+        var _a;
+        const node = this.m_nodeUuidMap[uuid];
+        if (node == null) {
+            return -1;
+        }
+        if (!_cc_().isValid(node)) {
+            return -2;
+        }
+        let trans = node.getComponent(_cc_().UITransform);
+        if (trans == null) {
+            return -3;
+        }
+        let parentTrans = this.makePersistCanvasNode();
+        if (parentTrans == null) {
+            return;
+        }
+        let worldPt = trans.node.getWorldPosition();
+        const pt = parentTrans.convertToNodeSpaceAR(_cc_().v3(worldPt.x, worldPt.y, 0));
+        let rect = _getNodeMarginOfAnchorPt(node);
+        const tmpParent = createNode(node.name);
+        tmpParent.parent = parentTrans.node;
+        tmpParent.setPosition(pt);
+        let graphics = createGraphicsNode(node.name);
+        graphics.node.layer = (_a = node.layer) !== null && _a !== void 0 ? _a : node._layer;
+        graphics.node.parent = tmpParent;
+        graphics.clear();
+        graphics.lineWidth = 3 / Math.min(_cc_().view.getScaleX(), 1);
+        graphics.strokeColor = _cc_().color(255, 0, 0);
+        graphics.moveTo(rect.left, rect.bottom);
+        graphics.lineTo(rect.right, rect.bottom);
+        graphics.lineTo(rect.right, rect.top);
+        graphics.lineTo(rect.left, rect.top);
+        graphics.lineTo(rect.left, rect.bottom);
+        graphics.close();
+        graphics.stroke();
+        let _tw = _cc_().tween(tmpParent);
+        if (!noAnim) {
+            _tw.set({ scale: _cc_().v3(1, 1, 1) })
+                .to(0.15, { scale: _cc_().v3(1.2, 1.2, 1.2) }).to(0.15, { scale: _cc_().v3(1, 1, 1) }).union().repeat(3);
+            _tw.delay(5)
+                .removeSelf()
+                .delay(0.1)
+                .call(() => {
+                _runtimeSocket.sendPush_checkUpdateSceneTree();
+            })
+                .start();
+        }
+        setTimeout(() => {
+            _runtimeSocket.sendPush_checkUpdateSceneTree();
+        }, 100);
+        return graphics;
+    }
+    destoryNode(uuid) {
+        const node = this.m_nodeUuidMap[uuid];
+        if (node == null) {
+            return -1;
+        }
+        if (!_cc_().isValid(node)) {
+            return -2;
+        }
+        node.destroy();
+        setTimeout(() => {
+            _runtimeSocket.sendPush_checkUpdateSceneTree();
+        }, 100);
+    }
+    duplicateNode(uuid) {
+        const node = this.m_nodeUuidMap[uuid];
+        if (node == null) {
+            return -1;
+        }
+        if (!_cc_().isValid(node)) {
+            return -2;
+        }
+        let _newNode = _cc_().instantiate(node);
+        _newNode.parent = node.parent;
+        _newNode.setSiblingIndex(node.getSiblingIndex());
+        setTimeout(() => {
+            _runtimeSocket.sendPush_checkUpdateSceneTree();
+        }, 100);
+    }
+    makePersistCanvasNode() {
+        if (this._globalNode == null) {
+            this._globalNode = new (_cc_().Node)("_debuger_canvas");
+            this._globalNode.setSiblingIndex(100);
+            this._globalNode.layer = _cc_().Layers.Enum.UI_2D;
+            let canvas = this._globalNode.addComponent(_cc_().Canvas);
+            canvas.alignCanvasWithScreen = true;
+            const _updateCamera = () => {
+                if (!_cc_().isValid(this._globalNode)) {
+                    return;
+                }
+                let _uiCamera = null;
+                let _canvasArr = _cc_().director.getScene().getComponentsInChildren(_cc_().Canvas);
+                for (let _cvs of _canvasArr) {
+                    if (_cvs.cameraComponent && _cvs.node.name != "_debuger_canvas") {
+                        _uiCamera = _cvs.cameraComponent;
+                        break;
+                    }
+                }
+                canvas.cameraComponent = _uiCamera;
+            };
+            _updateCamera();
+            _cc_().director.on(_cc_().Director.EVENT_BEFORE_SCENE_LAUNCH, () => {
+                canvas.cameraComponent = null;
+                this._allNodeRectInfo = [];
+            });
+            _cc_().director.on(_cc_().Director.EVENT_AFTER_SCENE_LAUNCH, () => {
+                _updateCamera();
+            });
+            let trans = this._globalNode.getComponent(_cc_().UITransform) || this._globalNode.addComponent(_cc_().UITransform);
+            let widget = _addWidget(this._globalNode);
+            _cc_().director.addPersistRootNode(this._globalNode);
+            // _cc_().input.on(_cc_().Input.EventType.MOUSE_MOVE, this._onMouseMove, this);
+            if (!_cc_().sys.isMobile && _cc_().sys.isBrowser && _cc_().game.canvas) {
+                _cc_().game.canvas.addEventListener('mousemove', this._onCanvasMouseMove.bind(this));
+                _cc_().game.canvas.addEventListener('mouseup', this._onCanvasMouseUp.bind(this));
+            }
+        }
+        if (!_cc_().isValid(this._globalNode)) {
+            return null;
+        }
+        return this._globalNode.getComponent(_cc_().UITransform);
+    }
+    setIsPickMode(isPick) {
+        this.m_isPickMode = isPick;
+        clearInterval(this._timeIdAutoPick);
+        if (isPick) {
+            this._timeIdAutoPick = setInterval(() => {
+                this._allNodeRectInfo = this._getAllNodeRects();
+                // console.log(this._allNodeRectInfo.map(item=>item.name))
+            }, 1000);
+            this._allNodeRectInfo = this._getAllNodeRects();
+        }
+        else {
+            if (_cc_().isValid(this._lastGraphics)) {
+                this._lastGraphics.node.destroy();
+            }
+            this._lastGraphics = null;
+        }
+    }
+    _onCanvasMouseUp(event) {
+        if (!this.m_isPickMode) {
+            return;
+        }
+        const uuid = this._lastHoverNodeUuid;
+        if (uuid == null) {
+            return;
+        }
+        // console.log("点击",this.m_nodeUuidMap[uuid].name)
+        _runtimeSocket.sendPush_pickNode(uuid);
+    }
+    _onCanvasMouseMove(event) {
+        var _a, _b, _c, _d, _e, _f, _g;
+        if (!this.m_isPickMode) {
+            return;
+        }
+        let canvasRect = _cc_().game.canvas.getBoundingClientRect();
+        let _touchX = event.clientX - canvasRect.x;
+        let _touchY = canvasRect.height - (event.clientY - canvasRect.y);
+        if (!(_touchX > 0 && _touchX < canvasRect.width && _touchY > 0 && _touchY < canvasRect.height)) {
+            return;
+        }
+        let viewScaleX = _cc_().view.getScaleX();
+        let viewScaleY = _cc_().view.getScaleY();
+        // console.log("-----------a",_touchX,_touchY)
+        _touchX /= viewScaleX;
+        _touchY /= viewScaleY;
+        let tmpObj = null;
+        let allArr = this._allNodeRectInfo;
+        for (let i = allArr.length - 1; i >= 0; i--) {
+            let item = allArr[i];
+            let rect = item.anchorMargin;
+            let pt = item.pt;
+            if (_touchX - pt.x >= rect.left && _touchX - pt.x <= rect.right && _touchY - pt.y >= rect.bottom && _touchY - pt.y <= rect.top) {
+                // console.log("touch node:",item.name)
+                tmpObj = item;
+                break;
+            }
+        }
+        if (this._lastHoverNodeUuid != null) {
+            if (tmpObj == null) {
+                this._lastHoverNodeUuid = null;
+                //TODO隐藏节点框
+                // console.log("1 touch node: null")
+                if (_cc_().isValid((_b = (_a = this._lastGraphics) === null || _a === void 0 ? void 0 : _a.node) === null || _b === void 0 ? void 0 : _b.parent)) {
+                    this._lastGraphics.node.parent.destroy();
+                }
+                this._lastGraphics = null;
+            }
+            else if (tmpObj.uuid != this._lastHoverNodeUuid) {
+                this._lastHoverNodeUuid = tmpObj.uuid;
+                //TODO隐藏上一个节点框，显示新的节点框
+                // console.log("2 touch node:",tmpObj.name)
+                if (_cc_().isValid((_d = (_c = this._lastGraphics) === null || _c === void 0 ? void 0 : _c.node) === null || _d === void 0 ? void 0 : _d.parent)) {
+                    (_g = (_f = (_e = this._lastGraphics) === null || _e === void 0 ? void 0 : _e.node) === null || _f === void 0 ? void 0 : _f.parent) === null || _g === void 0 ? void 0 : _g.destroy();
+                }
+                this._lastGraphics = this.showBorderOfNode(tmpObj.uuid, true);
+            }
+        }
+        else if (tmpObj != null) {
+            this._lastHoverNodeUuid = tmpObj.uuid;
+            //TODO显示新的节点框
+            // console.log("3 touch node:",tmpObj.name)
+            this._lastGraphics = this.showBorderOfNode(tmpObj.uuid, true);
+        }
+    }
+    getSearchPaths() {
+        if (!_cc_().sys.isNative) {
+            return "";
+        }
+        let paths = _cc_().native.fileUtils.getSearchPaths();
+        return paths;
+    }
+}
+function createNode(name = null) {
+    let _node = new (_cc_().Node)(name !== null && name !== void 0 ? name : "Node");
+    let trans = _node.addComponent(_cc_().UITransform);
+    return trans.node;
+}
+function createGraphicsNode(name = "") {
+    let _node = createNode("graphics_" + name);
+    let graphics = _node.addComponent(_cc_().Graphics);
+    return graphics;
+}
+function _addWidget(node) {
+    let widget = node.getComponent(_cc_().Widget) || node.addComponent(_cc_().Widget);
+    widget.isAlignLeft = true;
+    widget.isAlignRight = true;
+    widget.isAlignTop = true;
+    widget.isAlignBottom = true;
+    widget.left = 0;
+    widget.right = 0;
+    widget.top = 0;
+    widget.bottom = 0;
+    return widget;
+}
+/**获取节点的锚点相对于上下左右边界的距离 */
+function _getNodeMarginOfAnchorPt(node, parentScale = null) {
+    let trans = node.getComponent(_cc_().UITransform);
+    let size = trans.contentSize;
+    const anchorPt = trans.anchorPoint;
+    if (parentScale == null) {
+        let _scale = node.getScale();
+        let _parent = node.parent;
+        while (_parent) {
+            _scale = _scale.multiply(_parent.getScale());
+            _parent = _parent.parent;
+        }
+        parentScale = _scale;
+    }
+    size = _cc_().size(size.width * parentScale.x, size.height * parentScale.y);
+    let left = -size.width * anchorPt.x;
+    let right = size.width * (1 - anchorPt.x);
+    let bottom = -size.height * anchorPt.y;
+    let top = size.height * (1 - anchorPt.y);
+    return { left, right, top, bottom };
+}
+let compAttrMaps = null;
+function getCompAttrInfoFromCfg(clsName) {
+    if (compAttrMaps == null) {
+        const mapStr = `
+            {"cc.RigidBody":{"group":{"displayOrder":-2,"type":"Enum","tooltip":"i18n:ENGINE.physics3d.rigidbody.group","enumList":[{"name":"DEFAULT","value":1}]},"type":{"displayOrder":-1,"type":"Enum","tooltip":"i18n:ENGINE.physics3d.rigidbody.type","enumList":[{"name":"DYNAMIC","value":1},{"name":"STATIC","value":2},{"name":"KINEMATIC","value":4}]},"mass":{"displayOrder":0,"tooltip":"i18n:ENGINE.physics3d.rigidbody.mass","visible":"function isDynamicBody() {\\n    return this.isDynamic;\\n  }","type":"number"},"allowSleep":{"displayOrder":0.5,"tooltip":"i18n:ENGINE.physics3d.rigidbody.allowSleep","visible":"function isDynamicBody() {\\n    return this.isDynamic;\\n  }","type":"boolean"},"linearDamping":{"displayOrder":1,"tooltip":"i18n:ENGINE.physics3d.rigidbody.linearDamping","visible":"function isDynamicBody() {\\n    return this.isDynamic;\\n  }","type":"number"},"angularDamping":{"displayOrder":2,"tooltip":"i18n:ENGINE.physics3d.rigidbody.angularDamping","visible":"function isDynamicBody() {\\n    return this.isDynamic;\\n  }","type":"number"},"useGravity":{"displayOrder":4,"tooltip":"i18n:ENGINE.physics3d.rigidbody.useGravity","visible":"function isDynamicBody() {\\n    return this.isDynamic;\\n  }","type":"boolean"},"linearFactor":{"displayOrder":6,"tooltip":"i18n:ENGINE.physics3d.rigidbody.linearFactor","visible":"function isDynamicBody() {\\n    return this.isDynamic;\\n  }","type":"cc.Vec3"},"angularFactor":{"displayOrder":7,"tooltip":"i18n:ENGINE.physics3d.rigidbody.angularFactor","visible":"function isDynamicBody() {\\n    return this.isDynamic;\\n  }","type":"cc.Vec3"}},"cc.ConstantForce":{"force":{"displayOrder":0,"tooltip":"i18n:ENGINE.physics3d.constant_force.force","type":"cc.Vec3"},"localForce":{"displayOrder":1,"tooltip":"i18n:ENGINE.physics3d.constant_force.localForce","type":"cc.Vec3"},"torque":{"displayOrder":2,"tooltip":"i18n:ENGINE.physics3d.constant_force.torque","type":"cc.Vec3"},"localTorque":{"displayOrder":3,"tooltip":"i18n:ENGINE.physics3d.constant_force.localTorque","type":"cc.Vec3"}},"cc.BoxCollider":{"attachedRigidBody":{"displayOrder":-2,"displayName":"Attached","type":"cc.Component","ctor":"cc.RigidBody","tooltip":"i18n:ENGINE.physics3d.collider.attached","readonly":true},"sharedMaterial":{"displayOrder":-1,"displayName":"Material","type":"cc.Asset","ctor":"cc.PhysicsMaterial","tooltip":"i18n:ENGINE.physics3d.collider.sharedMaterial"},"isTrigger":{"displayOrder":0,"tooltip":"i18n:ENGINE.physics3d.collider.isTrigger","type":"boolean"},"center":{"displayOrder":1,"type":"cc.Vec3","ctor":"cc.Vec3","tooltip":"i18n:ENGINE.physics3d.collider.center"},"size":{"type":"cc.Vec3","ctor":"cc.Vec3","tooltip":"i18n:ENGINE.physics3d.collider.box_size"}},"cc.SphereCollider":{"attachedRigidBody":{"displayOrder":-2,"displayName":"Attached","type":"cc.Component","ctor":"cc.RigidBody","tooltip":"i18n:ENGINE.physics3d.collider.attached","readonly":true},"sharedMaterial":{"displayOrder":-1,"displayName":"Material","type":"cc.Asset","ctor":"cc.PhysicsMaterial","tooltip":"i18n:ENGINE.physics3d.collider.sharedMaterial"},"isTrigger":{"displayOrder":0,"tooltip":"i18n:ENGINE.physics3d.collider.isTrigger","type":"boolean"},"center":{"displayOrder":1,"type":"cc.Vec3","ctor":"cc.Vec3","tooltip":"i18n:ENGINE.physics3d.collider.center"},"radius":{"tooltip":"i18n:ENGINE.physics3d.collider.sphere_radius","type":"number"}},"cc.CapsuleCollider":{"attachedRigidBody":{"displayOrder":-2,"displayName":"Attached","type":"cc.Component","ctor":"cc.RigidBody","tooltip":"i18n:ENGINE.physics3d.collider.attached","readonly":true},"sharedMaterial":{"displayOrder":-1,"displayName":"Material","type":"cc.Asset","ctor":"cc.PhysicsMaterial","tooltip":"i18n:ENGINE.physics3d.collider.sharedMaterial"},"isTrigger":{"displayOrder":0,"tooltip":"i18n:ENGINE.physics3d.collider.isTrigger","type":"boolean"},"center":{"displayOrder":1,"type":"cc.Vec3","ctor":"cc.Vec3","tooltip":"i18n:ENGINE.physics3d.collider.center"},"radius":{"tooltip":"i18n:ENGINE.physics3d.collider.capsule_radius","type":"number"},"cylinderHeight":{"tooltip":"i18n:ENGINE.physics3d.collider.capsule_cylinderHeight","type":"number"},"direction":{"type":"Enum","tooltip":"i18n:ENGINE.physics3d.collider.capsule_direction","enumList":[{"name":"X_AXIS","value":0},{"name":"Y_AXIS","value":1},{"name":"Z_AXIS","value":2}]}},"cc.MeshCollider":{"attachedRigidBody":{"displayOrder":-2,"displayName":"Attached","type":"cc.Component","ctor":"cc.RigidBody","tooltip":"i18n:ENGINE.physics3d.collider.attached","readonly":true},"sharedMaterial":{"displayOrder":-1,"displayName":"Material","type":"cc.Asset","ctor":"cc.PhysicsMaterial","tooltip":"i18n:ENGINE.physics3d.collider.sharedMaterial"},"isTrigger":{"displayOrder":0,"tooltip":"i18n:ENGINE.physics3d.collider.isTrigger","type":"boolean"},"center":{"displayOrder":1,"type":"cc.Vec3","ctor":"cc.Vec3","tooltip":"i18n:ENGINE.physics3d.collider.center"},"mesh":{"type":"cc.Asset","ctor":"cc.Mesh","tooltip":"i18n:ENGINE.physics3d.collider.mesh_mesh"},"convex":{"tooltip":"i18n:ENGINE.physics3d.collider.mesh_convex","type":"boolean"}},"cc.CylinderCollider":{"attachedRigidBody":{"displayOrder":-2,"displayName":"Attached","type":"cc.Component","ctor":"cc.RigidBody","tooltip":"i18n:ENGINE.physics3d.collider.attached","readonly":true},"sharedMaterial":{"displayOrder":-1,"displayName":"Material","type":"cc.Asset","ctor":"cc.PhysicsMaterial","tooltip":"i18n:ENGINE.physics3d.collider.sharedMaterial"},"isTrigger":{"displayOrder":0,"tooltip":"i18n:ENGINE.physics3d.collider.isTrigger","type":"boolean"},"center":{"displayOrder":1,"type":"cc.Vec3","ctor":"cc.Vec3","tooltip":"i18n:ENGINE.physics3d.collider.center"},"radius":{"tooltip":"i18n:ENGINE.physics3d.collider.cylinder_radius","type":"number"},"height":{"tooltip":"i18n:ENGINE.physics3d.collider.cylinder_height","type":"number"},"direction":{"type":"Enum","tooltip":"i18n:ENGINE.physics3d.collider.cylinder_direction","enumList":[{"name":"X_AXIS","value":0},{"name":"Y_AXIS","value":1},{"name":"Z_AXIS","value":2}]}},"cc.ConeCollider":{"attachedRigidBody":{"displayOrder":-2,"displayName":"Attached","type":"cc.Component","ctor":"cc.RigidBody","tooltip":"i18n:ENGINE.physics3d.collider.attached","readonly":true},"sharedMaterial":{"displayOrder":-1,"displayName":"Material","type":"cc.Asset","ctor":"cc.PhysicsMaterial","tooltip":"i18n:ENGINE.physics3d.collider.sharedMaterial"},"isTrigger":{"displayOrder":0,"tooltip":"i18n:ENGINE.physics3d.collider.isTrigger","type":"boolean"},"center":{"displayOrder":1,"type":"cc.Vec3","ctor":"cc.Vec3","tooltip":"i18n:ENGINE.physics3d.collider.center"},"radius":{"tooltip":"i18n:ENGINE.physics3d.collider.cone_radius","type":"number"},"height":{"tooltip":"i18n:ENGINE.physics3d.collider.cone_height","type":"number"},"direction":{"type":"Enum","tooltip":"i18n:ENGINE.physics3d.collider.cone_direction","enumList":[{"name":"X_AXIS","value":0},{"name":"Y_AXIS","value":1},{"name":"Z_AXIS","value":2}]}},"cc.TerrainCollider":{"attachedRigidBody":{"displayOrder":-2,"displayName":"Attached","type":"cc.Component","ctor":"cc.RigidBody","tooltip":"i18n:ENGINE.physics3d.collider.attached","readonly":true},"sharedMaterial":{"displayOrder":-1,"displayName":"Material","type":"cc.Asset","ctor":"cc.PhysicsMaterial","tooltip":"i18n:ENGINE.physics3d.collider.sharedMaterial"},"isTrigger":{"displayOrder":0,"tooltip":"i18n:ENGINE.physics3d.collider.isTrigger","type":"boolean"},"center":{"displayOrder":1,"type":"cc.Vec3","ctor":"cc.Vec3","tooltip":"i18n:ENGINE.physics3d.collider.center"},"terrain":{"type":"cc.Asset","ctor":"cc.TerrainAsset","tooltip":"i18n:ENGINE.physics3d.collider.terrain_terrain"}},"cc.SimplexCollider":{"attachedRigidBody":{"displayOrder":-2,"displayName":"Attached","type":"cc.Component","ctor":"cc.RigidBody","tooltip":"i18n:ENGINE.physics3d.collider.attached","readonly":true},"sharedMaterial":{"displayOrder":-1,"displayName":"Material","type":"cc.Asset","ctor":"cc.PhysicsMaterial","tooltip":"i18n:ENGINE.physics3d.collider.sharedMaterial"},"isTrigger":{"displayOrder":0,"tooltip":"i18n:ENGINE.physics3d.collider.isTrigger","type":"boolean"},"center":{"displayOrder":1,"type":"cc.Vec3","ctor":"cc.Vec3","tooltip":"i18n:ENGINE.physics3d.collider.center"},"shapeType":{"type":"Enum","tooltip":"i18n:ENGINE.physics3d.collider.simplex_shapeType","enumList":[{"name":"VERTEX","value":1},{"name":"LINE","value":2},{"name":"TRIANGLE","value":3},{"name":"TETRAHEDRON","value":4}]},"vertex0":{"tooltip":"i18n:ENGINE.physics3d.collider.simplex_vertex0","type":"cc.Vec3"},"vertex1":{"tooltip":"i18n:ENGINE.physics3d.collider.simplex_vertex1","visible":"function () {\\n        return this.shapeType > 1;\\n      }","type":"cc.Vec3"},"vertex2":{"tooltip":"i18n:ENGINE.physics3d.collider.simplex_vertex2","visible":"function () {\\n        return this.shapeType > 2;\\n      }","type":"cc.Vec3"},"vertex3":{"tooltip":"i18n:ENGINE.physics3d.collider.simplex_vertex3","visible":"function () {\\n        return this.shapeType > 3;\\n      }","type":"cc.Vec3"}},"cc.PlaneCollider":{"attachedRigidBody":{"displayOrder":-2,"displayName":"Attached","type":"cc.Component","ctor":"cc.RigidBody","tooltip":"i18n:ENGINE.physics3d.collider.attached","readonly":true},"sharedMaterial":{"displayOrder":-1,"displayName":"Material","type":"cc.Asset","ctor":"cc.PhysicsMaterial","tooltip":"i18n:ENGINE.physics3d.collider.sharedMaterial"},"isTrigger":{"displayOrder":0,"tooltip":"i18n:ENGINE.physics3d.collider.isTrigger","type":"boolean"},"center":{"displayOrder":1,"type":"cc.Vec3","ctor":"cc.Vec3","tooltip":"i18n:ENGINE.physics3d.collider.center"},"normal":{"type":"cc.Vec3","ctor":"cc.Vec3","tooltip":"i18n:ENGINE.physics3d.collider.plane_normal"},"constant":{"tooltip":"i18n:ENGINE.physics3d.collider.plane_constant","type":"number"}},"cc.HingeConstraint":{"attachedBody":{"displayOrder":-2,"type":"cc.Component","ctor":"cc.RigidBody","readonly":true},"connectedBody":{"displayOrder":-1,"type":"cc.Component","ctor":"cc.RigidBody"},"enableCollision":{"displayOrder":0,"type":"boolean"},"pivotA":{"type":"cc.Vec3","ctor":"cc.Vec3"},"pivotB":{"type":"cc.Vec3","ctor":"cc.Vec3"},"axis":{"type":"cc.Vec3","ctor":"cc.Vec3"}},"cc.PointToPointConstraint":{"attachedBody":{"displayOrder":-2,"type":"cc.Component","ctor":"cc.RigidBody","readonly":true},"connectedBody":{"displayOrder":-1,"type":"cc.Component","ctor":"cc.RigidBody"},"enableCollision":{"displayOrder":0,"type":"boolean"},"pivotA":{"type":"cc.Vec3","ctor":"cc.Vec3"},"pivotB":{"type":"cc.Vec3","ctor":"cc.Vec3"}},"cc.Button":{"target":{"displayOrder":0,"type":"cc.Node","ctor":"cc.Node","tooltip":"i18n:ENGINE.button.target"},"interactable":{"displayOrder":1,"tooltip":"i18n:ENGINE.button.interactable","type":"boolean"},"transition":{"displayOrder":2,"type":"Enum","tooltip":"i18n:ENGINE.button.transition","enumList":[{"name":"NONE","value":0},{"name":"COLOR","value":1},{"name":"SPRITE","value":2},{"name":"SCALE","value":3}]},"normalColor":{"displayOrder":3,"tooltip":"i18n:ENGINE.button.normal_color","type":"cc.Color"},"pressedColor":{"displayOrder":3,"tooltip":"i18n:ENGINE.button.pressed_color","type":"cc.Color"},"hoverColor":{"displayOrder":3,"tooltip":"i18n:ENGINE.button.hover_color","type":"cc.Color"},"disabledColor":{"displayOrder":3,"tooltip":"i18n:ENGINE.button.disabled_color","type":"cc.Color"},"duration":{"displayOrder":4,"tooltip":"i18n:ENGINE.button.duration","min":0,"max":10,"type":"number"},"zoomScale":{"displayOrder":3,"tooltip":"i18n:ENGINE.button.zoom_scale","type":"number"},"normalSprite":{"displayOrder":3,"type":"cc.Asset","ctor":"cc.SpriteFrame","tooltip":"i18n:ENGINE.button.normal_sprite"},"pressedSprite":{"displayOrder":3,"type":"cc.Asset","ctor":"cc.SpriteFrame","tooltip":"i18n:ENGINE.button.pressed_sprite"},"hoverSprite":{"displayOrder":3,"type":"cc.Asset","ctor":"cc.SpriteFrame","tooltip":"i18n:ENGINE.button.hover_sprite"},"disabledSprite":{"displayOrder":3,"type":"cc.Asset","ctor":"cc.SpriteFrame","tooltip":"i18n:ENGINE.button.disabled_sprite"},"clickEvents":{"displayOrder":20,"type":"Array","ctor":"cc.ClickEvent","default":[],"tooltip":"i18n:ENGINE.button.click_events"}},"cc.ScrollView":{"bounceDuration":{"displayOrder":5,"type":"number","default":1,"tooltip":"i18n:ENGINE.scrollview.bounceDuration","min":0,"max":10},"brake":{"displayOrder":3,"type":"number","default":0.5,"tooltip":"i18n:ENGINE.scrollview.brake","min":0,"max":1,"step":0.1},"elastic":{"displayOrder":3,"type":"boolean","default":true,"tooltip":"i18n:ENGINE.scrollview.elastic"},"inertia":{"displayOrder":2,"type":"boolean","default":true,"tooltip":"i18n:ENGINE.scrollview.inertia"},"content":{"displayOrder":5,"type":"cc.Node","ctor":"cc.Node","tooltip":"i18n:ENGINE.scrollview.content"},"horizontal":{"displayOrder":0,"type":"boolean","default":true,"tooltip":"i18n:ENGINE.scrollview.horizontal"},"horizontalScrollBar":{"displayOrder":0,"type":"cc.Component","ctor":"cc.ScrollBar","tooltip":"i18n:ENGINE.scrollview.horizontal_bar"},"vertical":{"displayOrder":1,"type":"boolean","default":true,"tooltip":"i18n:ENGINE.scrollview.vertical"},"verticalScrollBar":{"displayOrder":1,"type":"cc.Component","ctor":"cc.ScrollBar","tooltip":"i18n:ENGINE.scrollview.vertical_bar"},"cancelInnerEvents":{"displayOrder":9,"type":"boolean","default":true,"tooltip":"i18n:ENGINE.scrollview.cancelInnerEvents"},"scrollEvents":{"displayOrder":10,"type":"Array","ctor":"cc.ClickEvent","default":[],"tooltip":"i18n:ENGINE.scrollview.scrollEvents"}},"cc.Widget":{"target":{"type":"cc.Node","ctor":"cc.Node","tooltip":"i18n:ENGINE.widget.target"},"isAlignTop":{"tooltip":"i18n:ENGINE.widget.align_top","type":"boolean"},"isAlignBottom":{"tooltip":"i18n:ENGINE.widget.align_bottom","type":"boolean"},"isAlignLeft":{"tooltip":"i18n:ENGINE.widget.align_left","type":"boolean"},"isAlignRight":{"tooltip":"i18n:ENGINE.widget.align_right","type":"boolean"},"isAlignVerticalCenter":{"tooltip":"i18n:ENGINE.widget.align_h_center","type":"boolean"},"isAlignHorizontalCenter":{"tooltip":"i18n:ENGINE.widget.align_v_center","type":"boolean"},"top":{"tooltip":"i18n:ENGINE.widget.top","type":"number"},"editorTop":{"type":"number"},"bottom":{"tooltip":"i18n:ENGINE.widget.bottom","type":"number"},"editorBottom":{"type":"number"},"left":{"tooltip":"i18n:ENGINE.widget.left","type":"number"},"editorLeft":{"type":"number"},"right":{"tooltip":"i18n:ENGINE.widget.right","type":"number"},"editorRight":{"type":"number"},"horizontalCenter":{"tooltip":"i18n:ENGINE.widget.horizontal_center","type":"number"},"editorHorizontalCenter":{"type":"number"},"verticalCenter":{"tooltip":"i18n:ENGINE.widget.vertical_center","type":"number"},"editorVerticalCenter":{"type":"number"},"isAbsoluteTop":{"type":"boolean"},"isAbsoluteBottom":{"type":"boolean"},"isAbsoluteLeft":{"type":"boolean"},"isAbsoluteRight":{"type":"boolean"},"isAbsoluteHorizontalCenter":{"type":"boolean"},"isAbsoluteVerticalCenter":{"type":"boolean"},"alignMode":{"type":"Enum","tooltip":"i18n:ENGINE.widget.align_mode","enumList":[{"name":"ONCE","value":0},{"name":"ALWAYS","value":1},{"name":"ON_WINDOW_RESIZE","value":2}]},"alignFlags":{"type":"number"}},"cc.MeshRenderer":{"sharedMaterials":{"displayOrder":0,"displayName":"Materials","type":"cc.Asset","ctor":"cc.Material"},"bakeSettings":{"displayOrder":3,"ctor":"cc.ModelBakeSettings","default":{"_callbackTable":{},"texture":null,"uvParam":{"x":0,"y":0,"z":0,"w":0},"_bakeable":false,"_castShadow":false,"_receiveShadow":false,"_lightmapSize":64,"_useLightProbe":false,"_bakeToLightProbe":true,"_reflectionProbeType":0,"_bakeToReflectionProbe":true,"_probeCubemap":null,"_probePlanarmap":null}},"shadowBias":{"type":"number","tooltip":"i18n:ENGINE.model.shadow_bias"},"shadowNormalBias":{"type":"number","tooltip":"i18n:ENGINE.model.shadow_normal_bias"},"shadowCastingMode":{"type":"Enum","tooltip":"i18n:ENGINE.model.shadow_casting_model","enumList":[{"name":"OFF","value":0},{"name":"ON","value":1}]},"receiveShadow":{"type":"Enum","tooltip":"i18n:ENGINE.model.shadow_receiving_model","enumList":[{"name":"OFF","value":0},{"name":"ON","value":1}]},"mesh":{"displayOrder":1,"type":"cc.Asset","ctor":"cc.Mesh","tooltip":"i18n:ENGINE.model.mesh"},"enableMorph":{"visible":"function () {\\n        return !!(this.mesh && this.mesh.struct.morph && this.mesh.struct.morph.subMeshMorphs.some(function (subMeshMorph) {\\n          return !!subMeshMorph;\\n        }));\\n      }","type":"boolean"}},"cc.Mask":{"type":{"type":"Enum","tooltip":"i18n:ENGINE.mask.type","enumList":[{"name":"GRAPHICS_RECT","value":0},{"name":"GRAPHICS_ELLIPSE","value":1},{"name":"GRAPHICS_STENCIL","value":2},{"name":"SPRITE_STENCIL","value":3}]},"inverted":{"displayOrder":14,"tooltip":"i18n:ENGINE.mask.inverted","type":"boolean"},"segments":{"visible":"function () {\\n        return this.type === MaskType.GRAPHICS_ELLIPSE;\\n      }","type":"number"},"alphaThreshold":{"min":0,"max":1,"step":0.1,"slide":true,"visible":"function () {\\n        return this.type === MaskType.SPRITE_STENCIL;\\n      }","type":"number"}},"cc.Sprite":{"customMaterial":{"displayOrder":0,"displayName":"CustomMaterial","type":"cc.Asset","ctor":"cc.Material","tooltip":"i18n:ENGINE.UIRenderer.customMaterial"},"color":{"displayOrder":1,"tooltip":"i18n:ENGINE.UIRenderer.color","type":"cc.Color"},"spriteAtlas":{"displayOrder":4,"type":"cc.Asset","ctor":"cc.SpriteAtlas","tooltip":"i18n:ENGINE.sprite.atlas"},"spriteFrame":{"displayOrder":5,"type":"cc.Asset","ctor":"cc.SpriteFrame","tooltip":"i18n:ENGINE.sprite.sprite_frame"},"type":{"displayOrder":6,"type":"Enum","tooltip":"i18n:ENGINE.sprite.type","enumList":[{"name":"SIMPLE","value":0},{"name":"SLICED","value":1},{"name":"TILED","value":2},{"name":"FILLED","value":3}]},"fillType":{"displayOrder":6,"type":"Enum","tooltip":"i18n:ENGINE.sprite.fill_type","enumList":[{"name":"HORIZONTAL","value":0},{"name":"VERTICAL","value":1},{"name":"RADIAL","value":2}]},"fillCenter":{"displayOrder":6,"tooltip":"i18n:ENGINE.sprite.fill_center","type":"cc.Vec2"},"fillStart":{"displayOrder":6,"tooltip":"i18n:ENGINE.sprite.fill_start","min":0,"max":1,"step":0.1,"type":"number"},"fillRange":{"displayOrder":6,"tooltip":"i18n:ENGINE.sprite.fill_range","min":-1,"max":1,"step":0.1,"type":"number"},"trim":{"displayOrder":8,"tooltip":"i18n:ENGINE.sprite.trim","visible":"function () {\\n        return this.type === SpriteType.SIMPLE;\\n      }","type":"boolean"},"grayscale":{"displayOrder":5,"tooltip":"i18n:ENGINE.sprite.gray_scale","type":"boolean"},"sizeMode":{"displayOrder":5,"type":"Enum","tooltip":"i18n:ENGINE.sprite.size_mode","enumList":[{"name":"CUSTOM","value":0},{"name":"TRIMMED","value":1},{"name":"RAW","value":2}]}},"cc.ReflectionProbe":{"size":{"type":"cc.Vec3","ctor":"cc.Vec3"},"probeType":{"type":"Enum","enumList":[{"name":"CUBE","value":0},{"name":"PLANAR","value":1}]},"resolution":{"type":"Enum","enumList":[{"name":"Low_256x256","value":256},{"name":"Medium_512x512","value":512},{"name":"High_768x768","value":768}],"visible":"function () {\\n        return this.probeType === ProbeType.CUBE;\\n      }"},"clearFlag":{"type":"Enum","enumList":[{"name":"SOLID_COLOR","value":7},{"name":"SKYBOX","value":14}]},"backgroundColor":{"type":"cc.Color","ctor":"cc.Color","visible":"function () {\\n        return this.clearFlag === ProbeClearFlag.SOLID_COLOR;\\n      }"},"visibility":{"type":"BitMask","tooltip":"i18n:ENGINE.camera.visibility"},"sourceCamera":{"type":"cc.Component","ctor":"cc.Camera","visible":"function () {\\n        return this.probeType === ProbeType.PLANAR;\\n      }"},"fastBake":{"type":{"name":"Boolean","default":false},"tooltip":"i18n:ENGINE.reflection_probe.fastBake","visible":"function () {\\n        return this.probeType === ProbeType.CUBE;\\n      }"}},"cc.MissingScript":{},"cc.Renderer":{"customMaterial":{"displayOrder":0,"displayName":"CustomMaterial","type":"cc.Asset","ctor":"cc.Material","tooltip":"i18n:ENGINE.UIRenderer.customMaterial"},"color":{"displayOrder":1,"tooltip":"i18n:ENGINE.UIRenderer.color","type":"cc.Color"},"spriteAtlas":{"displayOrder":4,"type":"cc.Asset","ctor":"cc.SpriteAtlas","tooltip":"i18n:ENGINE.sprite.atlas"},"spriteFrame":{"displayOrder":5,"type":"cc.Asset","ctor":"cc.SpriteFrame","tooltip":"i18n:ENGINE.sprite.sprite_frame"},"type":{"displayOrder":6,"type":"Enum","tooltip":"i18n:ENGINE.sprite.type","enumList":[{"name":"SIMPLE","value":0},{"name":"SLICED","value":1},{"name":"TILED","value":2},{"name":"FILLED","value":3}]},"fillType":{"displayOrder":6,"type":"Enum","tooltip":"i18n:ENGINE.sprite.fill_type","enumList":[{"name":"HORIZONTAL","value":0},{"name":"VERTICAL","value":1},{"name":"RADIAL","value":2}]},"fillCenter":{"displayOrder":6,"tooltip":"i18n:ENGINE.sprite.fill_center","type":"cc.Vec2"},"fillStart":{"displayOrder":6,"tooltip":"i18n:ENGINE.sprite.fill_start","min":0,"max":1,"step":0.1,"type":"number"},"fillRange":{"displayOrder":6,"tooltip":"i18n:ENGINE.sprite.fill_range","min":-1,"max":1,"step":0.1,"type":"number"},"trim":{"displayOrder":8,"tooltip":"i18n:ENGINE.sprite.trim","visible":"function () {\\n        return this.type === SpriteType.SIMPLE;\\n      }","type":"boolean"},"grayscale":{"displayOrder":5,"tooltip":"i18n:ENGINE.sprite.gray_scale","type":"boolean"},"sizeMode":{"displayOrder":5,"type":"Enum","tooltip":"i18n:ENGINE.sprite.size_mode","enumList":[{"name":"CUSTOM","value":0},{"name":"TRIMMED","value":1},{"name":"RAW","value":2}]}},"cc.ModelRenderer":{"sharedMaterials":{"displayOrder":0,"displayName":"Materials","type":"cc.Asset","ctor":"cc.Material"},"bakeSettings":{"displayOrder":3,"ctor":"cc.ModelBakeSettings","default":{"_callbackTable":{},"texture":null,"uvParam":{"x":0,"y":0,"z":0,"w":0},"_bakeable":false,"_castShadow":false,"_receiveShadow":false,"_lightmapSize":64,"_useLightProbe":false,"_bakeToLightProbe":true,"_reflectionProbeType":0,"_bakeToReflectionProbe":true,"_probeCubemap":null,"_probePlanarmap":null}},"shadowBias":{"type":"number","tooltip":"i18n:ENGINE.model.shadow_bias"},"shadowNormalBias":{"type":"number","tooltip":"i18n:ENGINE.model.shadow_normal_bias"},"shadowCastingMode":{"type":"Enum","tooltip":"i18n:ENGINE.model.shadow_casting_model","enumList":[{"name":"OFF","value":0},{"name":"ON","value":1}]},"receiveShadow":{"type":"Enum","tooltip":"i18n:ENGINE.model.shadow_receiving_model","enumList":[{"name":"OFF","value":0},{"name":"ON","value":1}]},"mesh":{"displayOrder":1,"type":"cc.Asset","ctor":"cc.Mesh","tooltip":"i18n:ENGINE.model.mesh"},"enableMorph":{"visible":"function () {\\n        return !!(this.mesh && this.mesh.struct.morph && this.mesh.struct.morph.subMeshMorphs.some(function (subMeshMorph) {\\n          return !!subMeshMorph;\\n        }));\\n      }","type":"boolean"}},"cc.UITransform":{"contentSize":{"displayOrder":0,"tooltip":"i18n:ENGINE.ui_transform.content_size","type":"cc.Size"},"anchorPoint":{"displayOrder":1,"tooltip":"i18n:ENGINE.ui_transform.anchor_point","type":"cc.Vec2"}},"cc.UIRenderer":{"customMaterial":{"displayOrder":0,"displayName":"CustomMaterial","type":"cc.Asset","ctor":"cc.Material","tooltip":"i18n:ENGINE.UIRenderer.customMaterial"},"color":{"displayOrder":1,"tooltip":"i18n:ENGINE.UIRenderer.color","type":"cc.Color"},"spriteAtlas":{"displayOrder":4,"type":"cc.Asset","ctor":"cc.SpriteAtlas","tooltip":"i18n:ENGINE.sprite.atlas"},"spriteFrame":{"displayOrder":5,"type":"cc.Asset","ctor":"cc.SpriteFrame","tooltip":"i18n:ENGINE.sprite.sprite_frame"},"type":{"displayOrder":6,"type":"Enum","tooltip":"i18n:ENGINE.sprite.type","enumList":[{"name":"SIMPLE","value":0},{"name":"SLICED","value":1},{"name":"TILED","value":2},{"name":"FILLED","value":3}]},"fillType":{"displayOrder":6,"type":"Enum","tooltip":"i18n:ENGINE.sprite.fill_type","enumList":[{"name":"HORIZONTAL","value":0},{"name":"VERTICAL","value":1},{"name":"RADIAL","value":2}]},"fillCenter":{"displayOrder":6,"tooltip":"i18n:ENGINE.sprite.fill_center","type":"cc.Vec2"},"fillStart":{"displayOrder":6,"tooltip":"i18n:ENGINE.sprite.fill_start","min":0,"max":1,"step":0.1,"type":"number"},"fillRange":{"displayOrder":6,"tooltip":"i18n:ENGINE.sprite.fill_range","min":-1,"max":1,"step":0.1,"type":"number"},"trim":{"displayOrder":8,"tooltip":"i18n:ENGINE.sprite.trim","visible":"function () {\\n        return this.type === SpriteType.SIMPLE;\\n      }","type":"boolean"},"grayscale":{"displayOrder":5,"tooltip":"i18n:ENGINE.sprite.gray_scale","type":"boolean"},"sizeMode":{"displayOrder":5,"type":"Enum","tooltip":"i18n:ENGINE.sprite.size_mode","enumList":[{"name":"CUSTOM","value":0},{"name":"TRIMMED","value":1},{"name":"RAW","value":2}]}},"cc.Label":{"customMaterial":{"displayOrder":0,"displayName":"CustomMaterial","type":"cc.Asset","ctor":"cc.Material","tooltip":"i18n:ENGINE.UIRenderer.customMaterial"},"color":{"displayOrder":1,"tooltip":"i18n:ENGINE.UIRenderer.color","type":"cc.Color"},"string":{"displayOrder":4,"tooltip":"i18n:ENGINE.label.string","multiline":true,"type":"string"},"horizontalAlign":{"displayOrder":5,"type":"Enum","tooltip":"i18n:ENGINE.label.horizontal_align","enumList":[{"name":"LEFT","value":0},{"name":"CENTER","value":1},{"name":"RIGHT","value":2}]},"verticalAlign":{"displayOrder":6,"type":"Enum","tooltip":"i18n:ENGINE.label.vertical_align","enumList":[{"name":"TOP","value":0},{"name":"CENTER","value":1},{"name":"BOTTOM","value":2}]},"fontSize":{"displayOrder":7,"tooltip":"i18n:ENGINE.label.font_size","type":"number"},"lineHeight":{"displayOrder":8,"tooltip":"i18n:ENGINE.label.line_height","type":"number"},"spacingX":{"displayOrder":9,"tooltip":"i18n:ENGINE.label.spacing_x","visible":"function () {\\n        return !this.isSystemFontUsed && this._font instanceof BitmapFont;\\n      }","type":"number"},"overflow":{"displayOrder":10,"type":"Enum","tooltip":"i18n:ENGINE.label.overflow","enumList":[{"name":"NONE","value":0},{"name":"CLAMP","value":1},{"name":"SHRINK","value":2},{"name":"RESIZE_HEIGHT","value":3}]},"enableWrapText":{"displayOrder":11,"tooltip":"i18n:ENGINE.label.wrap","type":"boolean"},"useSystemFont":{"displayOrder":12,"tooltip":"i18n:ENGINE.label.system_font","type":"boolean"},"fontFamily":{"displayOrder":13,"tooltip":"i18n:ENGINE.label.font_family","visible":"function () {\\n        return this.isSystemFontUsed;\\n      }","type":"string"},"font":{"displayOrder":13,"type":"cc.Asset","ctor":"cc.Font","tooltip":"i18n:ENGINE.label.font","visible":"function () {\\n        return !this.isSystemFontUsed;\\n      }"},"cacheMode":{"displayOrder":14,"type":"Enum","tooltip":"i18n:ENGINE.label.cache_mode","enumList":[{"name":"NONE","value":0},{"name":"BITMAP","value":1},{"name":"CHAR","value":2}]},"isBold":{"displayOrder":15,"tooltip":"i18n:ENGINE.label.font_bold","type":"boolean"},"isItalic":{"displayOrder":16,"tooltip":"i18n:ENGINE.label.font_italic","type":"boolean"},"isUnderline":{"displayOrder":17,"tooltip":"i18n:ENGINE.label.font_underline","type":"boolean"},"underlineHeight":{"displayOrder":18,"tooltip":"i18n:ENGINE.label.underline_height","visible":"function () {\\n        return this.isUnderline;\\n      }","type":"number"}},"cc.Graphics":{"customMaterial":{"displayOrder":0,"displayName":"CustomMaterial","type":"cc.Asset","ctor":"cc.Material","tooltip":"i18n:ENGINE.UIRenderer.customMaterial"},"lineWidth":{"tooltip":"i18n:ENGINE.graphics.lineWidth","type":"number"},"lineJoin":{"type":"Enum","tooltip":"i18n:ENGINE.graphics.lineJoin","enumList":[{"name":"BEVEL","value":0},{"name":"ROUND","value":1},{"name":"MITER","value":2}]},"lineCap":{"type":"Enum","tooltip":"i18n:ENGINE.graphics.lineCap","enumList":[{"name":"BUTT","value":0},{"name":"ROUND","value":1},{"name":"SQUARE","value":2}]},"strokeColor":{"tooltip":"i18n:ENGINE.graphics.strokeColor","type":"cc.Color"},"fillColor":{"tooltip":"i18n:ENGINE.graphics.fillColor","type":"cc.Color"},"miterLimit":{"tooltip":"i18n:ENGINE.graphics.miterLimit","type":"number"}},"cc.LabelOutline":{"color":{"tooltip":"i18n:ENGINE.labelOutline.color","type":"cc.Color"},"width":{"tooltip":"i18n:ENGINE.labelOutline.width","type":"number"}},"cc.Camera":{"priority":{"displayOrder":0,"tooltip":"i18n:ENGINE.camera.priority","min":0,"max":65535,"step":1,"type":"number"},"visibility":{"displayOrder":1,"type":"BitMask","tooltip":"i18n:ENGINE.camera.visibility"},"clearFlags":{"displayOrder":2,"type":"Enum","tooltip":"i18n:ENGINE.camera.clear_flags","enumList":[{"name":"DONT_CLEAR","value":0},{"name":"DEPTH_ONLY","value":6},{"name":"SOLID_COLOR","value":7},{"name":"SKYBOX","value":14}]},"clearColor":{"displayOrder":3,"tooltip":"i18n:ENGINE.camera.color","type":"cc.Color"},"clearDepth":{"displayOrder":4,"tooltip":"i18n:ENGINE.camera.depth","type":"number"},"clearStencil":{"displayOrder":5,"tooltip":"i18n:ENGINE.camera.stencil","type":"number"},"projection":{"displayOrder":6,"type":"Enum","tooltip":"i18n:ENGINE.camera.projection","enumList":[{"name":"ORTHO","value":0},{"name":"PERSPECTIVE","value":1}]},"fovAxis":{"displayOrder":7,"type":"Enum","tooltip":"i18n:ENGINE.camera.fov_axis","enumList":[{"name":"VERTICAL","value":0},{"name":"HORIZONTAL","value":1}],"visible":"function () {\\n        return this.projection === ProjectionType.PERSPECTIVE;\\n      }"},"fov":{"displayOrder":8,"tooltip":"i18n:ENGINE.camera.fov","min":1,"max":180,"step":1,"visible":"function () {\\n        return this.projection === ProjectionType.PERSPECTIVE;\\n      }","type":"number"},"orthoHeight":{"displayOrder":9,"tooltip":"i18n:ENGINE.camera.ortho_height","min":1,"visible":"function () {\\n        return this.projection === ProjectionType.ORTHO;\\n      }","type":"number"},"near":{"displayOrder":10,"tooltip":"i18n:ENGINE.camera.near","min":0,"type":"number"},"far":{"displayOrder":11,"tooltip":"i18n:ENGINE.camera.far","min":0,"type":"number"},"aperture":{"displayOrder":12,"type":"Enum","tooltip":"i18n:ENGINE.camera.aperture","enumList":[{"name":"F1_8","value":0},{"name":"F2_0","value":1},{"name":"F2_2","value":2},{"name":"F2_5","value":3},{"name":"F2_8","value":4},{"name":"F3_2","value":5},{"name":"F3_5","value":6},{"name":"F4_0","value":7},{"name":"F4_5","value":8},{"name":"F5_0","value":9},{"name":"F5_6","value":10},{"name":"F6_3","value":11},{"name":"F7_1","value":12},{"name":"F8_0","value":13},{"name":"F9_0","value":14},{"name":"F10_0","value":15},{"name":"F11_0","value":16},{"name":"F13_0","value":17},{"name":"F14_0","value":18},{"name":"F16_0","value":19},{"name":"F18_0","value":20},{"name":"F20_0","value":21},{"name":"F22_0","value":22}]},"shutter":{"displayOrder":13,"type":"Enum","tooltip":"i18n:ENGINE.camera.shutter","enumList":[{"name":"D1","value":0},{"name":"D2","value":1},{"name":"D4","value":2},{"name":"D8","value":3},{"name":"D15","value":4},{"name":"D30","value":5},{"name":"D60","value":6},{"name":"D125","value":7},{"name":"D250","value":8},{"name":"D500","value":9},{"name":"D1000","value":10},{"name":"D2000","value":11},{"name":"D4000","value":12}]},"iso":{"displayOrder":14,"type":"Enum","tooltip":"i18n:ENGINE.camera.ISO","enumList":[{"name":"ISO100","value":0},{"name":"ISO200","value":1},{"name":"ISO400","value":2},{"name":"ISO800","value":3}]},"rect":{"displayOrder":15,"tooltip":"i18n:ENGINE.camera.rect","type":"cc.Rect"},"targetTexture":{"displayOrder":16,"type":"cc.Asset","ctor":"cc.RenderTexture","tooltip":"i18n:ENGINE.camera.target_texture"}},"cc.RenderRoot2D":{"cameraComponent":{"type":"cc.Component","ctor":"cc.Camera","tooltip":"i18n:ENGINE.canvas.camera"},"alignCanvasWithScreen":{"tooltip":"i18n:ENGINE.canvas.align","type":"boolean"}},"cc.Canvas":{"cameraComponent":{"type":"cc.Component","ctor":"cc.Camera","tooltip":"i18n:ENGINE.canvas.camera"},"alignCanvasWithScreen":{"tooltip":"i18n:ENGINE.canvas.align","type":"boolean"}},"cc.UIComponent":{},"cc.PrefabLink":{"prefab":{"type":"cc.Asset","ctor":"cc.Prefab"}},"cc.SpriteRenderer":{"sharedMaterials":{"displayOrder":0,"displayName":"Materials","type":"cc.Asset","ctor":"cc.Material"},"spriteFrame":{"type":"cc.Asset","ctor":"cc.SpriteFrame"}},"cc.UIMeshRenderer":{},"cc.UIStaticBatch":{"customMaterial":{"displayOrder":0,"displayName":"CustomMaterial","type":"cc.Asset","ctor":"cc.Material","tooltip":"i18n:ENGINE.UIRenderer.customMaterial"}},"cc.LabelShadow":{"color":{"tooltip":"i18n:ENGINE.labelShadow.color","type":"cc.Color"},"offset":{"tooltip":"i18n:ENGINE.labelShadow.offset","type":"cc.Vec2"},"blur":{"tooltip":"i18n:ENGINE.labelShadow.blur","type":"number"}},"cc.UIOpacity":{"opacity":{"tooltip":"i18n:ENGINE.UIOpacity.opacity","type":"number"}},"cc.RichText":{"string":{"tooltip":"i18n:ENGINE.richtext.string","multiline":true,"type":"string"},"horizontalAlign":{"type":"Enum","tooltip":"i18n:ENGINE.richtext.horizontal_align","enumList":[{"name":"LEFT","value":0},{"name":"CENTER","value":1},{"name":"RIGHT","value":2}]},"verticalAlign":{"type":"Enum","tooltip":"i18n:ENGINE.richtext.vertical_align","enumList":[{"name":"TOP","value":0},{"name":"CENTER","value":1},{"name":"BOTTOM","value":2}]},"fontSize":{"tooltip":"i18n:ENGINE.richtext.font_size","type":"number"},"fontFamily":{"tooltip":"i18n:ENGINE.richtext.font_family","type":"string"},"font":{"type":"cc.Asset","ctor":"cc.Font","tooltip":"i18n:ENGINE.richtext.font"},"useSystemFont":{"displayOrder":12,"tooltip":"i18n:ENGINE.richtext.use_system_font","type":"boolean"},"cacheMode":{"type":"Enum","tooltip":"i18n:ENGINE.richtext.cache_mode","enumList":[{"name":"NONE","value":0},{"name":"BITMAP","value":1},{"name":"CHAR","value":2}]},"maxWidth":{"tooltip":"i18n:ENGINE.richtext.max_width","type":"number"},"lineHeight":{"tooltip":"i18n:ENGINE.richtext.line_height","type":"number"},"imageAtlas":{"type":"cc.Asset","ctor":"cc.SpriteAtlas","tooltip":"i18n:ENGINE.richtext.image_atlas"},"handleTouchEvent":{"tooltip":"i18n:ENGINE.richtext.handleTouchEvent","type":"boolean"}},"cc.Sorting":{"sortingLayer":{"type":"Enum","enumList":[{"name":"default","value":0}]},"sortingOrder":{"min":-32768,"max":32767,"step":1,"type":"number"}},"cc.Light":{"color":{"tooltip":"i18n:ENGINE.lights.color","type":"cc.Color"},"useColorTemperature":{"tooltip":"i18n:ENGINE.lights.use_color_temperature","type":"boolean"},"colorTemperature":{"tooltip":"i18n:ENGINE.lights.color_temperature","min":1000,"max":15000,"step":1,"slide":true,"type":"number"},"staticSettings":{"displayOrder":50,"type":"Object","ctor":"cc.StaticLightSettings"},"visibility":{"displayOrder":255,"type":"BitMask","tooltip":"i18n:ENGINE.lights.visibility"}},"cc.DirectionalLight":{"color":{"tooltip":"i18n:ENGINE.lights.color","type":"cc.Color"},"useColorTemperature":{"tooltip":"i18n:ENGINE.lights.use_color_temperature","type":"boolean"},"colorTemperature":{"tooltip":"i18n:ENGINE.lights.color_temperature","min":1000,"max":15000,"step":1,"slide":true,"type":"number"},"staticSettings":{"displayOrder":50,"type":"Object","ctor":"cc.StaticLightSettings"},"visibility":{"displayOrder":255,"type":"BitMask","tooltip":"i18n:ENGINE.lights.visibility"},"illuminance":{"tooltip":"i18n:ENGINE.lights.illuminance","type":"number"},"shadowEnabled":{"type":{"name":"Boolean","default":false},"tooltip":"i18n:ENGINE.lights.shadowEnabled","visible":"function () {\\n        return cclegacy.director.root.pipeline.pipelineSceneData.shadows.enabled && cclegacy.director.root.pipeline.pipelineSceneData.shadows.type === ShadowType.ShadowMap;\\n      }"},"shadowPcf":{"type":"Enum","tooltip":"i18n:ENGINE.lights.shadowPcf","enumList":[{"name":"HARD","value":0},{"name":"SOFT","value":1},{"name":"SOFT_2X","value":2},{"name":"SOFT_4X","value":3}],"visible":"function () {\\n        return cclegacy.director.root.pipeline.pipelineSceneData.shadows.enabled && cclegacy.director.root.pipeline.pipelineSceneData.shadows.type === ShadowType.ShadowMap;\\n      }"},"shadowBias":{"type":"number","tooltip":"i18n:ENGINE.lights.shadowBias","visible":"function () {\\n        return cclegacy.director.root.pipeline.pipelineSceneData.shadows.enabled && cclegacy.director.root.pipeline.pipelineSceneData.shadows.type === ShadowType.ShadowMap;\\n      }"},"shadowNormalBias":{"type":"number","tooltip":"i18n:ENGINE.lights.shadowNormalBias","visible":"function () {\\n        return cclegacy.director.root.pipeline.pipelineSceneData.shadows.enabled && cclegacy.director.root.pipeline.pipelineSceneData.shadows.type === ShadowType.ShadowMap;\\n      }"},"shadowSaturation":{"type":"number","tooltip":"i18n:ENGINE.lights.shadowSaturation","min":0,"max":1,"step":0.01,"slide":true,"visible":"function () {\\n        return cclegacy.director.root.pipeline.pipelineSceneData.shadows.enabled && cclegacy.director.root.pipeline.pipelineSceneData.shadows.type === ShadowType.ShadowMap;\\n      }"},"shadowDistance":{"type":"number","tooltip":"i18n:ENGINE.lights.shadowDistance","min":0,"max":2000,"step":0.1,"slide":true,"visible":"function () {\\n        return cclegacy.director.root.pipeline.pipelineSceneData.shadows.enabled && cclegacy.director.root.pipeline.pipelineSceneData.shadows.type === ShadowType.ShadowMap && this.shadowFixedArea === false;\\n      }"},"shadowInvisibleOcclusionRange":{"type":"number","tooltip":"i18n:ENGINE.lights.shadowInvisibleOcclusionRange","min":0,"max":2000,"step":1,"slide":true,"visible":"function () {\\n        return cclegacy.director.root.pipeline.pipelineSceneData.shadows.enabled && cclegacy.director.root.pipeline.pipelineSceneData.shadows.type === ShadowType.ShadowMap && this.shadowFixedArea === false && this._csmAdvancedOptions;\\n      }"},"enableCSM":{"type":{"name":"Boolean","default":false},"tooltip":"i18n:ENGINE.lights.enableCSM","slide":true,"visible":"function () {\\n        return cclegacy.director.root.pipeline.pipelineSceneData.shadows.enabled && cclegacy.director.root.pipeline.pipelineSceneData.shadows.type === ShadowType.ShadowMap && this.shadowFixedArea === false;\\n      }"},"shadowFixedArea":{"type":{"name":"Boolean","default":false},"tooltip":"i18n:ENGINE.lights.shadowFixedArea","visible":"function () {\\n        return cclegacy.director.root.pipeline.pipelineSceneData.shadows.enabled && cclegacy.director.root.pipeline.pipelineSceneData.shadows.type === ShadowType.ShadowMap;\\n      }"},"shadowNear":{"type":"number","tooltip":"i18n:ENGINE.lights.shadowNear","visible":"function () {\\n        return cclegacy.director.root.pipeline.pipelineSceneData.shadows.enabled && cclegacy.director.root.pipeline.pipelineSceneData.shadows.type === ShadowType.ShadowMap && this.shadowFixedArea === true;\\n      }"},"shadowFar":{"type":"number","tooltip":"i18n:ENGINE.lights.shadowFar","visible":"function () {\\n        return cclegacy.director.root.pipeline.pipelineSceneData.shadows.enabled && cclegacy.director.root.pipeline.pipelineSceneData.shadows.type === ShadowType.ShadowMap && this.shadowFixedArea === true;\\n      }"},"shadowOrthoSize":{"type":"number","tooltip":"i18n:ENGINE.lights.shadowOrthoSize","visible":"function () {\\n        return cclegacy.director.root.pipeline.pipelineSceneData.shadows.enabled && cclegacy.director.root.pipeline.pipelineSceneData.shadows.type === ShadowType.ShadowMap && this.shadowFixedArea === true;\\n      }"},"csmAdvancedOptions":{"type":{"name":"Boolean","default":false},"tooltip":"i18n:ENGINE.lights.shadowAdvancedOptions","visible":"function () {\\n        return cclegacy.director.root.pipeline.pipelineSceneData.shadows.enabled && cclegacy.director.root.pipeline.pipelineSceneData.shadows.type === ShadowType.ShadowMap && this.csmLevel > CSMLevel.LEVEL_1;\\n      }"},"csmLayersTransition":{"type":{"name":"Boolean","default":false},"tooltip":"i18n:ENGINE.lights.csmLayersTransition","visible":"function () {\\n        return cclegacy.director.root.pipeline.pipelineSceneData.shadows.enabled && cclegacy.director.root.pipeline.pipelineSceneData.shadows.type === ShadowType.ShadowMap && this.csmLevel > CSMLevel.LEVEL_1 && this._csmAdvancedOptions;\\n      }"},"csmTransitionRange":{"type":"number","tooltip":"i18n:ENGINE.lights.csmTransitionRange","min":0,"max":0.1,"step":0.01,"slide":true,"visible":"function () {\\n        return cclegacy.director.root.pipeline.pipelineSceneData.shadows.enabled && cclegacy.director.root.pipeline.pipelineSceneData.shadows.type === ShadowType.ShadowMap && this.csmLevel > CSMLevel.LEVEL_1 && this._csmAdvancedOptions;\\n      }"}},"cc.SphereLight":{"color":{"tooltip":"i18n:ENGINE.lights.color","type":"cc.Color"},"useColorTemperature":{"tooltip":"i18n:ENGINE.lights.use_color_temperature","type":"boolean"},"colorTemperature":{"tooltip":"i18n:ENGINE.lights.color_temperature","min":1000,"max":15000,"step":1,"slide":true,"type":"number"},"staticSettings":{"displayOrder":50,"type":"Object","ctor":"cc.StaticLightSettings"},"visibility":{"displayOrder":255,"type":"BitMask","tooltip":"i18n:ENGINE.lights.visibility"},"luminousFlux":{"displayOrder":-1,"tooltip":"i18n:ENGINE.lights.luminous_flux","type":"number"},"luminance":{"displayOrder":-1,"tooltip":"i18n:ENGINE.lights.luminance","type":"number"},"term":{"displayOrder":-2,"type":"Enum","tooltip":"i18n:ENGINE.lights.term","enumList":[{"name":"LUMINOUS_FLUX","value":0},{"name":"LUMINANCE","value":1}]},"size":{"tooltip":"i18n:ENGINE.lights.size","type":"number"},"range":{"tooltip":"i18n:ENGINE.lights.range","type":"number"}},"cc.SpotLight":{"color":{"tooltip":"i18n:ENGINE.lights.color","type":"cc.Color"},"useColorTemperature":{"tooltip":"i18n:ENGINE.lights.use_color_temperature","type":"boolean"},"colorTemperature":{"tooltip":"i18n:ENGINE.lights.color_temperature","min":1000,"max":15000,"step":1,"slide":true,"type":"number"},"staticSettings":{"displayOrder":50,"type":"Object","ctor":"cc.StaticLightSettings"},"visibility":{"displayOrder":255,"type":"BitMask","tooltip":"i18n:ENGINE.lights.visibility"},"luminousFlux":{"displayOrder":-1,"tooltip":"i18n:ENGINE.lights.luminous_flux","type":"number"},"luminance":{"displayOrder":-1,"tooltip":"i18n:ENGINE.lights.luminance","type":"number"},"term":{"displayOrder":-2,"type":"Enum","tooltip":"i18n:ENGINE.lights.term","enumList":[{"name":"LUMINOUS_FLUX","value":0},{"name":"LUMINANCE","value":1}]},"size":{"tooltip":"i18n:ENGINE.lights.size","type":"number"},"range":{"tooltip":"i18n:ENGINE.lights.range","type":"number"},"spotAngle":{"tooltip":"The spot light cone angle","min":2,"max":180,"step":1,"slide":true,"type":"number"},"shadowEnabled":{"type":{"name":"Boolean","default":false},"tooltip":"i18n:ENGINE.lights.shadowEnabled","visible":"function () {\\n        return cclegacy.director.root.pipeline.pipelineSceneData.shadows.type === ShadowType.ShadowMap;\\n      }"},"shadowPcf":{"type":"Enum","tooltip":"i18n:ENGINE.lights.shadowPcf","enumList":[{"name":"HARD","value":0},{"name":"SOFT","value":1},{"name":"SOFT_2X","value":2},{"name":"SOFT_4X","value":3}],"visible":"function () {\\n        return cclegacy.director.root.pipeline.pipelineSceneData.shadows.type === ShadowType.ShadowMap;\\n      }"},"shadowBias":{"type":"number","tooltip":"i18n:ENGINE.lights.shadowBias","visible":"function () {\\n        return cclegacy.director.root.pipeline.pipelineSceneData.shadows.type === ShadowType.ShadowMap;\\n      }"},"shadowNormalBias":{"type":"number","tooltip":"i18n:ENGINE.lights.shadowNormalBias","visible":"function () {\\n        return cclegacy.director.root.pipeline.pipelineSceneData.shadows.type === ShadowType.ShadowMap;\\n      }"}},"cc.SkinnedMeshRenderer":{"sharedMaterials":{"displayOrder":0,"displayName":"Materials","type":"cc.Asset","ctor":"cc.Material"},"bakeSettings":{"displayOrder":3,"ctor":"cc.ModelBakeSettings","default":{"_callbackTable":{},"texture":null,"uvParam":{"x":0,"y":0,"z":0,"w":0},"_bakeable":false,"_castShadow":false,"_receiveShadow":false,"_lightmapSize":64,"_useLightProbe":false,"_bakeToLightProbe":true,"_reflectionProbeType":0,"_bakeToReflectionProbe":true,"_probeCubemap":null,"_probePlanarmap":null}},"shadowBias":{"type":"number","tooltip":"i18n:ENGINE.model.shadow_bias"},"shadowNormalBias":{"type":"number","tooltip":"i18n:ENGINE.model.shadow_normal_bias"},"shadowCastingMode":{"type":"Enum","tooltip":"i18n:ENGINE.model.shadow_casting_model","enumList":[{"name":"OFF","value":0},{"name":"ON","value":1}]},"receiveShadow":{"type":"Enum","tooltip":"i18n:ENGINE.model.shadow_receiving_model","enumList":[{"name":"OFF","value":0},{"name":"ON","value":1}]},"mesh":{"displayOrder":1,"type":"cc.Asset","ctor":"cc.Mesh","tooltip":"i18n:ENGINE.model.mesh"},"enableMorph":{"visible":"function () {\\n        return !!(this.mesh && this.mesh.struct.morph && this.mesh.struct.morph.subMeshMorphs.some(function (subMeshMorph) {\\n          return !!subMeshMorph;\\n        }));\\n      }","type":"boolean"},"skeleton":{"type":"cc.Asset","ctor":"cc.Skeleton"},"skinningRoot":{"type":"cc.Node","ctor":"cc.Node","tooltip":"i18n:ENGINE.model.skinning_root"}},"cc.SkinnedMeshBatchRenderer":{"sharedMaterials":{"displayOrder":0,"displayName":"Materials","type":"cc.Asset","ctor":"cc.Material"},"bakeSettings":{"displayOrder":3,"ctor":"cc.ModelBakeSettings","default":{"_callbackTable":{},"texture":null,"uvParam":{"x":0,"y":0,"z":0,"w":0},"_bakeable":false,"_castShadow":false,"_receiveShadow":false,"_lightmapSize":64,"_useLightProbe":false,"_bakeToLightProbe":true,"_reflectionProbeType":0,"_bakeToReflectionProbe":true,"_probeCubemap":null,"_probePlanarmap":null}},"shadowBias":{"type":"number","tooltip":"i18n:ENGINE.model.shadow_bias"},"shadowNormalBias":{"type":"number","tooltip":"i18n:ENGINE.model.shadow_normal_bias"},"shadowCastingMode":{"type":"Enum","tooltip":"i18n:ENGINE.model.shadow_casting_model","enumList":[{"name":"OFF","value":0},{"name":"ON","value":1}]},"receiveShadow":{"type":"Enum","tooltip":"i18n:ENGINE.model.shadow_receiving_model","enumList":[{"name":"OFF","value":0},{"name":"ON","value":1}]},"enableMorph":{"visible":"function () {\\n        return !!(this.mesh && this.mesh.struct.morph && this.mesh.struct.morph.subMeshMorphs.some(function (subMeshMorph) {\\n          return !!subMeshMorph;\\n        }));\\n      }","type":"boolean"},"skinningRoot":{"type":"cc.Node","ctor":"cc.Node","tooltip":"i18n:ENGINE.model.skinning_root"},"atlasSize":{"type":"number","default":1024,"tooltip":"i18n:ENGINE.batched_skinning_model.atlas_size"},"batchableTextureNames":{"type":"Array","ctor":"String","default":[],"tooltip":"i18n:ENGINE.batched_skinning_model.batchable_texture_names"},"units":{"type":"Array","ctor":"cc.SkinnedMeshUnit","default":[],"tooltip":"i18n:ENGINE.batched_skinning_model.units"}},"cc.LODGroup":{"objectSize":{"type":"number"},"LODs":{"type":"Object","ctor":"cc.LOD"}},"cc.Animation":{"clips":{"type":"cc.Asset","ctor":"cc.AnimationClip","tooltip":"i18n:ENGINE.animation.clips"},"defaultClip":{"type":"cc.Asset","ctor":"cc.AnimationClip","tooltip":"i18n:ENGINE.animation.default_clip"},"playOnLoad":{"type":"boolean","default":false,"tooltip":"i18n:ENGINE.animation.play_on_load"}},"cc.AudioSource":{"clip":{"type":"cc.Asset","ctor":"cc.AudioClip","tooltip":"i18n:ENGINE.audio.clip"},"loop":{"tooltip":"i18n:ENGINE.audio.loop","type":"boolean"},"playOnAwake":{"tooltip":"i18n:ENGINE.audio.playOnAwake","type":"boolean"},"volume":{"tooltip":"i18n:ENGINE.audio.volume","min":0,"max":1,"type":"number"}},"cc.LightProbeGroup":{"method":{"displayName":"Generating Method","type":"Enum","tooltip":"i18n:ENGINE.light_probe_group.method","enumList":[{"name":"UNIFORM","value":0},{"name":"ADAPTIVE","value":1}]},"minPos":{"displayName":"Generating Min Pos","tooltip":"i18n:ENGINE.light_probe_group.minPos","type":"cc.Vec3"},"maxPos":{"displayName":"Generating Max Pos","tooltip":"i18n:ENGINE.light_probe_group.maxPos","type":"cc.Vec3"},"nProbesX":{"displayName":"Number Of Probes X","type":{"name":"Integer","default":0},"tooltip":"i18n:ENGINE.light_probe_group.nProbesX","min":2,"max":65535,"step":1},"nProbesY":{"displayName":"Number Of Probes Y","type":{"name":"Integer","default":0},"tooltip":"i18n:ENGINE.light_probe_group.nProbesY","min":2,"max":65535,"step":1},"nProbesZ":{"displayName":"Number Of Probes Z","type":{"name":"Integer","default":0},"tooltip":"i18n:ENGINE.light_probe_group.nProbesZ","min":2,"max":65535,"step":1}},"cc.ParticleSystem":{"capacity":{"displayOrder":1,"tooltip":"i18n:ENGINE.particle_system.capacity","min":0,"max":null,"step":1,"type":"number"},"startColor":{"displayOrder":8,"type":"Object","ctor":"cc.GradientRange","default":{"color":{"_val":4294967295},"colorMin":{"_val":4294967295},"colorMax":{"_val":4294967295},"gradient":{"colorKeys":[],"alphaKeys":[],"mode":0,"_color":{"_val":4294967295}},"gradientMin":{"colorKeys":[],"alphaKeys":[],"mode":0,"_color":{"_val":4294967295}},"gradientMax":{"colorKeys":[],"alphaKeys":[],"mode":0,"_color":{"_val":4294967295}},"_mode":0,"_color":{"_val":4294967295}},"tooltip":"i18n:ENGINE.particle_system.startColor"},"scaleSpace":{"displayOrder":9,"type":"Enum","default":1,"tooltip":"i18n:ENGINE.particle_system.scaleSpace","enumList":[{"name":"World","value":0},{"name":"Local","value":1},{"name":"Custom","value":2}]},"startSize3D":{"displayOrder":10,"type":"boolean","default":false,"tooltip":"i18n:ENGINE.particle_system.startSize3D"},"startSizeX":{"displayOrder":10,"type":"Object","ctor":"cc.CurveRange","default":{"constant":0,"constantMin":0,"constantMax":0,"multiplier":1,"_mode":0},"tooltip":"i18n:ENGINE.particle_system.startSizeX","min":0,"max":null},"startSizeY":{"displayOrder":10,"type":"Object","ctor":"cc.CurveRange","default":{"constant":0,"constantMin":0,"constantMax":0,"multiplier":1,"_mode":0},"tooltip":"i18n:ENGINE.particle_system.startSizeY","min":0,"max":null,"visible":"function () {\\n        return this.startSize3D;\\n      }"},"startSizeZ":{"displayOrder":10,"type":"Object","ctor":"cc.CurveRange","default":{"constant":0,"constantMin":0,"constantMax":0,"multiplier":1,"_mode":0},"tooltip":"i18n:ENGINE.particle_system.startSizeZ","min":0,"max":null,"visible":"function () {\\n        return this.startSize3D;\\n      }"},"startSpeed":{"displayOrder":11,"type":"Object","ctor":"cc.CurveRange","default":{"constant":0,"constantMin":0,"constantMax":0,"multiplier":1,"_mode":0},"tooltip":"i18n:ENGINE.particle_system.startSpeed"},"startRotation3D":{"displayOrder":12,"type":"boolean","default":false,"tooltip":"i18n:ENGINE.particle_system.startRotation3D"},"startRotationX":{"displayOrder":12,"type":"Object","ctor":"cc.CurveRange","default":{"constant":0,"constantMin":0,"constantMax":0,"multiplier":1,"_mode":0},"tooltip":"i18n:ENGINE.particle_system.startRotationX","visible":"function () {\\n        return this.startRotation3D;\\n      }"},"startRotationY":{"displayOrder":12,"type":"Object","ctor":"cc.CurveRange","default":{"constant":0,"constantMin":0,"constantMax":0,"multiplier":1,"_mode":0},"tooltip":"i18n:ENGINE.particle_system.startRotationY","visible":"function () {\\n        return this.startRotation3D;\\n      }"},"startRotationZ":{"displayOrder":12,"type":"Object","ctor":"cc.CurveRange","default":{"constant":0,"constantMin":0,"constantMax":0,"multiplier":1,"_mode":0},"tooltip":"i18n:ENGINE.particle_system.startRotationZ"},"startDelay":{"displayOrder":6,"type":"Object","ctor":"cc.CurveRange","default":{"constant":0,"constantMin":0,"constantMax":0,"multiplier":1,"_mode":0},"tooltip":"i18n:ENGINE.particle_system.startDelay","min":0,"max":null},"startLifetime":{"displayOrder":7,"type":"Object","ctor":"cc.CurveRange","default":{"constant":0,"constantMin":0,"constantMax":0,"multiplier":1,"_mode":0},"tooltip":"i18n:ENGINE.particle_system.startLifetime","min":0,"max":null},"duration":{"displayOrder":0,"type":"number","default":5,"tooltip":"i18n:ENGINE.particle_system.duration"},"loop":{"displayOrder":2,"type":"boolean","default":true,"tooltip":"i18n:ENGINE.particle_system.loop"},"prewarm":{"displayOrder":3,"tooltip":"i18n:ENGINE.particle_system.prewarm","type":"boolean"},"simulationSpace":{"displayOrder":4,"type":"Enum","tooltip":"i18n:ENGINE.particle_system.simulationSpace","enumList":[{"name":"World","value":0},{"name":"Local","value":1},{"name":"Custom","value":2}]},"simulationSpeed":{"displayOrder":5,"type":"number","default":1,"tooltip":"i18n:ENGINE.particle_system.simulationSpeed"},"playOnAwake":{"displayOrder":2,"type":"boolean","default":true,"tooltip":"i18n:ENGINE.particle_system.playOnAwake"},"gravityModifier":{"displayOrder":13,"type":"Object","ctor":"cc.CurveRange","default":{"constant":0,"constantMin":0,"constantMax":0,"multiplier":1,"_mode":0},"tooltip":"i18n:ENGINE.particle_system.gravityModifier"},"rateOverTime":{"displayOrder":14,"type":"Object","ctor":"cc.CurveRange","default":{"constant":0,"constantMin":0,"constantMax":0,"multiplier":1,"_mode":0},"tooltip":"i18n:ENGINE.particle_system.rateOverTime","min":0,"max":null},"rateOverDistance":{"displayOrder":15,"type":"Object","ctor":"cc.CurveRange","default":{"constant":0,"constantMin":0,"constantMax":0,"multiplier":1,"_mode":0},"tooltip":"i18n:ENGINE.particle_system.rateOverDistance","min":0,"max":null},"bursts":{"displayOrder":16,"type":"Array","ctor":"cc.Burst","default":[],"tooltip":"i18n:ENGINE.particle_system.bursts"},"renderCulling":{"displayOrder":27,"type":{"name":"Boolean","default":false},"tooltip":"i18n:ENGINE.particle_system.renderCulling"},"cullingMode":{"displayOrder":17,"type":"Enum","tooltip":"i18n:ENGINE.particle_system.cullingMode","enumList":[{"name":"Pause","value":0},{"name":"PauseAndCatchup","value":1},{"name":"AlwaysSimulate","value":2}]},"aabbHalfX":{"displayOrder":17,"type":"number","tooltip":"i18n:ENGINE.particle_system.aabbHalfX"},"aabbHalfY":{"displayOrder":17,"type":"number","tooltip":"i18n:ENGINE.particle_system.aabbHalfY"},"aabbHalfZ":{"displayOrder":17,"type":"number","tooltip":"i18n:ENGINE.particle_system.aabbHalfZ"},"dataCulling":{"displayOrder":28,"tooltip":"i18n:ENGINE.particle_system.dataCulling","type":"boolean"},"colorOverLifetimeModule":{"displayOrder":23,"type":"Object","ctor":"cc.ColorOvertimeModule","tooltip":"i18n:ENGINE.particle_system.colorOverLifetimeModule"},"shapeModule":{"displayOrder":17,"type":"Object","ctor":"cc.ShapeModule","tooltip":"i18n:ENGINE.particle_system.shapeModule"},"sizeOvertimeModule":{"displayOrder":21,"type":"Object","ctor":"cc.SizeOvertimeModule","tooltip":"i18n:ENGINE.particle_system.sizeOvertimeModule"},"velocityOvertimeModule":{"displayOrder":18,"type":"Object","ctor":"cc.VelocityOvertimeModule","tooltip":"i18n:ENGINE.particle_system.velocityOvertimeModule"},"forceOvertimeModule":{"displayOrder":19,"type":"Object","ctor":"cc.ForceOvertimeModule","tooltip":"i18n:ENGINE.particle_system.forceOvertimeModule"},"limitVelocityOvertimeModule":{"displayOrder":20,"type":"Object","ctor":"cc.LimitVelocityOvertimeModule","tooltip":"i18n:ENGINE.particle_system.limitVelocityOvertimeModule"},"rotationOvertimeModule":{"displayOrder":22,"type":"Object","ctor":"cc.RotationOvertimeModule","tooltip":"i18n:ENGINE.particle_system.rotationOvertimeModule"},"textureAnimationModule":{"displayOrder":24,"type":"Object","ctor":"cc.TextureAnimationModule","tooltip":"i18n:ENGINE.particle_system.textureAnimationModule"},"noiseModule":{"displayOrder":24,"type":"Object","ctor":"cc.NoiseModule","tooltip":"i18n:ENGINE.particle_system.noiseModule"},"trailModule":{"displayOrder":25,"type":"Object","ctor":"cc.TrailModule","tooltip":"i18n:ENGINE.particle_system.trailModule"},"renderer":{"displayOrder":26,"type":"Object","ctor":"cc.ParticleSystemRenderer","default":{"_renderMode":0,"_velocityScale":1,"_lengthScale":1,"_mesh":null,"_cpuMaterial":null,"_gpuMaterial":null,"_mainTexture":null,"_useGPU":false,"_alignSpace":2,"_particleSystem":null},"tooltip":"i18n:ENGINE.particle_system.renderer"}},"cc.Billboard":{"texture":{"type":"cc.Asset","ctor":"cc.Texture2D","tooltip":"i18n:ENGINE.billboard.texture"},"height":{"tooltip":"i18n:ENGINE.billboard.height","type":"number"},"width":{"tooltip":"i18n:ENGINE.billboard.width","type":"number"},"rotation":{"tooltip":"i18n:ENGINE.billboard.rotation","type":"number"}},"cc.Line":{"texture":{"displayOrder":0,"type":"cc.Asset","ctor":"cc.Texture2D","tooltip":"i18n:ENGINE.line.texture"},"lineMaterial":{"displayOrder":1,"displayName":"Material","type":"cc.Asset","ctor":"cc.Material","tooltip":"i18n:ENGINE.line.material"},"worldSpace":{"displayOrder":1,"tooltip":"i18n:ENGINE.line.worldSpace","type":"boolean"},"positions":{"displayOrder":2,"type":"Object","ctor":"cc.Vec3","tooltip":"i18n:ENGINE.line.positions"},"width":{"displayOrder":3,"type":"Object","ctor":"cc.CurveRange","tooltip":"i18n:ENGINE.line.width","min":0,"max":1},"color":{"displayOrder":6,"type":"Object","ctor":"cc.GradientRange","tooltip":"i18n:ENGINE.line.color"},"tile":{"displayOrder":4,"type":"cc.Vec2","ctor":"cc.Vec2","tooltip":"i18n:ENGINE.line.tile"},"offset":{"displayOrder":5,"type":"cc.Vec2","ctor":"cc.Vec2","tooltip":"i18n:ENGINE.line.offset"}},"cc.ParticleSystem2D":{"customMaterial":{"displayOrder":0,"displayName":"CustomMaterial","type":"cc.Asset","ctor":"cc.Material","tooltip":"i18n:ENGINE.UIRenderer.customMaterial"},"color":{"displayOrder":1,"tooltip":"i18n:ENGINE.UIRenderer.color","visible":"function () {\\n        return false;\\n      }","type":"cc.Color"},"custom":{"displayOrder":6,"tooltip":"i18n:ENGINE.particle_system.custom","type":"boolean"},"file":{"displayOrder":5,"type":"cc.Asset","ctor":"cc.ParticleAsset","tooltip":"i18n:ENGINE.particle_system.file"},"spriteFrame":{"type":"cc.Asset","ctor":"cc.SpriteFrame","tooltip":"i18n:ENGINE.particle_system.spriteFrame"},"totalParticles":{"tooltip":"i18n:ENGINE.particle_system.totalParticles","type":"number"},"duration":{"type":"number","default":-1,"tooltip":"i18n:ENGINE.particle_system.duration"},"emissionRate":{"type":"number","default":10,"tooltip":"i18n:ENGINE.particle_system.emissionRate"},"life":{"type":"number","default":1,"tooltip":"i18n:ENGINE.particle_system.life"},"lifeVar":{"type":"number","default":0,"tooltip":"i18n:ENGINE.particle_system.lifeVar"},"startColor":{"tooltip":"i18n:ENGINE.particle_system.startColor","type":"cc.Color"},"startColorVar":{"tooltip":"i18n:ENGINE.particle_system.startColorVar","type":"cc.Color"},"endColor":{"tooltip":"i18n:ENGINE.particle_system.endColor","type":"cc.Color"},"endColorVar":{"tooltip":"i18n:ENGINE.particle_system.endColorVar","type":"cc.Color"},"angle":{"type":"number","default":90,"tooltip":"i18n:ENGINE.particle_system.angle"},"angleVar":{"type":"number","default":20,"tooltip":"i18n:ENGINE.particle_system.angleVar"},"startSize":{"type":"number","default":50,"tooltip":"i18n:ENGINE.particle_system.startSize"},"startSizeVar":{"type":"number","default":0,"tooltip":"i18n:ENGINE.particle_system.startSizeVar"},"endSize":{"type":"number","default":0,"tooltip":"i18n:ENGINE.particle_system.endSize"},"endSizeVar":{"type":"number","default":0,"tooltip":"i18n:ENGINE.particle_system.endSizeVar"},"startSpin":{"type":"number","default":0,"tooltip":"i18n:ENGINE.particle_system.startSpin"},"startSpinVar":{"type":"number","default":0,"tooltip":"i18n:ENGINE.particle_system.startSpinVar"},"endSpin":{"type":"number","default":0,"tooltip":"i18n:ENGINE.particle_system.endSpin"},"endSpinVar":{"type":"number","default":0,"tooltip":"i18n:ENGINE.particle_system.endSpinVar"},"posVar":{"type":"Vec2","ctor":"cc.Vec2","default":{"x":0,"y":0},"tooltip":"i18n:ENGINE.particle_system.posVar"},"positionType":{"type":"Enum","tooltip":"i18n:ENGINE.particle_system.positionType","enumList":[{"name":"FREE","value":0},{"name":"RELATIVE","value":1},{"name":"GROUPED","value":2}]},"preview":{"displayOrder":2,"tooltip":"i18n:ENGINE.particle_system.preview","type":"boolean"},"emitterMode":{"type":"Enum","default":0,"tooltip":"i18n:ENGINE.particle_system.emitterMode","enumList":[{"name":"GRAVITY","value":0},{"name":"RADIUS","value":1}]},"gravity":{"type":"Vec2","ctor":"cc.Vec2","default":{"x":0,"y":0},"tooltip":"i18n:ENGINE.particle_system.gravity"},"speed":{"type":"number","default":180,"tooltip":"i18n:ENGINE.particle_system.speed"},"speedVar":{"type":"number","default":50,"tooltip":"i18n:ENGINE.particle_system.speedVar"},"tangentialAccel":{"type":"number","default":80,"tooltip":"i18n:ENGINE.particle_system.tangentialAccel"},"tangentialAccelVar":{"type":"number","default":0,"tooltip":"i18n:ENGINE.particle_system.tangentialAccelVar"},"radialAccel":{"type":"number","default":0,"tooltip":"i18n:ENGINE.particle_system.radialAccel"},"radialAccelVar":{"type":"number","default":0,"tooltip":"i18n:ENGINE.particle_system.radialAccelVar"},"rotationIsDir":{"type":"boolean","default":false,"tooltip":"i18n:ENGINE.particle_system.rotationIsDir"},"startRadius":{"type":"number","default":0,"tooltip":"i18n:ENGINE.particle_system.startRadius"},"startRadiusVar":{"type":"number","default":0,"tooltip":"i18n:ENGINE.particle_system.startRadiusVar"},"endRadius":{"type":"number","default":0,"tooltip":"i18n:ENGINE.particle_system.endRadius"},"endRadiusVar":{"type":"number","default":0,"tooltip":"i18n:ENGINE.particle_system.endRadiusVar"},"rotatePerS":{"type":"number","default":0,"tooltip":"i18n:ENGINE.particle_system.rotatePerS"},"rotatePerSVar":{"type":"number","default":0,"tooltip":"i18n:ENGINE.particle_system.rotatePerSVar"},"playOnLoad":{"displayOrder":3,"type":"boolean","default":true,"tooltip":"i18n:ENGINE.particle_system.playOnLoad"},"autoRemoveOnFinish":{"displayOrder":4,"type":"boolean","default":false,"tooltip":"i18n:ENGINE.particle_system.autoRemoveOnFinish"}},"cc.MotionStreak":{"customMaterial":{"displayOrder":0,"displayName":"CustomMaterial","type":"cc.Asset","ctor":"cc.Material","tooltip":"i18n:ENGINE.UIRenderer.customMaterial"},"color":{"displayOrder":1,"tooltip":"i18n:ENGINE.UIRenderer.color","type":"cc.Color"},"preview":{"type":"boolean"},"fadeTime":{"type":"number"},"minSeg":{"type":"number"},"stroke":{"type":"number"},"texture":{"type":"cc.Asset","ctor":"cc.Texture2D"},"fastMode":{"type":"boolean"}},"cc.RigidBody2D":{"group":{"type":"Enum","tooltip":"i18n:ENGINE.physics2d.rigidbody.group","enumList":[{"name":"DEFAULT","value":1}]},"enabledContactListener":{"type":"boolean","default":false,"tooltip":"i18n:ENGINE.physics2d.rigidbody.enabledContactListener"},"bullet":{"type":"boolean","default":false,"tooltip":"i18n:ENGINE.physics2d.rigidbody.bullet"},"type":{"type":"Enum","tooltip":"i18n:ENGINE.physics2d.rigidbody.type","enumList":[{"name":"Static","value":0},{"name":"Kinematic","value":1},{"name":"Dynamic","value":2},{"name":"Animated","value":3}]},"allowSleep":{"type":{"name":"Boolean","default":false},"tooltip":"i18n:ENGINE.physics2d.rigidbody.allowSleep"},"gravityScale":{"type":"number","tooltip":"i18n:ENGINE.physics2d.rigidbody.gravityScale"},"linearDamping":{"type":"number","tooltip":"i18n:ENGINE.physics2d.rigidbody.linearDamping"},"angularDamping":{"type":"number","tooltip":"i18n:ENGINE.physics2d.rigidbody.angularDamping"},"linearVelocity":{"type":"cc.Vec2","ctor":"cc.Vec2","tooltip":"i18n:ENGINE.physics2d.rigidbody.linearVelocity"},"angularVelocity":{"type":"number","tooltip":"i18n:ENGINE.physics2d.rigidbody.angularVelocity"},"fixedRotation":{"type":{"name":"Boolean","default":false},"tooltip":"i18n:ENGINE.physics2d.rigidbody.fixedRotation"},"awakeOnLoad":{"type":"boolean","default":true,"tooltip":"i18n:ENGINE.physics2d.rigidbody.awakeOnLoad"}},"cc.BoxCollider2D":{"editing":{"type":"boolean","default":false,"tooltip":"i18n:ENGINE.physics2d.collider.editing"},"tag":{"type":"number","default":0,"tooltip":"i18n:ENGINE.physics2d.collider.tag"},"group":{"type":"Enum","tooltip":"i18n:ENGINE.physics2d.collider.group","enumList":[{"name":"DEFAULT","value":1}]},"density":{"type":"number","tooltip":"i18n:ENGINE.physics2d.collider.density"},"sensor":{"type":{"name":"Boolean","default":false},"tooltip":"i18n:ENGINE.physics2d.collider.sensor"},"friction":{"type":"number","tooltip":"i18n:ENGINE.physics2d.collider.friction"},"restitution":{"type":"number","tooltip":"i18n:ENGINE.physics2d.collider.restitution"},"offset":{"type":"cc.Vec2","ctor":"cc.Vec2","tooltip":"i18n:ENGINE.physics2d.collider.offset"},"size":{"type":"cc.Size","ctor":"cc.Size","tooltip":"i18n:ENGINE.physics2d.collider.size"}},"cc.CircleCollider2D":{"editing":{"type":"boolean","default":false,"tooltip":"i18n:ENGINE.physics2d.collider.editing"},"tag":{"type":"number","default":0,"tooltip":"i18n:ENGINE.physics2d.collider.tag"},"group":{"type":"Enum","tooltip":"i18n:ENGINE.physics2d.collider.group","enumList":[{"name":"DEFAULT","value":1}]},"density":{"type":"number","tooltip":"i18n:ENGINE.physics2d.collider.density"},"sensor":{"type":{"name":"Boolean","default":false},"tooltip":"i18n:ENGINE.physics2d.collider.sensor"},"friction":{"type":"number","tooltip":"i18n:ENGINE.physics2d.collider.friction"},"restitution":{"type":"number","tooltip":"i18n:ENGINE.physics2d.collider.restitution"},"offset":{"type":"cc.Vec2","ctor":"cc.Vec2","tooltip":"i18n:ENGINE.physics2d.collider.offset"},"radius":{"type":"number","tooltip":"i18n:ENGINE.physics2d.collider.radius"}},"cc.PolygonCollider2D":{"editing":{"type":"boolean","default":false,"tooltip":"i18n:ENGINE.physics2d.collider.editing"},"tag":{"type":"number","default":0,"tooltip":"i18n:ENGINE.physics2d.collider.tag"},"group":{"type":"Enum","tooltip":"i18n:ENGINE.physics2d.collider.group","enumList":[{"name":"DEFAULT","value":1}]},"density":{"type":"number","tooltip":"i18n:ENGINE.physics2d.collider.density"},"sensor":{"type":{"name":"Boolean","default":false},"tooltip":"i18n:ENGINE.physics2d.collider.sensor"},"friction":{"type":"number","tooltip":"i18n:ENGINE.physics2d.collider.friction"},"restitution":{"type":"number","tooltip":"i18n:ENGINE.physics2d.collider.restitution"},"offset":{"type":"cc.Vec2","ctor":"cc.Vec2","tooltip":"i18n:ENGINE.physics2d.collider.offset"},"threshold":{"displayOrder":0,"type":"number","default":1,"tooltip":"i18n:ENGINE.physics2d.collider.threshold"},"points":{"type":"Object","ctor":"cc.Vec2","tooltip":"i18n:ENGINE.physics2d.collider.points"}},"cc.MouseJoint2D":{"anchor":{"type":"Vec2","ctor":"cc.Vec2","default":{"x":0,"y":0},"tooltip":"i18n:ENGINE.physics2d.joint.anchor"},"connectedAnchor":{"type":"Vec2","ctor":"cc.Vec2","default":{"x":0,"y":0},"tooltip":"i18n:ENGINE.physics2d.joint.connectedAnchor"},"collideConnected":{"type":"boolean","default":false,"tooltip":"i18n:ENGINE.physics2d.joint.collideConnected"},"connectedBody":{"type":"cc.Component","ctor":"cc.RigidBody2D","tooltip":"i18n:ENGINE.physics2d.joint.connectedBody"},"frequency":{"type":"number","tooltip":"i18n:ENGINE.physics2d.joint.frequency"},"dampingRatio":{"type":"number","tooltip":"i18n:ENGINE.physics2d.joint.dampingRatio"},"maxForce":{"type":"number","tooltip":"i18n:ENGINE.physics2d.joint.maxForce"}},"cc.Collider":{"attachedRigidBody":{"displayOrder":-2,"displayName":"Attached","type":"cc.Component","ctor":"cc.RigidBody","tooltip":"i18n:ENGINE.physics3d.collider.attached","readonly":true},"sharedMaterial":{"displayOrder":-1,"displayName":"Material","type":"cc.Asset","ctor":"cc.PhysicsMaterial","tooltip":"i18n:ENGINE.physics3d.collider.sharedMaterial"},"isTrigger":{"displayOrder":0,"tooltip":"i18n:ENGINE.physics3d.collider.isTrigger","type":"boolean"},"center":{"displayOrder":1,"type":"cc.Vec3","ctor":"cc.Vec3","tooltip":"i18n:ENGINE.physics3d.collider.center"}},"cc.SkeletalAnimation":{"clips":{"type":"cc.Asset","ctor":"cc.AnimationClip","tooltip":"i18n:ENGINE.animation.clips"},"defaultClip":{"type":"cc.Asset","ctor":"cc.AnimationClip","tooltip":"i18n:ENGINE.animation.default_clip"},"playOnLoad":{"type":"boolean","default":false,"tooltip":"i18n:ENGINE.animation.play_on_load"},"sockets":{"type":"Object","ctor":"cc.SkeletalAnimation.Socket","tooltip":"i18n:ENGINE.animation.sockets"},"useBakedAnimation":{"tooltip":"i18n:ENGINE.animation.use_baked_animation","type":"boolean"}},"cc.Terrain":{"effectAsset":{"type":"cc.Asset","ctor":"cc.EffectAsset"},"receiveShadow":{"type":"boolean"},"useNormalMap":{"type":"boolean"},"usePBR":{"type":"boolean"},"lodEnable":{"type":"boolean"},"LodBias":{"type":"number"},"info":{"type":"Object","ctor":"cc.TerrainInfo"}},"cc.TiledTile":{"x":{"type":{"name":"Integer","default":0}},"y":{"type":{"name":"Integer","default":0}},"grid":{"type":{"name":"Integer","default":0}}},"cc.TiledUserNodeData":{},"cc.TiledLayer":{"customMaterial":{"displayOrder":0,"displayName":"CustomMaterial","type":"cc.Asset","ctor":"cc.Material","tooltip":"i18n:ENGINE.UIRenderer.customMaterial"},"color":{"displayOrder":1,"tooltip":"i18n:ENGINE.UIRenderer.color","type":"cc.Color"}},"cc.TiledObjectGroup":{"premultiplyAlpha":{"type":{"name":"Boolean","default":false}}},"cc.TiledMap":{"tmxAsset":{"displayOrder":7,"type":"cc.Asset","ctor":"cc.TiledMapAsset"},"enableCulling":{"type":"boolean"}},"cc.EditBox":{"string":{"displayOrder":1,"tooltip":"i18n:ENGINE.editbox.string","type":"string"},"placeholder":{"displayOrder":2,"tooltip":"i18n:ENGINE.editbox.placeholder","type":"string"},"textLabel":{"displayOrder":3,"type":"cc.Component","ctor":"cc.Label","tooltip":"i18n:ENGINE.editbox.text_lable"},"placeholderLabel":{"displayOrder":4,"type":"cc.Component","ctor":"cc.Label","tooltip":"i18n:ENGINE.editbox.placeholder_label"},"backgroundImage":{"displayOrder":5,"type":"cc.Asset","ctor":"cc.SpriteFrame","tooltip":"i18n:ENGINE.editbox.backgroundImage"},"inputFlag":{"displayOrder":6,"type":"Enum","tooltip":"i18n:ENGINE.editbox.input_flag","enumList":[{"name":"PASSWORD","value":0},{"name":"SENSITIVE","value":1},{"name":"INITIAL_CAPS_WORD","value":2},{"name":"INITIAL_CAPS_SENTENCE","value":3},{"name":"INITIAL_CAPS_ALL_CHARACTERS","value":4},{"name":"DEFAULT","value":5}]},"inputMode":{"displayOrder":7,"type":"Enum","tooltip":"i18n:ENGINE.editbox.input_mode","enumList":[{"name":"ANY","value":0},{"name":"EMAIL_ADDR","value":1},{"name":"NUMERIC","value":2},{"name":"PHONE_NUMBER","value":3},{"name":"URL","value":4},{"name":"DECIMAL","value":5},{"name":"SINGLE_LINE","value":6}]},"returnType":{"displayOrder":8,"type":"Enum","tooltip":"i18n:ENGINE.editbox.returnType","enumList":[{"name":"DEFAULT","value":0},{"name":"DONE","value":1},{"name":"SEND","value":2},{"name":"SEARCH","value":3},{"name":"GO","value":4},{"name":"NEXT","value":5}]},"maxLength":{"displayOrder":9,"tooltip":"i18n:ENGINE.editbox.max_length","type":"number"},"tabIndex":{"displayOrder":10,"tooltip":"i18n:ENGINE.editbox.tab_index","type":"number"},"editingDidBegan":{"displayOrder":11,"type":"Array","ctor":"cc.ClickEvent","default":[],"tooltip":"i18n:ENGINE.editbox.editing_began"},"textChanged":{"displayOrder":12,"type":"Array","ctor":"cc.ClickEvent","default":[],"tooltip":"i18n:ENGINE.editbox.text_changed"},"editingDidEnded":{"displayOrder":13,"type":"Array","ctor":"cc.ClickEvent","default":[],"tooltip":"i18n:ENGINE.editbox.editing_ended"},"editingReturn":{"displayOrder":14,"type":"Array","ctor":"cc.ClickEvent","default":[],"tooltip":"i18n:ENGINE.editbox.editing_return"}},"cc.Layout":{"alignHorizontal":{"tooltip":"i18n:ENGINE.layout.align_horizontal","visible":"function () {\\n        return this.layoutType === Type.HORIZONTAL;\\n      }","type":"boolean"},"alignVertical":{"tooltip":"i18n:ENGINE.layout.align_vertical","visible":"function () {\\n        return this.layoutType === Type.VERTICAL;\\n      }","type":"boolean"},"type":{"displayOrder":0,"type":"Enum","tooltip":"i18n:ENGINE.layout.layout_type","enumList":[{"name":"NONE","value":0},{"name":"HORIZONTAL","value":1},{"name":"VERTICAL","value":2},{"name":"GRID","value":3}]},"resizeMode":{"type":"Enum","tooltip":"i18n:ENGINE.layout.resize_mode","enumList":[{"name":"NONE","value":0},{"name":"CONTAINER","value":1},{"name":"CHILDREN","value":2}],"visible":"function () {\\n        return this.layoutType !== Type.NONE;\\n      }"},"cellSize":{"tooltip":"i18n:ENGINE.layout.cell_size","visible":"function () {\\n        if (this.type === Type.GRID && this.resizeMode === ResizeMode.CHILDREN) {\\n          return true;\\n        }\\n\\n        return false;\\n      }","type":"cc.Size"},"startAxis":{"type":"Enum","tooltip":"i18n:ENGINE.layout.start_axis","enumList":[{"name":"HORIZONTAL","value":0},{"name":"VERTICAL","value":1}]},"paddingLeft":{"tooltip":"i18n:ENGINE.layout.padding_left","type":"number"},"paddingRight":{"tooltip":"i18n:ENGINE.layout.padding_right","type":"number"},"paddingTop":{"tooltip":"i18n:ENGINE.layout.padding_top","type":"number"},"paddingBottom":{"tooltip":"i18n:ENGINE.layout.padding_bottom","type":"number"},"spacingX":{"tooltip":"i18n:ENGINE.layout.space_x","type":"number"},"spacingY":{"tooltip":"i18n:ENGINE.layout.space_y","type":"number"},"verticalDirection":{"type":"Enum","tooltip":"i18n:ENGINE.layout.vertical_direction","enumList":[{"name":"BOTTOM_TO_TOP","value":0},{"name":"TOP_TO_BOTTOM","value":1}]},"horizontalDirection":{"type":"Enum","tooltip":"i18n:ENGINE.layout.horizontal_direction","enumList":[{"name":"LEFT_TO_RIGHT","value":0},{"name":"RIGHT_TO_LEFT","value":1}]},"constraint":{"type":"Enum","tooltip":"i18n:ENGINE.layout.constraint","enumList":[{"name":"NONE","value":0},{"name":"FIXED_ROW","value":1},{"name":"FIXED_COL","value":2}],"visible":"function () {\\n        return this.type === Type.GRID;\\n      }"},"constraintNum":{"tooltip":"i18n:ENGINE.layout.constraint_number","visible":"function () {\\n        return this.constraint !== Constraint.NONE;\\n      }","type":"number"},"affectedByScale":{"tooltip":"i18n:ENGINE.layout.affected_scale","type":"boolean"}},"cc.ProgressBar":{"barSprite":{"type":"cc.Component","ctor":"cc.Sprite","tooltip":"i18n:ENGINE.progress.bar_sprite"},"mode":{"type":"Enum","tooltip":"i18n:ENGINE.progress.mode","enumList":[{"name":"HORIZONTAL","value":0},{"name":"VERTICAL","value":1},{"name":"FILLED","value":2}]},"totalLength":{"tooltip":"i18n:ENGINE.progress.total_length","type":"number"},"progress":{"tooltip":"i18n:ENGINE.progress.progress","min":0,"max":1,"step":0.1,"slide":true,"type":"number"},"reverse":{"tooltip":"i18n:ENGINE.progress.reverse","type":"boolean"}},"cc.ScrollBar":{"handle":{"displayOrder":0,"type":"cc.Component","ctor":"cc.Sprite","tooltip":"i18n:ENGINE.scrollbar.handle"},"direction":{"displayOrder":1,"type":"Enum","tooltip":"i18n:ENGINE.scrollbar.direction","enumList":[{"name":"HORIZONTAL","value":0},{"name":"VERTICAL","value":1}]},"enableAutoHide":{"displayOrder":2,"tooltip":"i18n:ENGINE.scrollbar.auto_hide","type":"boolean"},"autoHideTime":{"displayOrder":3,"tooltip":"i18n:ENGINE.scrollbar.auto_hide_time","type":"number"}},"cc.ViewGroup":{"bounceDuration":{"displayOrder":5,"type":"number","default":1,"tooltip":"i18n:ENGINE.scrollview.bounceDuration","min":0,"max":10},"brake":{"displayOrder":3,"type":"number","default":0.5,"tooltip":"i18n:ENGINE.scrollview.brake","min":0,"max":1,"step":0.1},"elastic":{"displayOrder":3,"type":"boolean","default":true,"tooltip":"i18n:ENGINE.scrollview.elastic"},"inertia":{"displayOrder":2,"type":"boolean","default":true,"tooltip":"i18n:ENGINE.scrollview.inertia"},"content":{"displayOrder":5,"type":"cc.Node","ctor":"cc.Node","tooltip":"i18n:ENGINE.scrollview.content"},"horizontal":{"displayOrder":0,"type":"boolean","default":true,"tooltip":"i18n:ENGINE.scrollview.horizontal"},"horizontalScrollBar":{"displayOrder":0,"type":"cc.Component","ctor":"cc.ScrollBar","tooltip":"i18n:ENGINE.scrollview.horizontal_bar"},"vertical":{"displayOrder":1,"type":"boolean","default":true,"tooltip":"i18n:ENGINE.scrollview.vertical"},"verticalScrollBar":{"displayOrder":1,"type":"cc.Component","ctor":"cc.ScrollBar","tooltip":"i18n:ENGINE.scrollview.vertical_bar"},"cancelInnerEvents":{"displayOrder":9,"type":"boolean","default":true,"tooltip":"i18n:ENGINE.scrollview.cancelInnerEvents"},"scrollEvents":{"displayOrder":10,"type":"Array","ctor":"cc.ClickEvent","default":[],"tooltip":"i18n:ENGINE.scrollview.scrollEvents"}},"cc.Slider":{"handle":{"type":"cc.Component","ctor":"cc.Sprite","tooltip":"i18n:ENGINE.slider.handle"},"direction":{"type":"Enum","tooltip":"i18n:ENGINE.slider.direction","enumList":[{"name":"Horizontal","value":0},{"name":"Vertical","value":1}]},"progress":{"tooltip":"i18n:ENGINE.slider.progress","min":0,"max":1,"step":0.01,"slide":true,"type":"number"},"slideEvents":{"type":"Array","ctor":"cc.ClickEvent","default":[],"tooltip":"i18n:ENGINE.slider.slideEvents"}},"cc.Toggle":{"target":{"displayOrder":0,"type":"cc.Node","ctor":"cc.Node","tooltip":"i18n:ENGINE.button.target"},"interactable":{"displayOrder":1,"tooltip":"i18n:ENGINE.button.interactable","type":"boolean"},"transition":{"displayOrder":2,"type":"Enum","tooltip":"i18n:ENGINE.button.transition","enumList":[{"name":"NONE","value":0},{"name":"COLOR","value":1},{"name":"SPRITE","value":2},{"name":"SCALE","value":3}]},"normalColor":{"displayOrder":3,"tooltip":"i18n:ENGINE.button.normal_color","type":"cc.Color"},"pressedColor":{"displayOrder":3,"tooltip":"i18n:ENGINE.button.pressed_color","type":"cc.Color"},"hoverColor":{"displayOrder":3,"tooltip":"i18n:ENGINE.button.hover_color","type":"cc.Color"},"disabledColor":{"displayOrder":3,"tooltip":"i18n:ENGINE.button.disabled_color","type":"cc.Color"},"duration":{"displayOrder":4,"tooltip":"i18n:ENGINE.button.duration","min":0,"max":10,"type":"number"},"zoomScale":{"displayOrder":3,"tooltip":"i18n:ENGINE.button.zoom_scale","type":"number"},"normalSprite":{"displayOrder":3,"type":"cc.Asset","ctor":"cc.SpriteFrame","tooltip":"i18n:ENGINE.button.normal_sprite"},"pressedSprite":{"displayOrder":3,"type":"cc.Asset","ctor":"cc.SpriteFrame","tooltip":"i18n:ENGINE.button.pressed_sprite"},"hoverSprite":{"displayOrder":3,"type":"cc.Asset","ctor":"cc.SpriteFrame","tooltip":"i18n:ENGINE.button.hover_sprite"},"disabledSprite":{"displayOrder":3,"type":"cc.Asset","ctor":"cc.SpriteFrame","tooltip":"i18n:ENGINE.button.disabled_sprite"},"clickEvents":{"displayOrder":20,"type":"Array","ctor":"cc.ClickEvent","default":[],"tooltip":"i18n:ENGINE.button.click_events"},"isChecked":{"displayOrder":1,"tooltip":"i18n:ENGINE.toggle.isChecked","type":"boolean"},"checkMark":{"displayOrder":1,"type":"cc.Component","ctor":"cc.Sprite","tooltip":"i18n:ENGINE.toggle.checkMark"},"checkEvents":{"type":"Array","ctor":"cc.ClickEvent","default":[],"tooltip":"i18n:ENGINE.toggle.check_events"}},"cc.ToggleContainer":{"allowSwitchOff":{"tooltip":"i18n:ENGINE.toggle_group.allowSwitchOff","type":"boolean"},"checkEvents":{"type":"Array","ctor":"cc.ClickEvent","default":[],"tooltip":"i18n:ENGINE.toggle_group.check_events"}},"cc.PageViewIndicator":{"spriteFrame":{"type":"cc.Asset","ctor":"cc.SpriteFrame","tooltip":"i18n:ENGINE.pageview_indicator.spriteFrame"},"direction":{"type":"Enum","tooltip":"i18n:ENGINE.pageview_indicator.direction","enumList":[{"name":"HORIZONTAL","value":0},{"name":"VERTICAL","value":1}]},"cellSize":{"type":"cc.Size","ctor":"cc.Size","tooltip":"i18n:ENGINE.pageview_indicator.cell_size"},"spacing":{"type":"number","default":0,"tooltip":"i18n:ENGINE.pageview_indicator.spacing"}},"cc.PageView":{"bounceDuration":{"displayOrder":5,"type":"number","default":1,"tooltip":"i18n:ENGINE.scrollview.bounceDuration","min":0,"max":10},"brake":{"displayOrder":3,"type":"number","default":0.5,"tooltip":"i18n:ENGINE.scrollview.brake","min":0,"max":1,"step":0.1},"elastic":{"displayOrder":3,"type":"boolean","default":true,"tooltip":"i18n:ENGINE.scrollview.elastic"},"inertia":{"displayOrder":2,"type":"boolean","default":true,"tooltip":"i18n:ENGINE.scrollview.inertia"},"content":{"displayOrder":5,"type":"cc.Node","ctor":"cc.Node","tooltip":"i18n:ENGINE.scrollview.content"},"sizeMode":{"type":"Enum","tooltip":"i18n:ENGINE.pageview.sizeMode","enumList":[{"name":"Unified","value":0},{"name":"Free","value":1}]},"direction":{"type":"Enum","tooltip":"i18n:ENGINE.pageview.direction","enumList":[{"name":"Horizontal","value":0},{"name":"Vertical","value":1}]},"scrollThreshold":{"tooltip":"i18n:ENGINE.pageview.scrollThreshold","min":0,"max":1,"step":0.01,"slide":true,"type":"number"},"pageTurningEventTiming":{"tooltip":"i18n:ENGINE.pageview.pageTurningEventTiming","min":0,"max":1,"step":0.01,"slide":true,"type":"number"},"indicator":{"type":"cc.Component","ctor":"cc.PageViewIndicator","tooltip":"i18n:ENGINE.pageview.indicator"},"autoPageTurningThreshold":{"type":"number","default":100,"tooltip":"i18n:ENGINE.pageview.autoPageTurningThreshold"},"pageTurningSpeed":{"type":"number","default":0.3,"tooltip":"i18n:ENGINE.pageview.pageTurningSpeed"},"pageEvents":{"type":"Array","ctor":"cc.ClickEvent","default":[],"tooltip":"i18n:ENGINE.pageview.pageEvents"}},"cc.SafeArea":{},"cc.UICoordinateTracker":{"target":{"type":"cc.Node","ctor":"cc.Node","tooltip":"i18n:ENGINE.UICoordinateTracker.target"},"camera":{"type":"cc.Component","ctor":"cc.Camera","tooltip":"i18n:ENGINE.UICoordinateTracker.camera"},"useScale":{"tooltip":"i18n:ENGINE.UICoordinateTracker.use_scale","type":"boolean"},"distance":{"tooltip":"i18n:ENGINE.UICoordinateTracker.distance","type":"number"},"syncEvents":{"type":"Array","ctor":"cc.ClickEvent","default":[],"tooltip":"i18n:ENGINE.UICoordinateTracker.sync_events"}},"cc.BlockInputEvents":{},"cc.SubContextView":{"designResolutionSize":{"tooltip":"i18n:ENGINE.subContextView.design_size","type":"cc.Size"},"fps":{"tooltip":"i18n:ENGINE.subContextView.fps","type":"number"}},"cc.VideoPlayer":{"resourceType":{"type":"Enum","tooltip":"i18n:ENGINE.videoplayer.resourceType","enumList":[{"name":"REMOTE","value":0},{"name":"LOCAL","value":1}]},"remoteURL":{"tooltip":"i18n:ENGINE.videoplayer.remoteURL","type":"string"},"clip":{"type":"cc.Asset","ctor":"cc.VideoClip","tooltip":"i18n:ENGINE.videoplayer.clip"},"playOnAwake":{"tooltip":"i18n:ENGINE.videoplayer.playOnAwake","type":"boolean"},"playbackRate":{"tooltip":"i18n:ENGINE.videoplayer.playbackRate","min":0,"max":10,"step":1,"slide":true,"type":"number"},"volume":{"tooltip":"i18n:ENGINE.videoplayer.volume","min":0,"max":1,"step":0.1,"slide":true,"type":"number"},"mute":{"tooltip":"i18n:ENGINE.videoplayer.mute","type":"boolean"},"loop":{"tooltip":"i18n:ENGINE.videoplayer.loop","type":"boolean"},"keepAspectRatio":{"tooltip":"i18n:ENGINE.videoplayer.keepAspectRatio","type":"boolean"},"fullScreenOnAwake":{"tooltip":"i18n:ENGINE.videoplayer.fullScreenOnAwake","type":"boolean"},"stayOnBottom":{"tooltip":"i18n:ENGINE.videoplayer.stayOnBottom","type":"boolean"},"videoPlayerEvent":{"displayOrder":100,"type":"Array","ctor":"cc.ClickEvent","default":[],"tooltip":"i18n:ENGINE.videoplayer.videoPlayerEvent"}},"cc.WebView":{"url":{"tooltip":"i18n:ENGINE.webview.url","type":"string"},"webviewEvents":{"displayOrder":20,"type":"Array","ctor":"cc.ClickEvent","default":[],"tooltip":"i18n:ENGINE.webview.webviewEvents"}}}
+        `;
+        compAttrMaps = JSON.parse(mapStr);
+    }
+    return compAttrMaps[clsName];
+}
+function isSubclassOfComponent(val) {
+    if (typeof val !== 'function') {
+        return false;
+    }
+    let proto = Object.getPrototypeOf(val);
+    while (proto) {
+        if (proto === _cc_().Component) {
+            return true;
+        }
+        proto = Object.getPrototypeOf(proto);
+    }
+    return false;
+}
+/**
+ * 获取内置class的编辑器属性（DEV时获取，保存为配置，构建后可能会变化，使用配置比较稳定）
+ * @returns
+ */
+function getCCCompClassAttrMap() {
+    const sceneNode = _cc_().director.getScene();
+    const compAttrMaps = {};
+    const classArr = [];
+    const errArr = [];
+    for (let k in _cc_()) {
+        const val = _cc_()[k];
+        if (isSubclassOfComponent(val)) {
+            // console.log(`${k} is a subclass of cc.Component`);
+            const comp = val;
+            //@ts-ignore
+            const clsName = comp.prototype.__classname__;
+            if (compAttrMaps[clsName] != null) {
+                continue;
+            }
+            classArr.push(clsName);
+            let inst = sceneNode.getComponentInChildren(comp);
+            let _node = null;
+            if (inst == null) {
+                _node = new (_cc_().Node)();
+                _node.parent = sceneNode;
+                try {
+                    inst = _node.addComponent(comp);
+                }
+                catch (e) {
+                    console.log("---err1", clsName, e.message);
+                }
+            }
+            if (inst) {
+                try {
+                    const map = getAttrInfosOfComponentInst(inst);
+                    compAttrMaps[clsName] = map;
+                }
+                catch (e) {
+                    console.log("---err2", clsName, e.message);
+                }
+            }
+            if (compAttrMaps[clsName] == null) {
+                errArr.push(clsName);
+            }
+            if (_node) {
+                _node.destroy();
+            }
+        }
+    }
+    const str = JSON.stringify(compAttrMaps);
+    const len = Object.keys(compAttrMaps).length;
+    return str;
+}
+/**
+ * 对 _getAttrInfosOfComponentProrotype 的补充
+ */
+function getAttrInfosOfComponentInst(compInst /**import("cc").Component */) {
+    const clsPrototype = compInst["__proto__"];
+    let map = _getAttrInfosOfComponentProrotype(clsPrototype);
+    for (let k in map) {
+        let attrType = map[k].type;
+        if (!attrType || attrType == "Object") {
+            const _instVal = compInst[k];
+            const _instType = typeof _instVal;
+            if (_instType == "boolean") {
+                attrType = "boolean";
+            }
+            else if (_instType == "string") {
+                attrType = "string";
+            }
+            else if (_instType == "number") {
+                attrType = "number";
+            }
+            else if (_instType == "object") {
+                if (_instVal instanceof _cc_().Color) {
+                    attrType = "cc.Color";
+                }
+                else if (_instVal instanceof _cc_().Vec2) {
+                    attrType = "cc.Vec2";
+                }
+                else if (_instVal instanceof _cc_().Vec3) {
+                    attrType = "cc.Vec3";
+                }
+                else if (_instVal instanceof _cc_().Vec4) {
+                    attrType = "cc.Vec4";
+                }
+                else if (_instVal instanceof _cc_().Rect) {
+                    attrType = "cc.Rect";
+                }
+                else if (_instVal instanceof _cc_().Size) {
+                    attrType = "cc.Size";
+                }
+                else if (_instVal instanceof _cc_().Quat) {
+                    attrType = "cc.Quat";
+                }
+                else if (_instVal instanceof _cc_().Node) {
+                    attrType = "cc.Node";
+                }
+                else if (_instVal instanceof _cc_().Component) {
+                    attrType = "cc.Component";
+                }
+                else if (_instVal instanceof _cc_().Asset) {
+                    attrType = "cc.Asset";
+                }
+            }
+            map[k].type = attrType;
+        }
+    }
+    return map;
+}
+let _compAttrsMap = {};
+/**
+ * 根据组件的类，获取到要在编辑器显示的属性列表
+ * @param clsPrototype 如Label.prototype
+ * @returns
+ */
+function _getAttrInfosOfComponentProrotype(clsPrototype) {
+    var _a, _b, _c, _d, _e, _f, _g;
+    const clsName = clsPrototype.__classname__;
+    if (_compAttrsMap[clsName]) {
+        return _compAttrsMap[clsName];
+    }
+    function _getAttr(attrs, name, p) {
+        var _a;
+        const key = name + "$_$" + p;
+        let v = (_a = attrs[key]) !== null && _a !== void 0 ? _a : null;
+        return v;
+    }
+    const _ctor = clsPrototype.constructor;
+    const props = _ctor.__props__;
+    const attrs = _cc_().CCClass.Attr.getClassAttrs(_ctor);
+    const data = {};
+    for (let k of props) {
+        if (k.startsWith("_")) {
+            // if(k!=="__scriptAsset"){
+            continue;
+            // }
+        }
+        let visible = _getAttr(attrs, k, "visible");
+        if (visible === false) {
+            continue;
+        }
+        let editorOnly = _getAttr(attrs, k, "editorOnly");
+        if (editorOnly) {
+            continue;
+        }
+        if (typeof visible == "function") {
+            const funcStr = visible.toString();
+            visible = funcStr.replace("this._", "this.");
+        }
+        else if (visible === true) {
+            visible = null;
+        }
+        const pCtor = _getAttr(attrs, k, "ctor");
+        const pCtorClassname = (_a = pCtor === null || pCtor === void 0 ? void 0 : pCtor.prototype) === null || _a === void 0 ? void 0 : _a.__classname__;
+        const param = {
+            displayOrder: _getAttr(attrs, k, "displayOrder"),
+            displayName: _getAttr(attrs, k, "displayName"),
+            type: _getAttr(attrs, k, "type"),
+            ctor: pCtorClassname !== null && pCtorClassname !== void 0 ? pCtorClassname : null,
+            default: _getAttr(attrs, k, "default"),
+            tooltip: _getAttr(attrs, k, "tooltip"),
+            multiline: _getAttr(attrs, k, "multiline"),
+            readonly: _getAttr(attrs, k, "readonly"),
+            min: _getAttr(attrs, k, "min"),
+            max: _getAttr(attrs, k, "max"),
+            step: _getAttr(attrs, k, "step"),
+            range: _getAttr(attrs, k, "range"),
+            slide: _getAttr(attrs, k, "slide"),
+            editorOnly: _getAttr(attrs, k, "editorOnly"),
+            enumList: _getAttr(attrs, k, "enumList"),
+            visible: visible,
+        };
+        if (typeof param.default == "function") {
+            param.default = param.default();
+            if (param.ctor == null && (typeof param.default) == "object") {
+                param.ctor = (_c = (_b = param.default) === null || _b === void 0 ? void 0 : _b.__proto__) === null || _c === void 0 ? void 0 : _c.__classname__;
+            }
+        }
+        if (Array.isArray(param.default)) {
+            if (param.ctor == null && ((_d = param.type) === null || _d === void 0 ? void 0 : _d.name)) {
+                param.ctor = (_e = param.type) === null || _e === void 0 ? void 0 : _e.name;
+            }
+            param.type = "Array";
+        }
+        else if (!param.type) {
+            let _type = typeof param.default;
+            if (_type == "boolean") {
+                param.type = "boolean";
+            }
+            else if (_type == "string") {
+                param.type = "string";
+            }
+            else if (_type == "number") {
+                param.type = "number";
+            }
+            else if (_type == "object") {
+                if (param.default instanceof _cc_().Color) {
+                    param.type = "Color";
+                }
+                else if (param.default instanceof _cc_().Vec2) {
+                    param.type = "Vec2";
+                }
+                else if (param.default instanceof _cc_().Vec3) {
+                    param.type = "Vec3";
+                }
+                else if (param.default instanceof _cc_().Vec4) {
+                    param.type = "Vec4";
+                }
+                else if (param.default instanceof _cc_().Rect) {
+                    param.type = "Rect";
+                }
+                else if (param.default instanceof _cc_().Size) {
+                    param.type = "Size";
+                }
+            }
+        }
+        else if (param.type == "Object") {
+            // if(param.ctor){
+            //     param.type = param.ctor
+            // }else{
+            // }
+            const isNode = _cc_().Node.prototype == pCtor.prototype || _cc_().Node.prototype.isPrototypeOf(pCtor.prototype);
+            const isComponent = _cc_().Component.prototype == pCtor.prototype || _cc_().Component.prototype.isPrototypeOf(pCtor.prototype);
+            const isAsset = _cc_().Asset.prototype == pCtor.prototype || _cc_().Asset.prototype.isPrototypeOf(pCtor.prototype);
+            if (isNode) {
+                param.type = "cc.Node";
+            }
+            else if (isComponent) {
+                param.type = "cc.Component";
+            }
+            else if (isAsset) {
+                param.type = "cc.Asset";
+            }
+            else if (param.ctor == "cc.ClickEvent") {
+                let g = 0;
+            }
+        }
+        else if (typeof param.type == "object") {
+            if (param.type.name == "Float" || param.type.name == "double") {
+                param.type = "number";
+            }
+            else if (param.type.name == "String") {
+                param.type = "string";
+            }
+        }
+        if (param.ctor == null && param.default != null && (typeof param.default) == "object") {
+            param.ctor = (_g = (_f = param.default) === null || _f === void 0 ? void 0 : _f.__proto__) === null || _g === void 0 ? void 0 : _g.__classname__;
+            if (param.ctor != null) {
+                if (param.type == null) {
+                    param.type = "Object";
+                }
+            }
+        }
+        for (let k of Object.keys(param)) {
+            if (param[k] == null) {
+                delete param[k];
+            }
+        }
+        data[k] = param;
+        // console.log(_ctor.name,k,JSON.stringify(param))
+    }
+    _compAttrsMap[clsName] = data;
+    return data;
+}
+function _getResMemory(asset /**import("cc").Asset */) {
+    if (asset instanceof _cc_().ImageAsset) {
+        return getImageAssetMemorySize(asset);
+    }
+    return 0;
+}
+function getDynamicTextureData(index) {
+    if (!_cc_().DynamicAtlasManager.instance.enabled) {
+        return null;
+    }
+    //@ts-ignore
+    const _atlases = _cc_().DynamicAtlasManager.instance._atlases;
+    if (_atlases.length == 0) {
+        return null;
+    }
+    const _tex = _atlases[index]._texture;
+    if (_tex == null) {
+        return null;
+    }
+    return getTextureData(_tex, false);
+}
+function getTextureData(_tex /**import("cc").Texture2D */, flipY = true) {
+    if (_tex == null) {
+        return null;
+    }
+    const arr = readPixels(_tex, flipY);
+    const obj = cropBlankPixels(arr, _tex.width, _tex.height);
+    const base64String = uint8ArrayToBase64(obj.buffer);
+    obj["base64Data"] = base64String;
+    delete obj.buffer;
+    return obj;
+}
+function readPixels(texture /**import("cc").Texture2D */, flipY = true) {
+    const { width, height } = texture;
+    const gfxTexture = texture.getGFXTexture();
+    const gfxDevice = texture['_getGFXDevice']();
+    const bufferViews = [];
+    const region = new (_cc_()).gfx.BufferTextureCopy;
+    const buffer = new Uint8Array(width * height * 4);
+    region.texExtent.width = width;
+    region.texExtent.height = height;
+    bufferViews.push(buffer);
+    gfxDevice === null || gfxDevice === void 0 ? void 0 : gfxDevice.copyTextureToBuffers(gfxTexture, bufferViews, [region]);
+    if (flipY) {
+        let i = 0, len1 = height / 2, len2 = width * 4, j, idx0, idx1;
+        while (i < len1) {
+            j = 0;
+            while (j < len2) {
+                idx0 = i * len2 + j;
+                idx1 = (height - i - 1) * len2 + j++;
+                [buffer[idx0], buffer[idx1]] = [buffer[idx1], buffer[idx0]];
+            }
+            i++;
+        }
+    }
+    return buffer;
+}
+// Base64 编码
+function btoaPolyfill(input) {
+    if (globalThis.btoa) {
+        return btoa(input);
+    }
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
+    let str = input;
+    let output = '';
+    for (let block = 0, charCode, i = 0, map = chars; str.charAt(i | 0) || (map = '=', i % 1); output += map.charAt(63 & (block >> (8 - (i % 1) * 8)))) {
+        charCode = str.charCodeAt(i += 3 / 4);
+        if (charCode > 0xFF) {
+            throw new Error("'btoa' failed: The string to be encoded contains characters outside of the Latin1 range.");
+        }
+        block = (block << 8) | charCode;
+    }
+    return output;
+}
+// Base64 解码
+function atobPolyfill(input) {
+    if (globalThis.atob) {
+        return atob(input);
+    }
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
+    let str = input.replace(/=+$/, '');
+    let output = '';
+    if (str.length % 4 === 1) {
+        throw new Error("'atob' failed: The string to be decoded is not correctly encoded.");
+    }
+    for (let bc = 0, bs = 0, buffer, i = 0; (buffer = str.charAt(i++)); ~buffer && ((bs = bc % 4 ? (bs << 6) | buffer : buffer), bc++ % 4)
+        ? (output += String.fromCharCode(255 & (bs >> ((-2 * bc) & 6))))
+        : 0) {
+        buffer = chars.indexOf(buffer);
+    }
+    return output;
+}
+function uint8ArrayToBase64(uint8Array) {
+    const chunkSize = 0x8000; // 每次处理 32768 个字节
+    let result = '';
+    for (let i = 0; i < uint8Array.length; i += chunkSize) {
+        const chunk = uint8Array.subarray(i, i + chunkSize);
+        result += String.fromCharCode.apply(null, chunk);
+    }
+    return btoaPolyfill(result);
+}
+function cropBlankPixels(buffer, width, height) {
+    // 寻找上下边界
+    let top = 0;
+    let bottomLine = height - 1;
+    // 寻找上边界
+    for (; top < height; top++) {
+        let hasPixel = false;
+        for (let x = 0; x < width; x++) {
+            if (buffer[(top * width + x) * 4 + 3] !== 0) {
+                hasPixel = true;
+                break;
+            }
+        }
+        if (hasPixel)
+            break;
+    }
+    // 寻找下边界
+    for (; bottomLine >= top; bottomLine--) {
+        let hasPixel = false;
+        for (let x = 0; x < width; x++) {
+            if (buffer[(bottomLine * width + x) * 4 + 3] !== 0) {
+                hasPixel = true;
+                break;
+            }
+        }
+        if (hasPixel)
+            break;
+    }
+    // 处理全透明情况
+    if (top > bottomLine) {
+        return {
+            buffer,
+            width: 0,
+            height: 0,
+            oldWidth: width,
+            oldHeight: height,
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0
+        };
+    }
+    // 寻找左右边界
+    let leftMin = width;
+    let rightMax = 0;
+    for (let y = top; y <= bottomLine; y++) {
+        // 找左边界
+        let left = 0;
+        for (; left < width; left++) {
+            if (buffer[(y * width + left) * 4 + 3] !== 0)
+                break;
+        }
+        if (left < leftMin)
+            leftMin = left;
+        // 找右边界
+        let right = width - 1;
+        for (; right >= leftMin; right--) {
+            if (buffer[(y * width + right) * 4 + 3] !== 0)
+                break;
+        }
+        if (right > rightMax)
+            rightMax = right;
+    }
+    // 计算裁剪参数
+    const newWidth = rightMax - leftMin + 1;
+    const newHeight = bottomLine - top + 1;
+    const newBuffer = new Uint8Array(newWidth * newHeight * 4);
+    // 复制有效像素数据
+    for (let y = 0; y < newHeight; y++) {
+        const srcStart = ((top + y) * width + leftMin) * 4;
+        const srcEnd = srcStart + newWidth * 4;
+        newBuffer.set(buffer.subarray(srcStart, srcEnd), y * newWidth * 4);
+    }
+    return {
+        buffer: newBuffer,
+        width: newWidth,
+        height: newHeight,
+        oldWidth: width,
+        oldHeight: height,
+        top: top,
+        left: leftMin,
+        right: width - rightMax - 1,
+        bottom: height - bottomLine - 1
+    };
+}
+async function evalJsStr(jsStr) {
+    try {
+        const content = _cc_().js.formatStr("(async function(){%s})()", jsStr);
+        let ret = await eval(content);
+        const type = typeof ret;
+        if (type == "object") {
+            ret = JSON.stringify(ret);
+        }
+        else {
+            ret = ret + "";
+        }
+        return ret;
+    }
+    catch (e) {
+        if (e && e.message) {
+            return e.message;
+        }
+        return "error occur";
+    }
+}
+function getImageAssetMemorySize(imageAsset /**import("cc").ImageAsset */) {
+    const width = imageAsset.width;
+    const height = imageAsset.height;
+    const format = imageAsset.format; // 像素格式
+    let bytesPerPixel = 4; // 默认 RGBA8888 格式，每个像素 4 字节
+    switch (format) {
+        case _cc_().Texture2D.PixelFormat.RGBA8888:
+            bytesPerPixel = 4;
+            break;
+        case _cc_().Texture2D.PixelFormat.RGB888:
+            bytesPerPixel = 3;
+            break;
+        case _cc_().Texture2D.PixelFormat.RGBA4444:
+        case _cc_().Texture2D.PixelFormat.RGB565:
+            bytesPerPixel = 2;
+            break;
+        case _cc_().Texture2D.PixelFormat.A8:
+            bytesPerPixel = 1;
+            break;
+        // 其他格式根据需要添加
+    }
+    return width * height * bytesPerPixel;
+}
+function getGameEnv() {
+    let obj = {
+        isNative: _cc_().sys.isNative,
+        isBrowser: _cc_().sys.isBrowser,
+        isMobile: _cc_().sys.isMobile,
+        isWechatGame: _cc_().sys.platform === _cc_().sys.Platform.WECHAT_GAME,
+        CC_DEV: _ccenv_().DEV,
+        CC_DEBUG: _ccenv_().DEBUG,
+        CC_PREVIEW: _ccenv_().PREVIEW,
+        CC_JSB: _ccenv_().JSB,
+        CC_SUPPORT_JIT: _ccenv_().SUPPORT_JIT,
+        CC_EDITOR: _ccenv_().EDITOR
+    };
+    if (_cc_().sys.isNative) {
+        obj.writablePath = _cc_().native.fileUtils.getWritablePath();
+    }
+    return obj;
+}
+function _getSelfModelName() {
+    let model = "";
+    if (_cc_().sys.isNative) {
+        if (_cc_().sys.os === _cc_().sys.OS.ANDROID) {
+            model = "native_android";
+        }
+        else if (_cc_().sys.os === _cc_().sys.OS.IOS) {
+            model = "native_ios";
+        }
+        else if (_cc_().sys.os === _cc_().sys.OS.WINDOWS) {
+            model = "native_windows";
+        }
+        else if (_cc_().sys.os === _cc_().sys.OS.OSX) {
+            model = "native_osx";
+        }
+        else if (_cc_().sys.os === _cc_().sys.OS.OHOS) {
+            model = "native_ohos";
+        }
+        else if (_cc_().sys.os === _cc_().sys.OS.LINUX) {
+            model = "native_linux";
+        }
+        else {
+            model = "native_unknown";
+        }
+    }
+    else {
+        if (_cc_().sys.platform === _cc_().sys.Platform.ALIPAY_MINI_GAME) {
+            model = "alipay_mini_game";
+        }
+        else if (_cc_().sys.platform === _cc_().sys.Platform.WECHAT_GAME) {
+            model = "wechat_game";
+        }
+        else if (_cc_().sys.platform === _cc_().sys.Platform.QTT_MINI_GAME) {
+            model = "qq_play";
+        }
+        else if (_cc_().sys.platform === _cc_().sys.Platform.BYTEDANCE_MINI_GAME) {
+            model = "bytedance_mini_game";
+        }
+        else if (_cc_().sys.platform === _cc_().sys.Platform.BAIDU_MINI_GAME) {
+            model = "baidu_mini_game";
+        }
+        else if (_cc_().sys.platform === _cc_().sys.Platform.XIAOMI_QUICK_GAME) {
+            model = "xiaomi_quick_game";
+        }
+        else if (_cc_().sys.platform === _cc_().sys.Platform.OPPO_MINI_GAME) {
+            model = "oppo_mini_game";
+        }
+        else if (_cc_().sys.platform === _cc_().sys.Platform.VIVO_MINI_GAME) {
+            model = "vivo_mini_game";
+        }
+        else if (_cc_().sys.platform === _cc_().sys.Platform.TAOBAO_CREATIVE_APP) {
+            model = "taobao_creative_app";
+        }
+        else if (_cc_().sys.platform === _cc_().sys.Platform.TAOBAO_MINI_GAME) {
+            model = "taobao_mini_game";
+        }
+        else if (_cc_().sys.platform === _cc_().sys.Platform.COCOSPLAY) {
+            model = "cocosplay";
+        }
+        else if (_cc_().sys.platform === _cc_().sys.Platform.LINKSURE_MINI_GAME) {
+            model = "linksure_mini_game";
+        }
+        else if (_cc_().sys.platform === _cc_().sys.Platform.HUAWEI_QUICK_GAME) {
+            model = "huawei_quick_game";
+        }
+        else if (_cc_().sys.browserType === _cc_().sys.BrowserType.CHROME) {
+            model = "browser_chrome";
+        }
+        else if (_cc_().sys.browserType === _cc_().sys.BrowserType.FIREFOX) {
+            model = "browser_firefox";
+        }
+        else if (_cc_().sys.browserType === _cc_().sys.BrowserType.SAFARI) {
+            model = "browser_safari";
+        }
+        else if (_cc_().sys.browserType === _cc_().sys.BrowserType.EDGE) {
+            model = "browser_edge";
+        }
+        else if (_cc_().sys.browserType === _cc_().sys.BrowserType.IE) {
+            model = "browser_ie";
+        }
+        else if (_cc_().sys.browserType === _cc_().sys.BrowserType.OPERA) {
+            model = "browser_opera";
+        }
+        else if (_cc_().sys.browserType === _cc_().sys.BrowserType.MIUI) {
+            model = "browser_miui";
+        }
+        else if (_cc_().sys.browserType === _cc_().sys.BrowserType.UC) {
+            model = "browser_uc";
+        }
+        else if (_cc_().sys.browserType === _cc_().sys.BrowserType.QQ) {
+            model = "browser_qq";
+        }
+        else if (_cc_().sys.browserType === _cc_().sys.BrowserType.BAIDU) {
+            model = "browser_baidu";
+        }
+        else {
+            model = "unknown";
+        }
+        if (_cc_().sys.os === _cc_().sys.OS.ANDROID) {
+            model = "android" + "_" + model;
+        }
+        else if (_cc_().sys.os === _cc_().sys.OS.IOS) {
+            model = "ios" + "_" + model;
+        }
+        else if (_cc_().sys.os === _cc_().sys.OS.WINDOWS) {
+            model = "windows" + "_" + model;
+        }
+        else if (_cc_().sys.os === _cc_().sys.OS.OSX) {
+            model = "osx" + "_" + model;
+        }
+        else if (_cc_().sys.os === _cc_().sys.OS.OHOS) {
+            model = "ohos" + "_" + model;
+        }
+        else if (_cc_().sys.os === _cc_().sys.OS.LINUX) {
+            model = "linux" + "_" + model;
+        }
+    }
+    if (_cc_().sys.isXR) {
+        model += "_isXR";
+    }
+    return model;
+}
+function interceptLog() {
+    let _handleLog = globalThis["cc_debuger_handleLog"];
+    if (!_handleLog) {
+        // 添加递归保护标志
+        let isHandlingLog = false;
+        globalThis["cc_debuger_handleLog"] = _handleLog = function (level /**LogLevel */, args) {
+            if (isHandlingLog) {
+                // 如果正在处理日志，直接返回，避免递归
+                return;
+            }
+            try {
+                isHandlingLog = true; // 设置标志，表示正在处理日志
+                const message = args.map((a) => {
+                    if (typeof a === "object") {
+                        try {
+                            return JSON.stringify(a);
+                        }
+                        catch (e) {
+                            if (a.toString) {
+                                return a.toString();
+                            }
+                            else {
+                                return "[object]";
+                            }
+                        }
+                    }
+                    else {
+                        return String(a);
+                    }
+                }).join(" ");
+                let time = new Date();
+                let timeStr = `${time.getHours()}:${time.getMinutes()}:${time.getSeconds()}.${time.getMilliseconds()}`;
+                const logEntry /**LogEntry */ = {
+                    message,
+                    level,
+                    timestamp: timeStr,
+                };
+                _runtimeSocket.sendPush_runtimeLog(logEntry);
+            }
+            catch (e) {
+                console.error("日志处理时发生错误:", e);
+            }
+            finally {
+                isHandlingLog = false; // 恢复标志
+            }
+        };
+    }
+    if (!globalThis["cc_debuger_log_intercepted"]) {
+        globalThis["cc_debuger_log_intercepted"] = true;
+        ["log", "warn", "error"].forEach(level => {
+            const originalMethod = console[level];
+            console[level] = (...args) => {
+                if (globalThis["cc_debuger_handleLog"]) {
+                    globalThis["cc_debuger_handleLog"](level, args);
+                }
+                originalMethod.apply(console, args); // 始终调用原始日志方法
+            };
+        });
+    }
+}
+function _getImageAssetUrl(asset /**import("cc").ImageAsset */) {
+    if (_cc_().sys.isBrowser && asset.nativeUrl) {
+        const baseUrl = globalThis.location.origin; // http://192.168.1.17:7456
+        const fullPath = globalThis.location.pathname; // /web-desktop/web-desktop/index.html
+        const subPath = fullPath.substring(0, fullPath.lastIndexOf('/') + 1); // /web-desktop/web-desktop/
+        const imgSrc = `${baseUrl}${subPath}${asset.nativeUrl}`;
+        return imgSrc;
+    }
+    else if (_cc_().sys.isNative && asset.url) {
+        const imgPath = _cc_().native.fileUtils.fullPathForFilename(asset.url);
+        return imgPath;
+    }
+}
+/**获取可写目录下的目录结构 */
+function getWitablePathFilesInfo() {
+    if (!_cc_().sys.isNative) {
+        return [];
+    }
+    const writablePath = _cc_().native.fileUtils.getWritablePath();
+    function traverse(floder) {
+        const files = _cc_().native.fileUtils.listFiles(floder);
+        const newList = [];
+        for (let i = files.length - 1; i >= 0; i--) {
+            const f = files[i];
+            const x = _cc_().native.fileUtils.fullPathForFilename(f);
+            if (x != f) {
+                continue;
+            }
+            let isFloder = _cc_().native.fileUtils.isDirectoryExist(f);
+            let relativePath = f.replace(writablePath, "");
+            relativePath = _cc_().path.stripSep(relativePath);
+            const name = _cc_().path.basename(relativePath);
+            const obj /**WritableFileInfo */ = {
+                name,
+                isFloder,
+                path: relativePath,
+            };
+            if (isFloder) {
+                obj.children = traverse(f);
+            }
+            newList.push(obj);
+        }
+        return newList;
+    }
+    const arr = traverse(writablePath);
+    // console.log("getWitablePathFilesInfo",arr)
+    return arr;
+}
+function getWritableFileData(filePath) {
+    if (!_cc_().sys.isNative) {
+        return null;
+    }
+    const arr = _cc_().native.fileUtils.getDataFromFile(filePath);
+    if (!arr || arr.byteLength <= 0)
+        return null;
+    const u8a = new Uint8Array(arr);
+    const base64Str = uint8ArrayToBase64(u8a);
+    return base64Str;
+}
+function parseKey(segments) {
+    let key = '';
+    for (let i = 0; i < segments.length; i++) {
+        let val = segments[i].toString();
+        let newStr = '';
+        for (let j = 0; j < val.length; j++) {
+            newStr += (9 - parseInt(val.charAt(j))).toString();
+        }
+        let hexStr = parseInt(newStr).toString(16);
+        while (hexStr.length < 8) {
+            hexStr = '0' + hexStr;
+        }
+        key += hexStr;
+    }
+    return key;
+}
+// XOR 加密和解密的通用异或函数
+function xor(inputBytes, keyBytes) {
+    const output = new Uint8Array(inputBytes.length);
+    for (let i = 0; i < inputBytes.length; i++) {
+        output[i] = inputBytes[i] ^ keyBytes[i % keyBytes.length];
+    }
+    return output;
+}
+// 加密函数
+function str_encrypt(input, key) {
+    if (key == null) {
+        console.log("key 不能为空");
+        return;
+    }
+    // 将输入和密钥转换为字节数组
+    const inputBytes = new TextEncoder().encode(input);
+    const keyBytes = new TextEncoder().encode(key);
+    // 调用 xor 进行异或加密
+    const xorResult = xor(inputBytes, keyBytes);
+    // 将字节数组分块转换为 Base64 编码字符串
+    const chunkSize = 0x8000; // 每次处理 32768 个字节
+    let result = '';
+    for (let i = 0; i < xorResult.length; i += chunkSize) {
+        const chunk = xorResult.subarray(i, i + chunkSize);
+        result += String.fromCharCode.apply(null, Array.from(chunk));
+    }
+    return btoaPolyfill(result);
+}
+// 解密函数
+function str_decrypt(base64Input, key) {
+    if (key == null) {
+        console.log("key 不能为空");
+        return;
+    }
+    // Base64 解码为字节数组
+    const binaryString = atobPolyfill(base64Input);
+    const chunkSize = 0x8000; // 每次处理 32768 个字节
+    const xorResult = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i += chunkSize) {
+        const chunk = binaryString.slice(i, i + chunkSize);
+        for (let j = 0; j < chunk.length; j++) {
+            xorResult[i + j] = chunk.charCodeAt(j);
+        }
+    }
+    // 将密钥转换为字节数组
+    const keyBytes = new TextEncoder().encode(key);
+    // 调用 xor 进行异或解密
+    const originalBytes = xor(xorResult, keyBytes);
+    // 将解密后的字节数组转换为字符串
+    return new TextDecoder().decode(originalBytes);
+}
+function deepCompare(newObj, oldObj) {
+    if (oldObj == null) {
+        return null;
+    }
+    const changes = {};
+    for (const key in newObj) {
+        const newVal = newObj[key];
+        const oldVal = oldObj[key];
+        if (typeof newVal === 'object' && newVal !== null) {
+            if (Array.isArray(newVal)) {
+                if (!Array.isArray(oldVal)) {
+                    // 旧值非数组，记录整个新数组
+                    changes[key] = newVal;
+                }
+                else {
+                    // 处理数组元素变化
+                    const arrChanges = [];
+                    let hasChanges = false;
+                    for (let i = 0; i < newVal.length; i++) {
+                        const childOld = i < oldVal.length ? oldVal[i] : null;
+                        const change = deepCompare(newVal[i], childOld);
+                        if (change !== null) {
+                            arrChanges[i] = change;
+                            hasChanges = true;
+                        }
+                        else {
+                            arrChanges[i] = null; // 无变化的位置设为null
+                        }
+                    }
+                    // 确保数组长度与newVal一致，填充可能的undefined为null
+                    for (let i = 0; i < newVal.length; i++) {
+                        if (arrChanges[i] === undefined) {
+                            arrChanges[i] = null;
+                        }
+                    }
+                    if (hasChanges) {
+                        changes[key] = arrChanges;
+                    }
+                }
+            }
+            else {
+                // 处理普通对象
+                const childChanges = deepCompare(newVal, oldVal);
+                if (childChanges !== null) {
+                    changes[key] = childChanges;
+                }
+            }
+        }
+        else {
+            // 处理基本类型
+            if (newVal !== oldVal) {
+                changes[key] = newVal;
+            }
+        }
+    }
+    return Object.keys(changes).length > 0 ? changes : null;
+}
+function isSubclass(childClass, parentClass) {
+    if (childClass == parentClass) {
+        return true;
+    }
+    let proto = Object.getPrototypeOf(childClass);
+    while (proto) {
+        if (proto === parentClass) {
+            return true;
+        }
+        proto = Object.getPrototypeOf(proto);
+    }
+    return false;
+}
+let bInited = false;
+let _runtimeSocket = null;
+async function _initOnce(wsUrl) {
+    let scene = _cc_().director.getScene();
+    if (scene == null) {
+        await new Promise((resolve) => {
+            _cc_().director.once(_cc_().Director.EVENT_AFTER_SCENE_LAUNCH, () => {
+                scene = _cc_().director.getScene();
+                resolve(null);
+            });
+        });
+    }
+    if (bInited) {
+        return;
+    }
+    bInited = true;
+    _data = new _RuntimeData();
+    _runtimeSocket = new RunTimeSocket();
+    _runtimeSocket.initSocket(wsUrl);
+    _data.initAssetForPush();
+    setTimeout(() => {
+        _data.makePersistCanvasNode();
+    }, 1000);
+    const _addRef = _cc_().Asset.prototype.addRef;
+    const _decRef = _cc_().Asset.prototype.decRef;
+    const _destroy = _cc_().Asset.prototype.destroy;
+    //@ts-ignore
+    const cls_Cache = _cc_().assetManager.assets.__proto__;
+    const _add = cls_Cache === null || cls_Cache === void 0 ? void 0 : cls_Cache.add;
+    const _remove = cls_Cache === null || cls_Cache === void 0 ? void 0 : cls_Cache.remove;
+    if (_add) {
+        _cc_().assetManager.assets.add = function (key, val) {
+            // console.log("add key",key)
+            let ret = _add.call(_cc_().assetManager.assets, key, val);
+            _data.onAsset_added(key, val);
+            return ret;
+        };
+    }
+    if (_remove) {
+        _cc_().assetManager.assets.remove = function (key) {
+            // console.log("remove key",key)
+            let ret = _remove.call(_cc_().assetManager.assets, key);
+            _data.onAsset_removed(key);
+            return ret;
+        };
+    }
+    _cc_().Asset.prototype.addRef = function () {
+        let ret = _addRef.call(this);
+        _data.onRes_addRef(this);
+        return ret;
+    };
+    _cc_().Asset.prototype.decRef = function (autoRelease) {
+        let ret = _decRef.call(this, autoRelease);
+        _data.onRes_decRef(this);
+        return ret;
+    };
+    _cc_().Asset.prototype.destroy = function (autoRelease) {
+        let ret = _destroy.call(this, autoRelease);
+        _data.onRes_destroy(this);
+        return ret;
+    };
+    const duration = 500;
+    setInterval(() => {
+        _runtimeSocket.loopWithInterval(duration);
+    }, duration);
+    _runtimeSocket.sendPush_sceneLaunched();
+    _runtimeSocket.sendPush_checkUpdateSceneTree();
+    _cc_().director.on(_cc_().Director.EVENT_AFTER_SCENE_LAUNCH, () => {
+        _data.cancelCurSelectNode();
+    });
+    interceptLog();
+}
+globalThis["__cc_debuger__initOnce"] = _initOnce;
